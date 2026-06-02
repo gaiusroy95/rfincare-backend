@@ -1,0 +1,509 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Primary Colors - Deep institutional blue for trust */
+    --color-primary: #2D4A87; /* blue-900 */
+    --color-primary-foreground: #FFFFFF; /* white */
+    
+    /* Secondary Colors - Enhanced purple for customer journey */
+    --color-secondary: #7B68EE; /* medium-slate-blue */
+    --color-secondary-foreground: #FFFFFF; /* white */
+    
+    /* Accent Colors - Confident orange for key actions */
+    --color-accent: #FF6B35; /* orange-red */
+    --color-accent-foreground: #FFFFFF; /* white */
+    
+    /* Background Colors */
+    --color-background: #FAFBFC; /* gray-50 */
+    --color-foreground: #1A202C; /* gray-900 */
+    
+    /* Surface Colors */
+    --color-card: #FFFFFF; /* white */
+    --color-card-foreground: #1A202C; /* gray-900 */
+    
+    /* Popover Colors */
+    --color-popover: #FFFFFF; /* white */
+    --color-popover-foreground: #1A202C; /* gray-900 */
+    
+    /* Muted Colors */
+    --color-muted: #F7FAFC; /* gray-100 */
+    --color-muted-foreground: #4A5568; /* gray-600 */
+    
+    /* Border & Input */
+    --color-border: #E2E8F0; /* gray-300 */
+    --color-input: #E2E8F0; /* gray-300 */
+    --color-ring: #2D4A87; /* blue-900 */
+    
+    /* Destructive Colors */
+    --color-destructive: #E53E3E; /* red-600 */
+    --color-destructive-foreground: #FFFFFF; /* white */
+    
+    /* Success Colors */
+    --color-success: #38A169; /* green-600 */
+    --color-success-foreground: #FFFFFF; /* white */
+    
+    /* Warning Colors */
+    --color-warning: #D69E2E; /* yellow-600 */
+    --color-warning-foreground: #1A202C; /* gray-900 */
+    
+    /* Error Colors */
+    --color-error: #E53E3E; /* red-600 */
+    --color-error-foreground: #FFFFFF; /* white */
+    
+    /* Role-Based Journey Colors */
+    --color-customer-primary: #6366F1; /* indigo-500 */
+    --color-customer-foreground: #FFFFFF; /* white */
+    
+    --color-agent-primary: #EC4899; /* pink-500 */
+    --color-agent-foreground: #FFFFFF; /* white */
+    
+    --color-admin-primary: #F59E0B; /* amber-500 */
+    --color-admin-foreground: #1A202C; /* gray-900 */
+    
+    --color-employee-primary: #3B82F6; /* blue-500 */
+    --color-employee-foreground: #FFFFFF; /* white */
+    
+    /* Conversion Colors */
+    --color-conversion: #10B981; /* emerald-500 */
+    --color-conversion-foreground: #FFFFFF; /* white */
+    
+    /* Typography - Using system font stacks for reliability */
+    --font-headline: 'DM Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-body: 'DM Sans', Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+    --font-legal: 'Source Serif 4', Georgia, 'Times New Roman', serif;
+    --font-accent: 'Courier New', Courier, monospace;
+    
+    /* Spacing Base Unit */
+    --spacing-unit: 8px;
+    
+    /* Border Radius */
+    --radius-sm: 8px;
+    --radius-md: 12px;
+    --radius-lg: 16px;
+    
+    /* Shadows */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 8px 25px rgba(99, 102, 241, 0.15);
+    
+    /* Transitions */
+    --transition-base: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .dark {
+    --color-background: #0A0A0A; /* gray-950 */
+    --color-foreground: #F7FAFC; /* gray-100 */
+    
+    --color-card: #1A202C; /* gray-900 */
+    --color-card-foreground: #F7FAFC; /* gray-100 */
+    
+    --color-popover: #1A202C; /* gray-900 */
+    --color-popover-foreground: #F7FAFC; /* gray-100 */
+    
+    --color-muted: #2D3748; /* gray-800 */
+    --color-muted-foreground: #A0AEC0; /* gray-400 */
+    
+    --color-border: #2D3748; /* gray-800 */
+    --color-input: #2D3748; /* gray-800 */
+    
+    --color-primary: #4C6EAF; /* lighter blue for dark mode */
+    --color-primary-foreground: #FFFFFF; /* white */
+    
+    --color-secondary: #9B8EF0; /* lighter purple for dark mode */
+    --color-secondary-foreground: #FFFFFF; /* white */
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: var(--font-body);
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-headline);
+  }
+
+  /* Language-aware fallback stacks for script coverage */
+  html:lang(hi),
+  html:lang(mr),
+  html[data-lang="hi"],
+  html[data-lang="mr"] {
+    --font-body: 'Noto Sans Devanagari', 'Mangal', 'Kohinoor Devanagari', sans-serif;
+    --font-headline: 'Noto Sans Devanagari', 'Mangal', 'Kohinoor Devanagari', sans-serif;
+    --font-legal: 'Noto Serif Devanagari', Georgia, serif;
+  }
+
+  html:lang(gu),
+  html[data-lang="gu"] {
+    --font-body: 'Noto Sans Gujarati', 'Shruti', sans-serif;
+    --font-headline: 'Noto Sans Gujarati', 'Shruti', sans-serif;
+    --font-legal: 'Noto Serif Gujarati', Georgia, serif;
+  }
+
+  html:lang(bn),
+  html[data-lang="bn"] {
+    --font-body: 'Noto Sans Bengali', 'Vrinda', sans-serif;
+    --font-headline: 'Noto Sans Bengali', 'Vrinda', sans-serif;
+    --font-legal: 'Noto Serif Bengali', Georgia, serif;
+  }
+
+  html:lang(ta),
+  html[data-lang="ta"] {
+    --font-body: 'Noto Sans Tamil', 'Latha', sans-serif;
+    --font-headline: 'Noto Sans Tamil', 'Latha', sans-serif;
+    --font-legal: 'Noto Serif Tamil', Georgia, serif;
+  }
+
+  html:lang(te),
+  html[data-lang="te"] {
+    --font-body: 'Noto Sans Telugu', 'Gautami', sans-serif;
+    --font-headline: 'Noto Sans Telugu', 'Gautami', sans-serif;
+    --font-legal: 'Noto Serif Telugu', Georgia, serif;
+  }
+
+  html:lang(kn),
+  html[data-lang="kn"] {
+    --font-body: 'Noto Sans Kannada', 'Tunga', sans-serif;
+    --font-headline: 'Noto Sans Kannada', 'Tunga', sans-serif;
+    --font-legal: 'Noto Serif Kannada', Georgia, serif;
+  }
+}
+
+@layer components {
+  /* Header Styles */
+  .header-container {
+    @apply fixed top-0 left-0 right-0 z-50 bg-card shadow-md;
+    transition: all var(--transition-base);
+  }
+
+  .header-content {
+    @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .header-inner {
+    @apply flex items-center justify-between h-16;
+  }
+
+  .header-logo {
+    @apply flex items-center space-x-3;
+  }
+
+  .header-logo-icon {
+    @apply w-10 h-10 rounded-lg flex items-center justify-center;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+    transition: transform var(--transition-fast);
+  }
+
+  .header-logo-icon:hover {
+    transform: scale(1.05);
+  }
+
+  .header-logo-text {
+    @apply text-xl font-bold text-foreground;
+    font-family: var(--font-headline);
+  }
+
+  /* Menu bar: visible md+ only */
+  .header-nav {
+    @apply hidden md:flex items-center space-x-1 flex-1 justify-center;
+  }
+
+  .header-nav-item {
+    @apply px-4 py-2 rounded-lg text-sm font-medium transition-all;
+    font-family: var(--font-body);
+  }
+
+  .header-nav-item:hover {
+    @apply bg-muted;
+  }
+
+  .header-nav-item.active {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .header-actions {
+    @apply flex items-center space-x-3;
+  }
+
+  /* Menu icon: visible below md only (when menu bar is hidden) */
+  .header-mobile-toggle {
+    @apply flex md:!hidden p-2 rounded-lg hover:bg-muted transition-colors;
+  }
+
+  /* Mobile Menu Styles */
+  .mobile-menu {
+    @apply md:hidden fixed top-16 left-0 right-0 bottom-0 z-40 bg-card border-t border-border overflow-y-auto;
+    transition: all var(--transition-base);
+  }
+
+  .mobile-menu-content {
+    @apply px-4 py-4 space-y-2;
+  }
+
+  .mobile-menu-item {
+    @apply block px-4 py-3 rounded-lg text-sm font-medium transition-all;
+    font-family: var(--font-body);
+  }
+
+  .mobile-menu-item:hover {
+    @apply bg-muted;
+  }
+
+  .mobile-menu-item.active {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  /* Role Badge Styles */
+  .role-badge {
+    @apply inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold;
+    font-family: var(--font-accent);
+  }
+
+  .role-badge.customer {
+    @apply bg-customer-primary text-customer-foreground;
+  }
+
+  .role-badge.agent {
+    @apply bg-agent-primary text-agent-foreground;
+  }
+
+  .role-badge.admin {
+    @apply bg-admin-primary text-admin-foreground;
+  }
+
+  .role-badge.employee {
+    @apply bg-employee-primary text-employee-foreground;
+  }
+
+  /* Progress Indicator Styles */
+  .progress-ring {
+    @apply relative inline-flex items-center justify-center;
+  }
+
+  .progress-ring-circle {
+    transform: rotate(-90deg);
+    transform-origin: 50% 50%;
+  }
+
+  .progress-ring-fill {
+    transition: stroke-dashoffset 1.2s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  /* Conversion CTA Styles */
+  .cta-primary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold;
+    @apply bg-conversion text-conversion-foreground;
+    @apply transition-all duration-300;
+    box-shadow: var(--shadow-md);
+    font-family: var(--font-headline);
+  }
+
+  .cta-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .cta-secondary {
+    @apply inline-flex items-center justify-center px-6 py-3 rounded-lg font-semibold;
+    @apply bg-transparent border-2 border-primary text-primary;
+    @apply transition-all duration-300;
+    font-family: var(--font-headline);
+  }
+
+  .cta-secondary:hover {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  /* Form Styles */
+  .form-section {
+    @apply space-y-6 p-6 bg-card rounded-lg;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .form-progress {
+    @apply flex items-center justify-between mb-8;
+  }
+
+  .form-step {
+    @apply flex items-center space-x-2;
+  }
+
+  .form-step-indicator {
+    @apply w-8 h-8 rounded-full flex items-center justify-center text-sm font-semibold;
+    @apply transition-all duration-300;
+  }
+
+  .form-step-indicator.active {
+    @apply bg-primary text-primary-foreground;
+  }
+
+  .form-step-indicator.completed {
+    @apply bg-success text-success-foreground;
+  }
+
+  .form-step-indicator.pending {
+    @apply bg-muted text-muted-foreground;
+  }
+
+  /* Card Styles */
+  .feature-card {
+    @apply p-6 bg-card rounded-lg border border-border;
+    @apply transition-all duration-300;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .feature-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Trust Signal Styles */
+  .trust-badge {
+    @apply inline-flex items-center space-x-2 px-4 py-2 rounded-lg;
+    @apply bg-muted border border-border;
+    @apply transition-all duration-300;
+  }
+
+  .trust-badge:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  /* Animation Utilities */
+  .animate-slide-in {
+    animation: slideIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .animate-scale-in {
+    animation: scaleIn 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  @keyframes slideIn {
+    from {
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+
+  @keyframes scaleIn {
+    from {
+      transform: scale(0.9);
+      opacity: 0;
+    }
+    to {
+      transform: scale(1);
+      opacity: 1;
+    }
+  }
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Legal / policy pages */
+  .legal-page .legal-document-title {
+    font-family: var(--font-headline);
+    letter-spacing: -0.02em;
+  }
+
+  .legal-document {
+    font-family: var(--font-legal);
+    font-size: 1.0625rem;
+    line-height: 1.75;
+    color: var(--color-foreground);
+  }
+
+  .legal-document p {
+    margin-top: 0;
+    margin-bottom: 1.25rem;
+    color: color-mix(in srgb, var(--color-foreground) 92%, transparent);
+  }
+
+  .legal-document h2 {
+    font-family: var(--font-headline);
+    font-size: 1.35rem;
+    font-weight: 700;
+    margin-top: 2.5rem;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid color-mix(in srgb, var(--color-primary) 25%, transparent);
+    color: var(--color-primary);
+    letter-spacing: -0.01em;
+  }
+
+  .legal-document h3 {
+    font-family: var(--font-headline);
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-top: 1.75rem;
+    margin-bottom: 0.5rem;
+    color: var(--color-foreground);
+  }
+
+  .legal-document ul {
+    margin: 0.75rem 0 1.5rem;
+    padding-left: 1.5rem;
+    list-style-type: disc;
+  }
+
+  .legal-document li {
+    margin-bottom: 0.5rem;
+    padding-left: 0.25rem;
+  }
+
+  .legal-document li::marker {
+    color: var(--color-primary);
+  }
+
+  .legal-document strong {
+    font-family: var(--font-headline);
+    font-weight: 600;
+    color: var(--color-foreground);
+  }
+
+  .legal-document a {
+    color: var(--color-primary);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .legal-document a:hover {
+    opacity: 0.85;
+  }
+}

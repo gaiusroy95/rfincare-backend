@@ -1,0 +1,30 @@
+{
+  "short_name": "Rfincare",
+  "name": "Rfincare - Your Trusted Loan Partner",
+  "description": "Simplifying loan applications with personalized financial solutions across India",
+  "icons": [
+    {
+      "src": "/assets/images/Logo_-_Copy_-_Copy-1771484476490.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/assets/images/Logo_-_Copy_-_Copy-1771484476490.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "orientation": "portrait-primary",
+  "categories": ["finance", "business", "productivity"]
+}

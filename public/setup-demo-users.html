@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Setup Demo Users - RFincare</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 40px;
+    }
+    
+    h1 {
+      color: #1a202c;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #718096;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .warning {
+      background: #fff3cd;
+      border-left: 4px solid #ffc107;
+      padding: 15px;
+      margin-bottom: 25px;
+      border-radius: 4px;
+      font-size: 14px;
+      color: #856404;
+    }
+    
+    .input-group {
+      margin-bottom: 20px;
+    }
+    
+    label {
+      display: block;
+      margin-bottom: 8px;
+      color: #2d3748;
+      font-weight: 600;
+      font-size: 14px;
+    }
+    
+    input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 2px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+    
+    input:focus {
+      outline: none;
+      border-color: #667eea;
+    }
+    
+    button {
+      width: 100%;
+      padding: 14px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .log {
+      margin-top: 25px;
+      padding: 20px;
+      background: #f7fafc;
+      border-radius: 8px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+    
+    .log-entry {
+      margin-bottom: 8px;
+      padding: 6px 10px;
+      border-radius: 4px;
+    }
+    
+    .log-info {
+      background: #e6f7ff;
+      color: #0050b3;
+    }
+    
+    .log-success {
+      background: #f6ffed;
+      color: #389e0d;
+    }
+    
+    .log-error {
+      background: #fff1f0;
+      color: #cf1322;
+    }
+    
+    .log-warning {
+      background: #fffbe6;
+      color: #d48806;
+    }
+    
+    .credentials {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f0fdf4;
+      border: 2px solid #86efac;
+      border-radius: 8px;
+    }
+    
+    .credentials h3 {
+      color: #166534;
+      margin-bottom: 15px;
+      font-size: 16px;
+    }
+    
+    .credential-item {
+      margin-bottom: 10px;
+      padding: 10px;
+      background: white;
+      border-radius: 6px;
+      font-size: 13px;
+    }
+    
+    .credential-item strong {
+      color: #166534;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Setup Demo Users</h1>
+    <p class="subtitle">One-time setup to create demo users for RFincare</p>
+    
+    <div class="warning">
+      <strong>⚠️ Important:</strong> This requires your Supabase <strong>Service Role Key</strong> (not the anon key). 
+      Find it in: Supabase Dashboard → Settings → API → service_role (secret)
+    </div>
+    
+    <div class="input-group">
+      <label for="serviceKey">Supabase Service Role Key</label>
+      <input 
+        type="password" 
+        id="serviceKey" 
+        placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      />
+    </div>
+    
+    <button id="setupBtn" onclick="setupDemoUsers()">Create Demo Users</button>
+    
+    <div id="log" class="log" style="display: none;"></div>
+    <div id="credentials" class="credentials" style="display: none;"></div>
+  </div>
+  
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+    
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'YOUR_SUPABASE_URL';
+    
+    const demoUsers = [
+      { email: 'admin@rfincare.com', password: 'Admin@2026', role: 'super_admin', fullName: 'Admin User' },
+      { email: 'employee@rfincare.com', password: 'Employee@2026', role: 'employee', fullName: 'Employee User' },
+      { email: 'agent@rfincare.com', password: 'Agent@2026', role: 'agent', fullName: 'Agent User' },
+      { email: 'customer@rfincare.com', password: 'Customer@2026', role: 'customer', fullName: 'Customer User' }
+    ];
+    
+    function addLog(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      logDiv.style.display = 'block';
+      
+      const entry = document.createElement('div');
+      entry.className = `log-entry log-${type}`;
+      entry.textContent = message;
+      logDiv.appendChild(entry);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+    
+    function showCredentials() {
+      const credDiv = document.getElementById('credentials');
+      credDiv.style.display = 'block';
+      credDiv.innerHTML = `
+        <h3>✅ Demo Users Created Successfully!</h3>
+        <div class="credential-item"><strong>Admin:</strong> admin@rfincare.com / Admin@2026</div>
+        <div class="credential-item"><strong>Employee:</strong> employee@rfincare.com / Employee@2026</div>
+        <div class="credential-item"><strong>Agent:</strong> agent@rfincare.com / Agent@2026</div>
+        <div class="credential-item"><strong>Customer:</strong> customer@rfincare.com / Customer@2026</div>
+      `;
+    }
+    
+    window.setupDemoUsers = async function() {
+      const serviceKey = document.getElementById('serviceKey').value.trim();
+      const setupBtn = document.getElementById('setupBtn');
+      const logDiv = document.getElementById('log');
+      
+      if (!serviceKey) {
+        alert('Please enter your Supabase Service Role Key');
+        return;
+      }
+      
+      setupBtn.disabled = true;
+      setupBtn.textContent = 'Creating users...';
+      logDiv.innerHTML = '';
+      logDiv.style.display = 'block';
+      
+      try {
+        addLog('🚀 Initializing Supabase Admin client...', 'info');
+        
+        const supabaseAdmin = createClient(supabaseUrl, serviceKey, {
+          auth: {
+            autoRefreshToken: false,
+            persistSession: false
+          }
+        });
+        
+        addLog('✅ Admin client initialized', 'success');
+        
+        let successCount = 0;
+        let skipCount = 0;
+        let errorCount = 0;
+        
+        for (const user of demoUsers) {
+          addLog(`\n📝 Creating ${user.role}: ${user.email}`, 'info');
+          
+          try {
+            // Create user with Admin API
+            const { data: authData, error: authError } = await supabaseAdmin.auth.admin.createUser({
+              email: user.email,
+              password: user.password,
+              email_confirm: true,
+              user_metadata: {
+                full_name: user.fullName,
+                role: user.role
+              }
+            });
+            
+            if (authError) {
+              if (authError.message.includes('already registered') || authError.message.includes('already exists')) {
+                addLog(`⚠️  User already exists: ${user.email}`, 'warning');
+                skipCount++;
+                continue;
+              }
+              throw authError;
+            }
+            
+            addLog(`✅ Auth user created: ${authData.user.id}`, 'success');
+            
+            // Create user profile
+            const { error: profileError } = await supabaseAdmin
+              .from('user_profiles')
+              .upsert({
+                id: authData.user.id,
+                email: user.email,
+                full_name: user.fullName,
+                role: user.role,
+                is_active: true,
+                account_status: 'active',
+                failed_login_attempts: 0
+              }, {
+                onConflict: 'id'
+              });
+            
+            if (profileError) {
+              addLog(`❌ Profile creation failed: ${profileError.message}`, 'error');
+              errorCount++;
+            } else {
+              addLog(`✅ User profile created for ${user.role}`, 'success');
+              successCount++;
+            }
+            
+          } catch (error) {
+            addLog(`❌ Failed to create ${user.email}: ${error.message}`, 'error');
+            errorCount++;
+          }
+        }
+        
+        addLog(`\n✨ Setup complete! Success: ${successCount}, Skipped: ${skipCount}, Errors: ${errorCount}`, 'success');
+        
+        if (successCount > 0 || skipCount === demoUsers.length) {
+          showCredentials();
+        }
+        
+      } catch (error) {
+        addLog(`❌ Fatal error: ${error.message}`, 'error');
+      } finally {
+        setupBtn.disabled = false;
+        setupBtn.textContent = 'Create Demo Users';
+      }
+    };
+  </script>
+</body>
+</html>
