@@ -5,8 +5,12 @@ import Select from '../../../components/ui/Select';
 import { employeeService } from '../../../services/employeeService';
 import { milestone4Service } from '../../../services/milestone4Service';
 import { apiClient } from '../../../lib/apiClient';
-import { customerJourneyService } from '../../../services/customerJourneyService';
-import { getDocumentPreviewUrl } from '../../../utils/documentUrls';
+import { mapApiDocumentToCard } from '../../../services/documentManagementService';
+import DocumentReviewModal from '../../document-management-center/components/DocumentReviewModal';
+import {
+  BANK_APPROVAL_STAGE_SELECT_OPTIONS,
+  DOCUMENT_STAGE_SELECT_OPTIONS,
+} from '../../../constants/applicationStageOptions';
 
 const STATUS_OPTIONS = [
   { value: 'submitted', label: 'Submitted' },
@@ -15,17 +19,6 @@ const STATUS_OPTIONS = [
   { value: 'approved', label: 'Approved' },
   { value: 'rejected', label: 'Rejected' },
   { value: 'disbursed', label: 'Disbursed' },
-];
-
-const STAGE_OPTIONS = [
-  { value: 'submitted_to_bank', label: 'Submitted To Bank' },
-  { value: 'at_kyc_stage', label: 'At KYC Stage' },
-  { value: 'at_bgv_stage', label: 'At BGV Stage' },
-  { value: 'at_credit_stage', label: 'At Credit Stage' },
-  { value: 'at_property_valuation_stage', label: 'At Property Valuation Stage' },
-  { value: 'at_property_technical_stage', label: 'At Property Technical Stage' },
-  { value: 'at_disbursement_stage', label: 'At Disbursement Stage' },
-  { value: 'bank_rejected', label: 'Bank Rejected' },
 ];
 
 function appFields(application) {
@@ -59,6 +52,7 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
   const [docBusy, setDocBusy] = useState(null);
   const [rejectReason, setRejectReason] = useState({});
   const [expandedReject, setExpandedReject] = useState(null);
+  const [previewDocument, setPreviewDocument] = useState(null);
 
   const [status, setStatus] = useState(application?.status || 'under_review');
   const [statusNotes, setStatusNotes] = useState('');
@@ -86,7 +80,9 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
     if (!application?.id) return;
     setDocsLoading(true);
     const { data, error } = await employeeService.getApplicationDocuments(application.id);
-    setDocuments(error ? [] : data || []);
+    setDocuments(
+      error ? [] : (Array.isArray(data) ? data : []).map((row) => mapApiDocumentToCard(row)),
+    );
     setDocsLoading(false);
   }, [application?.id]);
 
@@ -106,35 +102,13 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
     ['pending', 'uploaded'].includes(String(d.status || d.verificationStatus || '').toLowerCase()),
   ).length;
 
-  const openDocument = async (doc) => {
+  const handleViewDocument = (doc) => {
     const docId = doc?.id;
     if (!docId) {
-      alert('Could not open document');
+      alert('Could not open document — missing document id.');
       return;
     }
-
-    const previewUrl = getDocumentPreviewUrl(doc);
-    if (previewUrl) {
-      window.open(previewUrl, '_blank', 'noopener,noreferrer');
-      return;
-    }
-
-    const { data, error } = await customerJourneyService.downloadDocument(docId);
-    if (error || !data?.blob) {
-      alert(error?.message || 'Could not open document');
-      return;
-    }
-
-    const url = URL.createObjectURL(data.blob);
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!opened) {
-      const link = document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.click();
-    }
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    setPreviewDocument(doc.raw ? doc : mapApiDocumentToCard(doc));
   };
 
   const handleVerifyDoc = async (docId, decision) => {
@@ -282,7 +256,7 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
               ) : (
                 <div className="space-y-3">
                   {documents.map((doc) => {
-                    const docStatus = doc.status || doc.verificationStatus || 'pending';
+                    const docStatus = doc.status || 'pending';
                     const isPending = ['pending', 'uploaded'].includes(String(docStatus).toLowerCase());
                     return (
                       <div
@@ -291,10 +265,10 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
                       >
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground truncate">
-                            {doc.documentName || doc.document_name || 'Document'}
+                            {doc.name || 'Document'}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {doc.documentType || doc.document_type || '—'}
+                            {doc.documentType || '—'}
                           </p>
                           <span
                             className={`inline-block mt-1 text-xs px-2 py-0.5 rounded-full ${statusBadgeClass(docStatus)}`}
@@ -303,7 +277,7 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-2 shrink-0">
-                          <Button variant="outline" size="xs" onClick={() => openDocument(doc)}>
+                          <Button variant="outline" size="xs" onClick={() => handleViewDocument(doc)}>
                             View
                           </Button>
                           {isPending && (
@@ -365,13 +339,13 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
                 <Select label="Application status" options={STATUS_OPTIONS} value={status} onChange={setStatus} />
                 <Select
                   label="Document stage"
-                  options={STAGE_OPTIONS.filter((o) => o.value !== 'bank_rejected')}
+                  options={DOCUMENT_STAGE_SELECT_OPTIONS}
                   value={documentStageStatus}
                   onChange={setDocumentStageStatus}
                 />
                 <Select
                   label="Bank approval stage"
-                  options={STAGE_OPTIONS}
+                  options={BANK_APPROVAL_STAGE_SELECT_OPTIONS}
                   value={bankApprovalStatus}
                   onChange={setBankApprovalStatus}
                 />
@@ -399,6 +373,24 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
           </Button>
         </div>
       </div>
+
+      <DocumentReviewModal
+        document={previewDocument}
+        application={{
+          applicationNumber: application?.applicationNumber,
+          customerName:
+            application?.customer?.fullName ||
+            application?.customerName ||
+            application?.customer_name ||
+            'Applicant',
+        }}
+        isOpen={Boolean(previewDocument)}
+        onClose={() => setPreviewDocument(null)}
+        onUpdated={async () => {
+          await loadDocuments();
+          onRefresh?.();
+        }}
+      />
     </div>
   );
 };

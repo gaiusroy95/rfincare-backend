@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Image from '../../../components/AppImage';
-import { documentTypeLabel, getDocumentPreviewUrl } from '../../../utils/documentUrls';
+import { documentTypeLabel, getDocumentPreviewUrl, inferDocumentMediaType } from '../../../utils/documentUrls';
 import {
   documentManagementService,
   DOC_STATUS_LABELS,
@@ -18,43 +18,107 @@ const DocumentReviewModal = ({
 }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  const [mediaType, setMediaType] = useState('doc');
   const [remark, setRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const blobUrlRef = useRef(null);
+
+  const revokeBlobUrl = useCallback(() => {
+    if (blobUrlRef.current) {
+      URL.revokeObjectURL(blobUrlRef.current);
+      blobUrlRef.current = null;
+    }
+  }, []);
 
   useEffect(() => {
     if (!isOpen || !document?.id) {
+      revokeBlobUrl();
       setPreviewUrl(null);
+      setPreviewError('');
       setRemark(document?.verificationNote || '');
       setError('');
       return undefined;
     }
 
     setRemark(document?.verificationNote || '');
-    const staticUrl = getDocumentPreviewUrl(document.raw || document);
-    if (staticUrl && document.type === 'image') {
+    setPreviewError('');
+    setError('');
+
+    const raw = document.raw || document;
+    const resolvedType = inferDocumentMediaType({
+      mimeType: document.mimeType || raw?.mimeType || raw?.mime_type,
+      documentName: document.name || raw?.documentName || raw?.document_name,
+      filePath: document.filePath || raw?.filePath || raw?.file_path,
+    });
+    setMediaType(resolvedType);
+
+    const staticUrl = getDocumentPreviewUrl(raw);
+    if (staticUrl && (resolvedType === 'image' || resolvedType === 'pdf')) {
       setPreviewUrl(staticUrl);
+      setPreviewLoading(false);
       return undefined;
     }
 
-    let objectUrl = null;
     let cancelled = false;
     (async () => {
       setPreviewLoading(true);
-      const { data } = await documentManagementService.downloadDocument(document.id);
+      setPreviewUrl(null);
+      const { data, error: dlErr } = await documentManagementService.downloadDocument(document.id, {
+        inline: true,
+      });
       if (cancelled) return;
-      if (data?.blob) {
-        objectUrl = URL.createObjectURL(data.blob);
-        setPreviewUrl(objectUrl);
+
+      if (dlErr || !data?.blob) {
+        setPreviewError(dlErr?.message || 'Could not load document preview.');
+        setPreviewLoading(false);
+        return;
       }
+
+      const blobType = data.mimeType || data.blob.type || '';
+      const fromBlob = inferDocumentMediaType({
+        mimeType: blobType,
+        documentName: data.fileName || document.name,
+      });
+      if (fromBlob !== 'doc') setMediaType(fromBlob);
+
+      revokeBlobUrl();
+      const objectUrl = URL.createObjectURL(data.blob);
+      blobUrlRef.current = objectUrl;
+      setPreviewUrl(objectUrl);
       setPreviewLoading(false);
     })();
 
     return () => {
       cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      revokeBlobUrl();
     };
-  }, [isOpen, document?.id]);
+  }, [isOpen, document?.id, document?.name, revokeBlobUrl]);
+
+  const openInNewTab = useCallback(async () => {
+    if (previewUrl && !previewError) {
+      const opened = window.open(previewUrl, '_blank', 'noopener,noreferrer');
+      if (opened) return;
+    }
+    const { data, error: dlErr } = await documentManagementService.downloadDocument(document.id, {
+      inline: true,
+    });
+    if (dlErr || !data?.blob) {
+      setPreviewError(dlErr?.message || 'Could not open document');
+      return;
+    }
+    const url = URL.createObjectURL(data.blob);
+    const opened = window.open(url, '_blank', 'noopener,noreferrer');
+    if (!opened) {
+      const link = window.document.createElement('a');
+      link.href = url;
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      link.click();
+    }
+    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  }, [document?.id, previewUrl, previewError]);
 
   if (!isOpen || !document) return null;
 
@@ -81,7 +145,10 @@ const DocumentReviewModal = ({
 
   const handleDownload = async () => {
     const { data, error: dlErr } = await documentManagementService.downloadDocument(document.id);
-    if (dlErr || !data?.blob) return;
+    if (dlErr || !data?.blob) {
+      setPreviewError(dlErr?.message || 'Download failed');
+      return;
+    }
     const url = URL.createObjectURL(data.blob);
     const a = window.document.createElement('a');
     a.href = url;
@@ -90,9 +157,20 @@ const DocumentReviewModal = ({
     URL.revokeObjectURL(url);
   };
 
+  const showPreview = !previewLoading && !previewError && previewUrl;
+  const showEmptyPreview =
+    !previewLoading && !previewError && !previewUrl && (mediaType === 'image' || mediaType === 'pdf');
+
   return (
-    <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
-      <div className="bg-card rounded-lg w-full max-w-4xl max-h-[92vh] flex flex-col border border-border shadow-xl">
+    <div
+      className="fixed inset-0 bg-black/60 z-[60] flex items-center justify-center p-4"
+      onClick={onClose}
+      role="presentation"
+    >
+      <div
+        className="bg-card rounded-lg w-full max-w-4xl max-h-[92vh] flex flex-col border border-border shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
         <div className="border-b border-border p-4 flex items-start justify-between gap-4 shrink-0">
           <div className="min-w-0">
             <h2 className="text-lg font-bold text-foreground truncate">
@@ -116,29 +194,59 @@ const DocumentReviewModal = ({
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           <div className="bg-muted/30 rounded-lg min-h-[240px] flex items-center justify-center p-4">
             {previewLoading && (
-              <p className="text-sm text-muted-foreground">Loading preview…</p>
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />
+                <p className="text-sm text-muted-foreground">Loading preview…</p>
+              </div>
             )}
-            {!previewLoading && document.type === 'image' && previewUrl && (
+
+            {previewError && (
+              <div className="text-center max-w-md">
+                <Icon name="AlertCircle" size={40} className="text-destructive mx-auto mb-3" />
+                <p className="text-sm text-destructive mb-4">{previewError}</p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button variant="outline" iconName="Download" onClick={handleDownload}>
+                    Download
+                  </Button>
+                  <Button variant="default" iconName="ExternalLink" onClick={openInNewTab}>
+                    Open in new tab
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {showPreview && mediaType === 'image' && (
               <Image
                 src={previewUrl}
                 alt={document.name}
                 className="max-w-full max-h-[50vh] object-contain rounded-lg"
               />
             )}
-            {!previewLoading && document.type === 'pdf' && previewUrl && (
+
+            {showPreview && mediaType === 'pdf' && (
               <iframe
                 title={document.name}
                 src={previewUrl}
                 className="w-full h-[50vh] rounded-lg bg-white border border-border"
               />
             )}
-            {!previewLoading && document.type !== 'image' && document.type !== 'pdf' && (
+
+            {(showEmptyPreview || (!previewLoading && !previewError && mediaType === 'doc')) && (
               <div className="text-center">
                 <Icon name="FileText" size={48} className="text-muted-foreground mx-auto mb-3" />
-                <p className="text-sm text-muted-foreground mb-3">Preview not available for this file type.</p>
-                <Button variant="outline" iconName="Download" onClick={handleDownload}>
-                  Download to view
-                </Button>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {showEmptyPreview
+                    ? 'Preview could not be embedded. Open or download the file to review.'
+                    : 'Preview not available for this file type.'}
+                </p>
+                <div className="flex flex-wrap gap-2 justify-center">
+                  <Button variant="outline" iconName="ExternalLink" onClick={openInNewTab}>
+                    Open in new tab
+                  </Button>
+                  <Button variant="outline" iconName="Download" onClick={handleDownload}>
+                    Download
+                  </Button>
+                </div>
               </div>
             )}
           </div>
@@ -173,6 +281,9 @@ const DocumentReviewModal = ({
         <div className="border-t border-border p-4 flex flex-wrap gap-2 justify-end shrink-0">
           <Button variant="outline" onClick={handleDownload} iconName="Download" disabled={submitting}>
             Download
+          </Button>
+          <Button variant="outline" onClick={openInNewTab} iconName="ExternalLink" disabled={submitting}>
+            Open in tab
           </Button>
           <Button variant="outline" onClick={onClose} disabled={submitting}>
             Close

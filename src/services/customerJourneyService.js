@@ -241,21 +241,40 @@ export const customerJourneyService = {
     return this.getDocuments(null, applicationId);
   },
 
-  async downloadDocument(documentId) {
+  async downloadDocument(documentId, { inline = false } = {}) {
     try {
-      const res = await apiClient.get(`/documents/${documentId}/download`, { responseType: 'blob' });
+      const res = await apiClient.get(`/documents/${documentId}/download`, {
+        responseType: 'blob',
+        params: inline ? { inline: '1' } : undefined,
+      });
+      const contentType = String(res.headers?.['content-type'] || res.data?.type || '');
+      if (contentType.includes('application/json')) {
+        const text = await res.data.text();
+        let message = 'Download failed';
+        try {
+          const parsed = JSON.parse(text);
+          message = parsed.error || parsed.message || message;
+        } catch {
+          /* use default */
+        }
+        return { data: null, error: { message } };
+      }
       const disposition = res.headers?.['content-disposition'] || '';
       const match = disposition.match(/filename="?([^"]+)"?/i);
       return {
         data: {
           blob: res.data,
           fileName: match?.[1] || 'document',
-          mimeType: res.data?.type || '',
+          mimeType: res.data?.type || contentType,
         },
         error: null,
       };
     } catch (error) {
-      return { data: null, error: { message: 'Download failed' } };
+      const message =
+        error?.response?.data?.error ||
+        error?.message ||
+        'Could not open document';
+      return { data: null, error: { message } };
     }
   },
 

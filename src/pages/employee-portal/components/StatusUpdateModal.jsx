@@ -3,6 +3,10 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
+import {
+  BANK_APPROVAL_STAGE_SELECT_OPTIONS,
+  DOCUMENT_STAGE_SELECT_OPTIONS,
+} from '../../../constants/applicationStageOptions';
 
 const StatusUpdateModal = ({ application, isOpen, onClose, onUpdate }) => {
   const [status, setStatus] = useState(application?.status || 'under_review');
@@ -24,17 +28,6 @@ const StatusUpdateModal = ({ application, isOpen, onClose, onUpdate }) => {
     { value: 'rejected', label: 'Rejected' },
     { value: 'disbursed', label: 'Disbursed' }
   ];
-  const stageOptions = [
-    { value: 'submitted_to_bank', label: 'Submitted To Bank' },
-    { value: 'at_kyc_stage', label: 'At KYC Stage' },
-    { value: 'at_bgv_stage', label: 'At BGV Stage' },
-    { value: 'at_credit_stage', label: 'At Credit Stage' },
-    { value: 'at_property_valuation_stage', label: 'At Property Valuation Stage' },
-    { value: 'at_property_technical_stage', label: 'At Property Technical Stage' },
-    { value: 'at_disbursement_stage', label: 'At Disbursement Stage' },
-    { value: 'bank_rejected', label: 'Bank Rejected Application' },
-  ];
-
   const getStatusColor = (statusValue) => {
     const colors = {
       submitted: 'text-blue-600 bg-blue-50',
@@ -139,13 +132,13 @@ const StatusUpdateModal = ({ application, isOpen, onClose, onUpdate }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <Select
                 label="Document stage"
-                options={stageOptions.filter((o) => o.value !== 'bank_rejected')}
+                options={DOCUMENT_STAGE_SELECT_OPTIONS}
                 value={documentStageStatus}
                 onChange={setDocumentStageStatus}
               />
               <Select
                 label="Bank approval stage"
-                options={stageOptions}
+                options={BANK_APPROVAL_STAGE_SELECT_OPTIONS}
                 value={bankApprovalStatus}
                 onChange={setBankApprovalStatus}
               />

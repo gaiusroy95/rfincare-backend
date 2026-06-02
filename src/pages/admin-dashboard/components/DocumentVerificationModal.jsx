@@ -6,6 +6,10 @@ import { adminService } from '../../../services/adminService';
 import { customerJourneyService } from '../../../services/customerJourneyService';
 import { buildApplicationDetailSections, pickCustomerPhotoDocument } from '../../../utils/applicationFormDetails';
 import { documentTypeLabel, getDocumentPreviewUrl } from '../../../utils/documentUrls';
+import {
+  BANK_APPROVAL_STAGE_SELECT_OPTIONS,
+  DOCUMENT_STAGE_SELECT_OPTIONS,
+} from '../../../constants/applicationStageOptions';
 
 const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, onReject }) => {
   const [reviewNotes, setReviewNotes] = useState('');
@@ -101,17 +105,6 @@ const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, on
     'Applicant';
 
   const amount = Number(app?.loanAmount ?? app?.data?.loanAmount ?? application?.amount ?? 0);
-  const stageOptions = [
-    { value: 'submitted_to_bank', label: 'Submitted To Bank' },
-    { value: 'at_kyc_stage', label: 'At KYC Stage' },
-    { value: 'at_bgv_stage', label: 'At BGV Stage' },
-    { value: 'at_credit_stage', label: 'At Credit Stage' },
-    { value: 'at_property_valuation_stage', label: 'At Property Valuation Stage' },
-    { value: 'at_property_technical_stage', label: 'At Property Technical Stage' },
-    { value: 'at_disbursement_stage', label: 'At Disbursement Stage' },
-    { value: 'bank_rejected', label: 'Bank Rejected Application' },
-  ];
-
   const handleApprove = () => {
     onApprove(application?.id, reviewNotes);
     onClose();
@@ -228,7 +221,7 @@ const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, on
                         value={documentStageStatus}
                         onChange={(e) => setDocumentStageStatus(e.target.value)}
                       >
-                        {stageOptions.filter((o) => o.value !== 'bank_rejected').map((opt) => (
+                        {DOCUMENT_STAGE_SELECT_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>
@@ -240,7 +233,7 @@ const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, on
                         value={bankApprovalStatus}
                         onChange={(e) => setBankApprovalStatus(e.target.value)}
                       >
-                        {stageOptions.map((opt) => (
+                        {BANK_APPROVAL_STAGE_SELECT_OPTIONS.map((opt) => (
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </select>

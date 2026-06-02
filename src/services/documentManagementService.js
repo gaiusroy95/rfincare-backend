@@ -1,4 +1,5 @@
 import { apiClient } from '../lib/apiClient';
+import { inferDocumentMediaType } from '../utils/documentUrls';
 import { customerJourneyService } from './customerJourneyService';
 
 const toCamelCase = (obj) => {
@@ -30,7 +31,8 @@ export const documentManagementService = {
     return toCamelCase(res.data);
   },
 
-  downloadDocument: (documentId) => customerJourneyService.downloadDocument(documentId),
+  downloadDocument: (documentId, options) =>
+    customerJourneyService.downloadDocument(documentId, options),
 
   async uploadDocument(file, { applicationId, customerId, documentType }) {
     const form = new FormData();
@@ -63,8 +65,11 @@ export const DOC_STATUS_LABELS = {
 
 export function mapApiDocumentToCard(doc) {
   const mime = doc.mimeType || doc.mime_type || '';
-  const isImage = mime.startsWith('image/');
-  const isPdf = mime.includes('pdf');
+  const mediaType = inferDocumentMediaType({
+    mimeType: mime,
+    documentName: doc.documentName || doc.document_name,
+    filePath: doc.filePath || doc.file_path,
+  });
   const uploadedAt = doc.uploadedAt || doc.uploaded_at || doc.createdAt || doc.created_at;
   const status = doc.verificationStatus || doc.verification_status || doc.status || 'pending';
 
@@ -73,7 +78,7 @@ export function mapApiDocumentToCard(doc) {
     name: doc.documentName || doc.document_name || 'Document',
     documentType: doc.documentType || doc.document_type,
     category: doc.documentType || doc.document_type,
-    type: isImage ? 'image' : isPdf ? 'pdf' : 'doc',
+    type: mediaType,
     size: doc.fileSize || doc.file_size || 0,
     uploadedAt: uploadedAt ? new Date(uploadedAt) : new Date(),
     status,

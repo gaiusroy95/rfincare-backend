@@ -91,7 +91,10 @@ const DocumentManagementCenter = () => {
 
   const handleDownload = async (doc) => {
     const { data, error: dlErr } = await documentManagementService.downloadDocument(doc.id);
-    if (dlErr || !data?.blob) return;
+    if (dlErr || !data?.blob) {
+      window.alert(dlErr?.message || 'Could not download document');
+      return;
+    }
     const url = URL.createObjectURL(data.blob);
     const a = window.document.createElement('a');
     a.href = url;
