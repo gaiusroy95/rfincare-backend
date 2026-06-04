@@ -107,13 +107,17 @@ const BankManagementTab = () => {
     try {
       setError('');
       let bankId = editingBank?.id;
+      const bankPayload = { ...formData };
+      if (pendingLogoFile && !editingBank) {
+        bankPayload.logoUrl = null;
+      }
       if (editingBank) {
-        await bankService?.updateBank(editingBank?.id, formData);
-        await auditService?.logAction('UPDATE', 'banks', editingBank?.id, editingBank, formData);
+        await bankService?.updateBank(editingBank?.id, bankPayload);
+        await auditService?.logAction('UPDATE', 'banks', editingBank?.id, editingBank, bankPayload);
       } else {
-        const created = await bankService?.createBank(formData);
+        const created = await bankService?.createBank(bankPayload);
         bankId = created?.id;
-        await auditService?.logAction('CREATE', 'banks', bankId, null, formData);
+        await auditService?.logAction('CREATE', 'banks', bankId, null, bankPayload);
       }
       if (bankId && pendingLogoFile) {
         await bankService.uploadBankLogo(bankId, pendingLogoFile);
@@ -122,7 +126,7 @@ const BankManagementTab = () => {
       await loadBanks();
       handleCloseModal();
     } catch (err) {
-      setError(err?.message || 'Failed to save bank');
+      setError(err?.response?.data?.error || err?.message || 'Failed to save bank');
     }
   };
 
@@ -327,7 +331,7 @@ const BankManagementTab = () => {
                   <label className="block text-sm font-medium text-foreground mb-2">Bank Type *</label>
                   <Select
                     value={formData?.bankType}
-                    onChange={(e) => setFormData({ ...formData, bankType: e?.target?.value })}
+                    onChange={(value) => setFormData({ ...formData, bankType: value })}
                     options={bankTypeOptions}
                   />
                 </div>
@@ -335,7 +339,7 @@ const BankManagementTab = () => {
                   <label className="block text-sm font-medium text-foreground mb-2">Status *</label>
                   <Select
                     value={formData?.status}
-                    onChange={(e) => setFormData({ ...formData, status: e?.target?.value })}
+                    onChange={(value) => setFormData({ ...formData, status: value })}
                     options={statusOptions}
                   />
                 </div>

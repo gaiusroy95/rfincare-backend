@@ -18,6 +18,20 @@ const toCamelCase = (obj) => {
 };
 
 // Helper function to convert camelCase to snake_case
+function sanitizeLogoUrlForApi(url) {
+  if (url == null || url === '') return null;
+  const trimmed = String(url).trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('/uploads/')) return trimmed;
+  try {
+    const parsed = new URL(trimmed);
+    if (parsed.protocol === 'http:' || parsed.protocol === 'https:') return trimmed;
+  } catch {
+    /* invalid */
+  }
+  return null;
+}
+
 const toSnakeCase = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
   if (Array.isArray(obj)) return obj.map(toSnakeCase);
@@ -53,7 +67,7 @@ export const bankService = {
   },
   async createBank(bankData) {
     const payload = toSnakeCase(bankData);
-    if (payload.logo_url === '') payload.logo_url = null;
+    payload.logo_url = sanitizeLogoUrlForApi(payload.logo_url ?? bankData?.logoUrl);
     if (payload.logo_alt === '') payload.logo_alt = null;
     const res = await apiClient.post('/banks', payload);
     invalidateBankCache();
@@ -61,7 +75,9 @@ export const bankService = {
   },
   async updateBank(bankId, bankData) {
     const payload = toSnakeCase(bankData);
-    if (payload.logo_url === '') payload.logo_url = null;
+    if (bankData?.logoUrl !== undefined) {
+      payload.logo_url = sanitizeLogoUrlForApi(payload.logo_url ?? bankData.logoUrl);
+    }
     if (payload.logo_alt === '') payload.logo_alt = null;
     const res = await apiClient.patch(`/banks/${bankId}`, payload);
     invalidateBankCache();
