@@ -3,6 +3,7 @@ import {
   buildBankListCacheKey,
   fetchBanksCached,
   invalidateBankCache,
+  setCachedBanks,
 } from './bankCache';
 
 // Helper function to convert snake_case to camelCase
@@ -43,17 +44,37 @@ const toSnakeCase = (obj) => {
   }, {});
 };
 
-async function fetchBankList(params) {
+async function fetchBankList(params, { forceRefresh = false } = {}) {
+  const listParams = { ...params };
+  if (forceRefresh) {
+    listParams._ = Date.now();
+  }
   const key = buildBankListCacheKey(params);
+
+  if (forceRefresh) {
+    invalidateBankCache();
+    const res = await apiClient.get('/banks', {
+      params: listParams,
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    });
+    const data = toCamelCase(res?.data);
+    setCachedBanks(key, data);
+    return data;
+  }
+
   return fetchBanksCached(key, async () => {
-    const res = await apiClient.get('/banks', { params });
+    const res = await apiClient.get('/banks', { params: listParams });
     return toCamelCase(res?.data);
   });
 }
 
 export const bankService = {
-  async getAllBanks() {
-    return fetchBankList({ includeInactive: true, includeProducts: true });
+  async getAllBanks(options = {}) {
+    const { forceRefresh = false } = options;
+    return fetchBankList(
+      { includeInactive: true, includeProducts: true },
+      { forceRefresh },
+    );
   },
   async getActiveBanks(options = {}) {
     const params = { includeProducts: options.includeProducts !== false };

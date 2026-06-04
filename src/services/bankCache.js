@@ -26,6 +26,7 @@ export function setCachedBanks(key, data) {
 
 export function invalidateBankCache() {
   cache.clear();
+  inflight.clear();
 }
 
 /**

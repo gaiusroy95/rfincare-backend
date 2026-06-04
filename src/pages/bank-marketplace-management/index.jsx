@@ -49,18 +49,18 @@ const BankMarketplaceManagement = () => {
   });
 
   useEffect(() => {
-    loadBanks();
+    loadBanks({ showFullLoader: true });
   }, []);
 
-  const loadBanks = async () => {
+  const loadBanks = async ({ forceRefresh = false, showFullLoader = false } = {}) => {
     try {
-      setLoading(true);
-      const data = await bankService?.getAllBanks();
-      setBanks(data);
+      if (showFullLoader) setLoading(true);
+      const data = await bankService?.getAllBanks({ forceRefresh });
+      setBanks(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err?.message);
+      setError(err?.response?.data?.error || err?.message);
     } finally {
-      setLoading(false);
+      if (showFullLoader) setLoading(false);
     }
   };
 
@@ -161,7 +161,7 @@ const BankMarketplaceManagement = () => {
       if (bankId) {
         await saveBankProduct(bankId);
       }
-      await loadBanks();
+      await loadBanks({ forceRefresh: true });
       handleCloseModal();
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Failed to save bank');
@@ -174,7 +174,7 @@ const BankMarketplaceManagement = () => {
     try {
       await bankService?.deleteBank(bank?.id);
       await auditService?.logAction('DELETE', 'banks', bank?.id, bank, null);
-      await loadBanks();
+      await loadBanks({ forceRefresh: true });
     } catch (err) {
       setError(err?.message);
     }
@@ -185,9 +185,9 @@ const BankMarketplaceManagement = () => {
     try {
       await bankService?.updateBank(bank?.id, { status: newStatus });
       await auditService?.logAction('UPDATE', 'banks', bank?.id, { status: bank?.status }, { status: newStatus });
-      await loadBanks();
+      await loadBanks({ forceRefresh: true });
     } catch (err) {
-      setError(err?.message);
+      setError(err?.response?.data?.error || err?.message);
     }
   };
 

@@ -30,33 +30,27 @@ const BankManagementTab = () => {
   });
 
   useEffect(() => {
-    loadBanks();
+    loadBanks({ showFullLoader: true });
   }, []);
 
-  const loadBanks = async () => {
+  const loadBanks = async ({ forceRefresh = false, showFullLoader = false } = {}) => {
     try {
-      setLoading(true);
+      if (showFullLoader) setLoading(true);
+      else if (forceRefresh) setRefreshing(true);
       setError('');
-      const data = await bankService?.getAllBanks();
-      setBanks(data || []);
+      const data = await bankService?.getAllBanks({ forceRefresh });
+      setBanks(Array.isArray(data) ? data : []);
     } catch (err) {
-      setError(err?.message || 'Failed to load banks');
+      setError(err?.response?.data?.error || err?.message || 'Failed to load banks');
       console.error('Error loading banks:', err);
     } finally {
-      setLoading(false);
+      if (showFullLoader) setLoading(false);
+      setRefreshing(false);
     }
   };
 
   const handleRefresh = async () => {
-    try {
-      setRefreshing(true);
-      setError('');
-      await loadBanks();
-    } catch (err) {
-      setError(err?.message || 'Failed to refresh banks');
-    } finally {
-      setRefreshing(false);
-    }
+    await loadBanks({ forceRefresh: true });
   };
 
   const handleOpenModal = (bank = null) => {
@@ -123,7 +117,7 @@ const BankManagementTab = () => {
         await bankService.uploadBankLogo(bankId, pendingLogoFile);
         setPendingLogoFile(null);
       }
-      await loadBanks();
+      await loadBanks({ forceRefresh: true });
       handleCloseModal();
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Failed to save bank');
@@ -137,9 +131,9 @@ const BankManagementTab = () => {
       setError('');
       await bankService?.deleteBank(bank?.id);
       await auditService?.logAction('DELETE', 'banks', bank?.id, bank, null);
-      await loadBanks();
+      await loadBanks({ forceRefresh: true });
     } catch (err) {
-      setError(err?.message || 'Failed to delete bank');
+      setError(err?.response?.data?.error || err?.message || 'Failed to delete bank');
     }
   };
 
@@ -149,7 +143,7 @@ const BankManagementTab = () => {
       setError('');
       await bankService?.updateBank(bank?.id, { status: newStatus });
       await auditService?.logAction('UPDATE', 'banks', bank?.id, { status: bank?.status }, { status: newStatus });
-      await loadBanks();
+      await loadBanks({ forceRefresh: true });
     } catch (err) {
       setError(err?.message || 'Failed to update bank status');
     }
