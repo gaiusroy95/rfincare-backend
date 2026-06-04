@@ -3,7 +3,9 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Icon from '../../../components/AppIcon';
+import BankLogoFields from '../../../components/admin/BankLogoFields';
 import { bankService, auditService } from '../../../services/apiServices';
+import { resolveBankLogoUrl } from '../../../utils/bankBranding';
 
 const BankManagementTab = () => {
   const [banks, setBanks] = useState([]);
@@ -12,6 +14,7 @@ const BankManagementTab = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingBank, setEditingBank] = useState(null);
+  const [pendingLogoFile, setPendingLogoFile] = useState(null);
   const [formData, setFormData] = useState({
     name: '',
     logoUrl: '',
@@ -57,6 +60,7 @@ const BankManagementTab = () => {
   };
 
   const handleOpenModal = (bank = null) => {
+    setPendingLogoFile(null);
     if (bank) {
       setEditingBank(bank);
       setFormData({
@@ -94,6 +98,7 @@ const BankManagementTab = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingBank(null);
+    setPendingLogoFile(null);
     setError('');
   };
 
@@ -101,12 +106,18 @@ const BankManagementTab = () => {
     e?.preventDefault();
     try {
       setError('');
+      let bankId = editingBank?.id;
       if (editingBank) {
         await bankService?.updateBank(editingBank?.id, formData);
         await auditService?.logAction('UPDATE', 'banks', editingBank?.id, editingBank, formData);
       } else {
-        await bankService?.createBank(formData);
-        await auditService?.logAction('CREATE', 'banks', null, null, formData);
+        const created = await bankService?.createBank(formData);
+        bankId = created?.id;
+        await auditService?.logAction('CREATE', 'banks', bankId, null, formData);
+      }
+      if (bankId && pendingLogoFile) {
+        await bankService.uploadBankLogo(bankId, pendingLogoFile);
+        setPendingLogoFile(null);
       }
       await loadBanks();
       handleCloseModal();
@@ -209,7 +220,11 @@ const BankManagementTab = () => {
                 <div className="flex items-center space-x-4 flex-1">
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0 flex items-center justify-center">
                     {bank?.logoUrl ? (
-                      <img src={bank?.logoUrl} alt={bank?.logoAlt || bank?.name} className="w-full h-full object-contain p-2" />
+                      <img
+                        src={resolveBankLogoUrl(bank.logoUrl)}
+                        alt={bank?.logoAlt || bank?.name}
+                        className="w-full h-full object-contain p-2"
+                      />
                     ) : (
                       <Icon name="Building" size={32} className="text-muted-foreground" />
                     )}
@@ -326,24 +341,15 @@ const BankManagementTab = () => {
                 </div>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Logo URL</label>
-                <Input
-                  value={formData?.logoUrl}
-                  onChange={(e) => setFormData({ ...formData, logoUrl: e?.target?.value })}
-                  placeholder="https://example.com/logo.png"
-                />
-                <p className="text-xs text-muted-foreground mt-1">Enter the full URL of the bank logo image</p>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">Logo Alt Text</label>
-                <Input
-                  value={formData?.logoAlt}
-                  onChange={(e) => setFormData({ ...formData, logoAlt: e?.target?.value })}
-                  placeholder="Bank logo description"
-                />
-              </div>
+              <BankLogoFields
+                logoUrl={formData?.logoUrl}
+                logoAlt={formData?.logoAlt}
+                bankId={editingBank?.id}
+                onLogoUrlChange={(logoUrl) => setFormData((prev) => ({ ...prev, logoUrl }))}
+                onLogoAltChange={(logoAlt) => setFormData((prev) => ({ ...prev, logoAlt }))}
+                onPendingFile={setPendingLogoFile}
+                onError={setError}
+              />
 
               <div className="grid grid-cols-2 gap-4">
                 <div>

@@ -5,7 +5,9 @@ import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import { LOAN_PRODUCTS } from '../../constants/loanProducts';
 import { formFromProduct, productDataFromForm } from '../../utils/bankMarketplace';
+import BankLogoFields from '../../components/admin/BankLogoFields';
 import { bankService, auditService } from '../../services/apiServices';
+import { resolveBankLogoUrl } from '../../utils/bankBranding';
 
 const emptyProductForm = () => ({
   id: '',
@@ -30,6 +32,7 @@ const BankMarketplaceManagement = () => {
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingBank, setEditingBank] = useState(null);
+  const [pendingLogoFile, setPendingLogoFile] = useState(null);
   const [productForm, setProductForm] = useState(emptyProductForm());
   const [formData, setFormData] = useState({
     name: '',
@@ -72,6 +75,7 @@ const BankMarketplaceManagement = () => {
   };
 
   const handleOpenModal = async (bank = null) => {
+    setPendingLogoFile(null);
     if (bank) {
       setEditingBank(bank);
       setFormData({
@@ -111,6 +115,7 @@ const BankMarketplaceManagement = () => {
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingBank(null);
+    setPendingLogoFile(null);
   };
 
   const saveBankProduct = async (bankId) => {
@@ -141,6 +146,13 @@ const BankMarketplaceManagement = () => {
         const created = await bankService.createBank(formData);
         bankId = created?.id;
         await auditService.logAction('CREATE', 'banks', bankId, null, formData);
+      }
+      if (bankId && pendingLogoFile) {
+        const updated = await bankService.uploadBankLogo(bankId, pendingLogoFile);
+        if (updated?.logoUrl) {
+          setFormData((prev) => ({ ...prev, logoUrl: updated.logoUrl }));
+        }
+        setPendingLogoFile(null);
       }
       if (bankId) {
         await saveBankProduct(bankId);
@@ -224,7 +236,11 @@ const BankMarketplaceManagement = () => {
                   <div className="flex items-center space-x-4 flex-1">
                     <div className="w-16 h-16 rounded-lg overflow-hidden bg-muted flex-shrink-0">
                       {bank?.logoUrl && (
-                        <img src={bank?.logoUrl} alt={bank?.logoAlt} className="w-full h-full object-contain p-2" />
+                        <img
+                          src={resolveBankLogoUrl(bank.logoUrl)}
+                          alt={bank?.logoAlt}
+                          className="w-full h-full object-contain p-2"
+                        />
                       )}
                     </div>
                     <div className="flex-1">
@@ -310,15 +326,14 @@ const BankMarketplaceManagement = () => {
                 onChange={(e) => setFormData({ ...formData, name: e?.target?.value })}
                 required
               />
-              <Input
-                label="Logo URL"
-                value={formData?.logoUrl}
-                onChange={(e) => setFormData({ ...formData, logoUrl: e?.target?.value })}
-              />
-              <Input
-                label="Logo Alt Text"
-                value={formData?.logoAlt}
-                onChange={(e) => setFormData({ ...formData, logoAlt: e?.target?.value })}
+              <BankLogoFields
+                logoUrl={formData?.logoUrl}
+                logoAlt={formData?.logoAlt}
+                bankId={editingBank?.id}
+                onLogoUrlChange={(logoUrl) => setFormData((prev) => ({ ...prev, logoUrl }))}
+                onLogoAltChange={(logoAlt) => setFormData((prev) => ({ ...prev, logoAlt }))}
+                onPendingFile={setPendingLogoFile}
+                onError={setError}
               />
               <div className="grid grid-cols-2 gap-4">
                 <Select

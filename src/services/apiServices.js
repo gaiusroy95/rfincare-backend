@@ -67,6 +67,15 @@ export const bankService = {
     invalidateBankCache();
     return toCamelCase(res?.data);
   },
+  async uploadBankLogo(bankId, file) {
+    const form = new FormData();
+    form.append('logo', file);
+    const res = await apiClient.post(`/banks/${bankId}/logo`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    invalidateBankCache();
+    return toCamelCase(res?.data);
+  },
   async deleteBank(bankId) {
     await apiClient.delete(`/banks/${bankId}`);
     invalidateBankCache();
