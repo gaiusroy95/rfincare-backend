@@ -14,6 +14,8 @@ const CommissionConfigModal = ({ agent, isOpen, onClose, onSave }) => {
     maxLoanAmount: '',
     effectiveFrom: new Date()?.toISOString()?.split('T')?.[0],
     effectiveTo: '',
+    circularTitle: '',
+    circularFileUrl: '',
   });
   const [circularTitle, setCircularTitle] = useState('');
   const [circularDescription, setCircularDescription] = useState('');
@@ -25,15 +27,18 @@ const CommissionConfigModal = ({ agent, isOpen, onClose, onSave }) => {
     if (!isOpen || !agent?.id) return;
     (async () => {
       const { data } = await adminService.getAgentCommission(agent.id);
-      if (data) {
+      const row = Array.isArray(data) ? data[0] : data;
+      if (row) {
         setFormData({
-          loanType: data.loanType || 'home_loan',
-          commissionType: data.commissionType || 'percentage',
-          commissionValue: data.commissionValue ?? 2.5,
-          minLoanAmount: data.minLoanAmount || '',
-          maxLoanAmount: data.maxLoanAmount || '',
-          effectiveFrom: data.effectiveFrom || new Date().toISOString().split('T')[0],
-          effectiveTo: data.effectiveTo || '',
+          loanType: row.loanType || row.loan_type || 'home_loan',
+          commissionType: row.commissionType || row.commission_type || 'percentage',
+          commissionValue: row.commissionValue ?? row.commission_value ?? 2.5,
+          minLoanAmount: row.minLoanAmount ?? row.min_loan_amount ?? '',
+          maxLoanAmount: row.maxLoanAmount ?? row.max_loan_amount ?? '',
+          effectiveFrom: row.effectiveFrom || row.effective_from || new Date().toISOString().split('T')[0],
+          effectiveTo: row.effectiveTo || row.effective_to || '',
+          circularTitle: row.circularTitle || row.circular_title || '',
+          circularFileUrl: row.circularFileUrl || row.circular_file_url || '',
         });
       }
       const circularRes = await adminService.getCommissionCirculars();
@@ -91,7 +96,9 @@ const CommissionConfigModal = ({ agent, isOpen, onClose, onSave }) => {
         <div className="border-b border-border p-4 md:p-6 flex items-center justify-between">
           <div>
             <h2 className="text-xl font-bold text-foreground">Configure Commission</h2>
-            <p className="text-sm text-muted-foreground">Universal config (applies to all agents)</p>
+            <p className="text-sm text-muted-foreground">
+              Agent: {agent?.name || agent?.agent_name || '—'} ({agent?.agentId || agent?.agent_code || '—'})
+            </p>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose}>
             <Icon name="X" size={20} />
@@ -155,6 +162,20 @@ const CommissionConfigModal = ({ agent, isOpen, onClose, onSave }) => {
               value={formData?.effectiveTo}
               onChange={(e) => setFormData({ ...formData, effectiveTo: e?.target?.value })}
               placeholder="Optional"
+            />
+
+            <Input
+              label="Circular title"
+              value={formData?.circularTitle}
+              onChange={(e) => setFormData({ ...formData, circularTitle: e?.target?.value })}
+              placeholder="e.g. Commission policy Q1 2026"
+            />
+
+            <Input
+              label="Circular file URL / upload reference"
+              value={formData?.circularFileUrl}
+              onChange={(e) => setFormData({ ...formData, circularFileUrl: e?.target?.value })}
+              placeholder="PDF URL or filename from bulk upload"
             />
           </div>
 

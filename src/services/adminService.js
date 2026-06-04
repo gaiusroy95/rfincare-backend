@@ -235,9 +235,9 @@ export const adminService = {
     try {
       const res = await apiClient.get(`/admin/agents/${agentId}/commission`);
       const rows = Array.isArray(res.data) ? res.data : [];
-      return { data: rows[0] ? toCamelCase(rows[0]) : null, error: null };
+      return { data: toCamelCase(rows), error: null };
     } catch (error) {
-      return { data: null, error: apiError(error, 'Failed to load commission') };
+      return { data: [], error: apiError(error, 'Failed to load commission') };
     }
   },
 
@@ -251,10 +251,46 @@ export const adminService = {
         max_loan_amount: config.maxLoanAmount || null,
         effective_from: config.effectiveFrom || null,
         effective_to: config.effectiveTo || null,
+        circular_title: config.circularTitle || null,
+        circular_file_url: config.circularFileUrl || config.upload || null,
       });
       return { error: null };
     } catch (error) {
       return { error: apiError(error, 'Failed to save commission') };
+    }
+  },
+
+  async downloadAgentCommissionCsvTemplate() {
+    try {
+      const res = await apiClient.get('/admin/agents/commission/csv-template', {
+        responseType: 'blob',
+      });
+      const blob = new Blob([res.data], { type: 'text/csv;charset=utf-8' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'agent-commission-template.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+      return { error: null };
+    } catch (error) {
+      return { error: apiError(error, 'Failed to download template') };
+    }
+  },
+
+  async uploadAgentCommissionCsv(csvFile, circularFiles = []) {
+    try {
+      const form = new FormData();
+      form.append('file', csvFile);
+      for (const pdf of circularFiles) {
+        form.append('circulars', pdf);
+      }
+      const res = await apiClient.post('/admin/agents/commission/bulk-csv', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      return { data: res.data, error: null };
+    } catch (error) {
+      return { data: null, error: apiError(error, 'Failed to upload commission CSV') };
     }
   },
 
@@ -294,12 +330,20 @@ export const adminService = {
 
   async updateEmployeeAccessControls(employeeId, accessControls) {
     try {
-      await apiClient.put(`/admin/employees/${employeeId}/access-controls`, {
-        module_name: accessControls.moduleName,
-        permissions: accessControls.permissions,
+      const payload = {
         is_active: accessControls.isActive,
         expires_at: accessControls.expiresAt || null,
-      });
+      };
+      if (Array.isArray(accessControls.modules)) {
+        payload.modules = accessControls.modules.map((m) => ({
+          module_name: m.moduleName,
+          permissions: m.permissions || [],
+        }));
+      } else {
+        payload.module_name = accessControls.moduleName;
+        payload.permissions = accessControls.permissions || [];
+      }
+      await apiClient.put(`/admin/employees/${employeeId}/access-controls`, payload);
       return { error: null };
     } catch (error) {
       return { error: apiError(error, 'Failed to update access controls') };

@@ -21,6 +21,7 @@ import AgentOnboardingModal from './components/AgentOnboardingModal';
 import EmployeeOnboardingModal from './components/EmployeeOnboardingModal';
 import SystemConfigPanel from './components/SystemConfigPanel';
 import CommissionConfigModal from './components/CommissionConfigModal';
+import AgentCommissionCsvUploadModal from './components/AgentCommissionCsvUploadModal';
 import AccessControlModal from './components/AccessControlModal';
 import StaffManageModal from './components/StaffManageModal';
 import DocumentVerificationModal from './components/DocumentVerificationModal';
@@ -54,6 +55,7 @@ const AdminDashboard = () => {
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
   const [showCommissionModal, setShowCommissionModal] = useState(false);
+  const [showCommissionCsvModal, setShowCommissionCsvModal] = useState(false);
   const [showAccessControlModal, setShowAccessControlModal] = useState(false);
   const [showStaffManageModal, setShowStaffManageModal] = useState(false);
   const [staffManageType, setStaffManageType] = useState('agent');
@@ -627,11 +629,20 @@ const AdminDashboard = () => {
                 {/* Agents Tab */}
                 {activeTab === 'agents' && (
                   <div className="space-y-6">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                       <h2 className="text-xl font-bold text-foreground">Agent Management</h2>
-                      <Button onClick={() => setShowAgentModal(true)} iconName="Plus">
-                        Add Agent
-                      </Button>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          variant="outline"
+                          onClick={() => setShowCommissionCsvModal(true)}
+                          iconName="Upload"
+                        >
+                          Upload commission CSV
+                        </Button>
+                        <Button onClick={() => setShowAgentModal(true)} iconName="Plus">
+                          Add Agent
+                        </Button>
+                      </div>
                     </div>
                     <div className="grid gap-4">
                       {agentsData?.map((agent) => (
@@ -728,6 +739,13 @@ const AdminDashboard = () => {
         isOpen={showCommissionModal}
         onClose={() => setShowCommissionModal(false)}
         onSave={handleSaveCommission}
+      />
+      <AgentCommissionCsvUploadModal
+        isOpen={showCommissionCsvModal}
+        onClose={() => setShowCommissionCsvModal(false)}
+        onImported={async () => {
+          await refreshCurrentTab();
+        }}
       />
       <StaffManageModal
         staffType={staffManageType}
