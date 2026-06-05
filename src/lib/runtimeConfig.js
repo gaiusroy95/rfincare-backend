@@ -11,7 +11,7 @@ export function getRuntimeEnv(key) {
   return runtime[key] ?? buildTime[key] ?? '';
 }
 
-const PRODUCTION_API_BASE = 'https://rfincare-backend.onrender.com';
+const PRODUCTION_API_BASE = 'https://rfincare.onrender.com';
 
 export function inferApiBaseFromHost() {
   if (typeof window === 'undefined') return '';
