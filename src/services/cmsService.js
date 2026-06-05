@@ -36,6 +36,11 @@ export const cmsService = {
   otpSettings: {
     get: () => apiClient.get('/cms/otp-settings').then((r) => r.data),
     update: (body) => apiClient.put('/cms/otp-settings', body).then((r) => r.data),
+    getStatus: () => apiClient.get('/cms/otp-settings/status').then((r) => r.data),
+    testSms: (phone) =>
+      apiClient.post('/cms/otp-settings/test', { phone, channel: 'sms' }).then((r) => r.data),
+    testWhatsapp: (phone) =>
+      apiClient.post('/cms/otp-settings/test', { phone, channel: 'whatsapp' }).then((r) => r.data),
   },
   oauthSettings: {
     get: () => apiClient.get('/cms/oauth-settings').then((r) => r.data),
