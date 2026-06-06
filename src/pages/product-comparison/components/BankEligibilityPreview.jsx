@@ -24,7 +24,10 @@ const BankEligibilityPreview = ({ loanTypeSlug, productLabel }) => {
         const eligibility = loadEligibilityResults();
         const probabilityMap = getBankProbabilityMap(eligibility);
         setBanks(
-          list.slice(0, 4).map((b) => mapBankForMarketplace(b, loanTypeSlug, probabilityMap)),
+          list
+            .map((b) => mapBankForMarketplace(b, loanTypeSlug, probabilityMap))
+            .filter(Boolean)
+            .slice(0, 4),
         );
       } catch {
         setBanks([]);

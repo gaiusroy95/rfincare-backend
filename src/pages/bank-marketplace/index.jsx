@@ -90,10 +90,10 @@ const BankMarketplace = () => {
         }
       }
       const probabilityMap = getBankProbabilityMap(eligibility);
-      const transformedBanks = list.map((bank) =>
-        mapBankForMarketplace(bank, loanTypeSlug, probabilityMap),
-      );
-      setBanks(transformedBanks || []);
+      const transformedBanks = list
+        .map((bank) => mapBankForMarketplace(bank, loanTypeSlug, probabilityMap))
+        .filter(Boolean);
+      setBanks(transformedBanks);
     } catch (err) {
       setError(err?.message);
       setBanks([]);

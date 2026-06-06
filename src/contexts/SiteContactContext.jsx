@@ -10,10 +10,25 @@ const DEFAULT_CONTACT = {
   phones: ['7300069952'],
   registeredOfficeLabel: 'Regist. Office:',
   registeredAddress: 'Ward No 2, Baniya Bass, Mahajan, Bikaner, Rajasthan-334606 India',
-  branchOfficeLabel: 'Branch Office:',
+  branchOfficeLabel: 'Corporate Office:',
   branchAddress:
     'Shop no 3, 2nd Floor, Shiv Market, Near Kirtistambh circle, Ganganagar Road, Bikaner -334001 India',
-  offices: [],
+  offices: [
+    {
+      title: 'Reg. Office',
+      address: 'Ward No 2, Baniya Bass, Mahajan, Bikaner, Rajasthan-334606 India',
+    },
+    {
+      title: 'Circle Office',
+      address:
+        'M125, Bharat Mata Chowk, Ganesh Nagar Ext. Niwaru Road, Jhotwara, Jaipur-302012 India',
+    },
+    {
+      title: 'Corporate Office',
+      address:
+        'Shop no 3, 2nd Floor, Shiv Market, Near Kirtistambh circle, Ganganagar Road, Bikaner -334001 India',
+    },
+  ],
   socialFacebook: '#',
   socialTwitter: '#',
   socialLinkedin: '#',

@@ -62,9 +62,18 @@ const CustomerLogin = () => {
 
   const handleSignUp = (e) => {
     e?.preventDefault();
-    // Redirect to assessment portal for new customers
+    const leadMeta = {
+      fullName: fullName.trim(),
+      email: email.trim(),
+      phone: phone.replace(/\D/g, '').slice(-10),
+    };
+    try {
+      sessionStorage.setItem('rfincare_registration_prefill', JSON.stringify(leadMeta));
+    } catch {
+      /* sessionStorage optional */
+    }
     navigate('/customer-assessment-portal', {
-      state: { email, fullName, phone }
+      state: { leadMeta },
     });
   };
 

@@ -5,7 +5,7 @@ import Image from '../../../components/AppImage';
 import { adminService } from '../../../services/adminService';
 import { customerJourneyService } from '../../../services/customerJourneyService';
 import { buildApplicationDetailSections, pickCustomerPhotoDocument } from '../../../utils/applicationFormDetails';
-import { documentTypeLabel, getDocumentPreviewUrl } from '../../../utils/documentUrls';
+import { documentTypeLabel, inferDocumentMediaType, loadDocumentPreviewUrl } from '../../../utils/documentUrls';
 import {
   BANK_APPROVAL_STAGE_SELECT_OPTIONS,
   DOCUMENT_STAGE_SELECT_OPTIONS,
@@ -22,9 +22,12 @@ const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, on
   const [previewDoc, setPreviewDoc] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
+  const [previewError, setPreviewError] = useState('');
+  const [previewMediaType, setPreviewMediaType] = useState('doc');
   const [documentStageStatus, setDocumentStageStatus] = useState('documents_pending');
   const [bankApprovalStatus, setBankApprovalStatus] = useState('submitted_to_bank');
   const [stageUpdateNotes, setStageUpdateNotes] = useState('');
+  const [customerPhotoUrl, setCustomerPhotoUrl] = useState(null);
 
   useEffect(() => {
     if (!isOpen || !application?.id) {
@@ -66,37 +69,72 @@ const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, on
   useEffect(() => {
     if (!previewDoc?.id) {
       setPreviewUrl(null);
+      setPreviewError('');
       return undefined;
     }
 
-    const staticUrl = getDocumentPreviewUrl(previewDoc);
-    if (staticUrl) {
-      setPreviewUrl(staticUrl);
-      return undefined;
-    }
-
-    let objectUrl = null;
+    let revoke = () => {};
     let cancelled = false;
     (async () => {
       setPreviewLoading(true);
-      const { data } = await customerJourneyService.downloadDocument(previewDoc.id);
-      if (cancelled) return;
-      if (data?.blob) {
-        objectUrl = URL.createObjectURL(data.blob);
-        setPreviewUrl(objectUrl);
+      setPreviewError('');
+      const result = await loadDocumentPreviewUrl(
+        previewDoc,
+        customerJourneyService.downloadDocument.bind(customerJourneyService),
+      );
+      if (cancelled) {
+        result.revoke();
+        return;
+      }
+      revoke = result.revoke;
+      if (result.url) {
+        setPreviewUrl(result.url);
+        const media = inferDocumentMediaType({
+          mimeType: result.mimeType || previewDoc.mimeType,
+          documentName: previewDoc.documentName,
+          filePath: previewDoc.filePath,
+        });
+        setPreviewMediaType(media);
+      } else {
+        setPreviewUrl(null);
+        setPreviewError(result.error || 'Could not load document preview.');
       }
       setPreviewLoading(false);
     })();
 
     return () => {
       cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      revoke();
     };
   }, [previewDoc]);
 
   const app = detail || application?.rawApplication || application;
   const photoDoc = pickCustomerPhotoDocument(documents);
-  const customerPhotoUrl = getDocumentPreviewUrl(photoDoc);
+
+  useEffect(() => {
+    if (!photoDoc?.id) {
+      setCustomerPhotoUrl(null);
+      return undefined;
+    }
+    let revoke = () => {};
+    let cancelled = false;
+    (async () => {
+      const result = await loadDocumentPreviewUrl(
+        photoDoc,
+        customerJourneyService.downloadDocument.bind(customerJourneyService),
+      );
+      if (cancelled) {
+        result.revoke();
+        return;
+      }
+      revoke = result.revoke;
+      setCustomerPhotoUrl(result.url);
+    })();
+    return () => {
+      cancelled = true;
+      revoke();
+    };
+  }, [photoDoc?.id]);
   const sections = buildApplicationDetailSections(app);
   const customerName =
     app?.customer?.fullName ||
@@ -281,7 +319,6 @@ const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, on
                   ) : (
                     <div className="space-y-3">
                       {documents.map((doc) => {
-                        const thumb = getDocumentPreviewUrl(doc);
                         const isImage = (doc.mimeType || '').startsWith('image/');
                         return (
                           <div
@@ -289,17 +326,9 @@ const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, on
                             className="flex items-center justify-between gap-3 p-3 border border-border rounded-lg"
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              {isImage && thumb ? (
-                                <img
-                                  src={thumb}
-                                  alt={doc.documentName}
-                                  className="w-12 h-12 rounded object-cover border border-border shrink-0"
-                                />
-                              ) : (
-                                <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0">
-                                  <Icon name="FileText" size={20} className="text-primary" />
-                                </div>
-                              )}
+                              <div className="w-12 h-12 rounded bg-muted flex items-center justify-center shrink-0">
+                                <Icon name={isImage ? 'Image' : 'FileText'} size={20} className="text-primary" />
+                              </div>
                               <div className="min-w-0">
                                 <p className="text-sm font-semibold truncate">
                                   {documentTypeLabel(doc.documentType)}
@@ -414,14 +443,26 @@ const DocumentVerificationModal = ({ application, isOpen, onClose, onApprove, on
             </div>
             <div className="p-4 overflow-auto flex-1 flex items-center justify-center min-h-[200px]">
               {previewLoading && <p className="text-muted-foreground">Loading…</p>}
-              {!previewLoading && previewUrl && (previewDoc.mimeType || '').includes('image') && (
+              {!previewLoading && previewError && (
+                <p className="text-destructive text-sm text-center">{previewError}</p>
+              )}
+              {!previewLoading && previewUrl && previewMediaType === 'image' && (
                 <img src={previewUrl} alt={previewDoc.documentName} className="max-h-[70vh] max-w-full object-contain" />
               )}
-              {!previewLoading && previewUrl && (previewDoc.mimeType || '').includes('pdf') && (
+              {!previewLoading && previewUrl && previewMediaType === 'pdf' && (
                 <iframe title={previewDoc.documentName} src={previewUrl} className="w-full h-[70vh] rounded border" />
               )}
-              {!previewLoading && !previewUrl && (
-                <p className="text-muted-foreground text-sm">Preview unavailable. Download from server.</p>
+              {!previewLoading && previewUrl && previewMediaType === 'doc' && (
+                <div className="text-center space-y-3">
+                  <Icon name="FileText" size={40} className="mx-auto text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">Preview not available for this file type.</p>
+                  <a href={previewUrl} download={previewDoc.documentName || 'document'} className="text-primary font-medium hover:underline">
+                    Download file
+                  </a>
+                </div>
+              )}
+              {!previewLoading && !previewUrl && !previewError && (
+                <p className="text-muted-foreground text-sm">Preview unavailable.</p>
               )}
             </div>
           </div>

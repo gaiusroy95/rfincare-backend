@@ -15,6 +15,24 @@ export function pickEligibilityPrefill(source) {
   };
 }
 
+export function resolveLeadMetaFromLocation(locationState) {
+  if (!locationState || typeof locationState !== 'object') return null;
+  if (locationState.leadMeta && typeof locationState.leadMeta === 'object') {
+    return locationState.leadMeta;
+  }
+  const { fullName, email, phone } = locationState;
+  if (fullName || email || phone) {
+    return { fullName, email, phone };
+  }
+  try {
+    const stored = sessionStorage.getItem('rfincare_registration_prefill');
+    if (stored) return JSON.parse(stored);
+  } catch {
+    /* ignore */
+  }
+  return null;
+}
+
 export function applyLeadMetaPrefill(base, leadMeta) {
   if (!leadMeta || typeof leadMeta !== 'object') return base;
   const next = { ...base };
@@ -98,7 +116,7 @@ export function buildAssessmentEntryState({
     merged.preferredBankName = selectedBank.name || merged.preferredBankName;
   }
 
-  merged = applyLeadMetaPrefill(merged, locationState?.leadMeta);
+  merged = applyLeadMetaPrefill(merged, resolveLeadMetaFromLocation(locationState));
 
   financialHistoryQuestions.forEach((q) => {
     const direct = coerceYesNo(merged[q.field]);

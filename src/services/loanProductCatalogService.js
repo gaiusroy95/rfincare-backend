@@ -31,6 +31,24 @@ export function mapCatalogRow(row) {
     color: r.color || 'var(--color-primary)',
     sortOrder: r.sortOrder ?? 0,
     isActive: r.isActive !== false,
+    categoryId: r.categoryId || null,
+    categoryLabel: r.categoryLabel || null,
+    categorySlug: r.categorySlug || null,
+    bankId: r.bankId || null,
+    bankName: r.bankName || null,
+    bankProductId: r.bankProductId || null,
+  };
+}
+
+export function mapCategoryRow(row) {
+  const r = toCamelCase(row);
+  return {
+    id: r.id,
+    slug: r.slug,
+    label: r.label,
+    parentLoanType: r.parentLoanType,
+    sortOrder: r.sortOrder ?? 0,
+    isActive: r.isActive !== false,
   };
 }
 
@@ -81,6 +99,31 @@ export const loanProductCatalogService = {
       return {
         data: null,
         error: { message: error?.response?.data?.error || 'Failed to update product' },
+      };
+    }
+  },
+
+  async listCategories() {
+    try {
+      const res = await apiClient.get('/loan-products/categories');
+      const list = Array.isArray(res.data) ? res.data.map(mapCategoryRow) : [];
+      return { data: list, error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: { message: error?.response?.data?.error || 'Failed to load categories' },
+      };
+    }
+  },
+
+  async createCategory(payload) {
+    try {
+      const res = await apiClient.post('/loan-products/categories', payload);
+      return { data: mapCategoryRow(res.data), error: null };
+    } catch (error) {
+      return {
+        data: null,
+        error: { message: error?.response?.data?.error || 'Failed to create category' },
       };
     }
   },

@@ -1,4 +1,5 @@
 import { getLoanProductBySlug } from '../constants/loanProducts';
+import { pickProductForCategory } from './bankProductMatching';
 import { getBankLogoAlt, getBankLogoUrl } from './bankBranding';
 
 export function parseProductData(product) {
@@ -29,29 +30,6 @@ export function normalizeFeatures(features, fallback = []) {
   return fallback;
 }
 
-function normalizeLoanType(value) {
-  if (!value) return '';
-  return String(value).toLowerCase().replace(/-/g, '_');
-}
-
-function pickProductForLoanType(products, loanTypeSlug) {
-  if (!products?.length) return null;
-  const target = normalizeLoanType(
-    getLoanProductBySlug(loanTypeSlug)?.apiKey || loanTypeSlug,
-  );
-  if (!target) return products[0];
-
-  const match = products.find((product) => {
-    const data = parseProductData(product);
-    const lt = normalizeLoanType(
-      product.loanType || product.loan_type || data.loan_type || data.loanType,
-    );
-    if (!lt) return false;
-    return lt === target || lt.includes(target.replace('_loan', ''));
-  });
-  return match || products[0];
-}
-
 function formatProcessingFee(productData) {
   const pct =
     productData.processingFeePercentage ?? productData.processing_fee_percentage;
@@ -66,14 +44,12 @@ function formatProcessingFee(productData) {
  */
 export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null) {
   const products = bank?.bankProducts || bank?.bank_products || [];
-  const primaryProduct = pickProductForLoanType(products, loanTypeSlug) || {};
+  const catalogProduct = getLoanProductBySlug(loanTypeSlug);
+  const primaryProduct = pickProductForCategory(products, catalogProduct || loanTypeSlug);
+  if (!primaryProduct) return null;
+
   const productData = parseProductData(primaryProduct);
-  const activeProduct = getLoanProductBySlug(loanTypeSlug);
-  const fallbackFeatures = activeProduct?.features || [
-    'Flexible repayment options',
-    'Digital application process',
-    'Transparent pricing',
-  ];
+  const activeProduct = catalogProduct;
 
   const interestMin = productData.interestRateMin ?? productData.interest_rate_min;
   const interestMax = productData.interestRateMax ?? productData.interest_rate_max;
@@ -82,7 +58,7 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
       ? Number(interestMin)
       : interestMax != null && interestMax !== ''
         ? Number(interestMax)
-        : 8.0;
+        : null;
 
   const maxLoan = productData.maxLoanAmount ?? productData.max_loan_amount ?? 2000000;
   const maxTenure = productData.maxTenureYears ?? productData.max_tenure_years ?? 20;
@@ -93,11 +69,16 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
     productData.other_fees ??
     '';
 
-  const features = normalizeFeatures(productData.features, fallbackFeatures);
+  const features = normalizeFeatures(productData.features, []);
+  const eligibilityCriteria = normalizeFeatures(
+    productData.eligibility_criteria || productData.eligibilityCriteria,
+    [],
+  );
 
   return {
     id: bank?.id,
     productId: primaryProduct?.id,
+    productName: primaryProduct?.name,
     name: bank?.name,
     logo: getBankLogoUrl(bank),
     logoAlt: getBankLogoAlt(bank),
@@ -121,6 +102,7 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
     maxAmount: `₹${Number(maxLoan).toLocaleString('en-IN')}`,
     maxTenure: `${maxTenure} years`,
     features,
+    eligibilityCriteria,
     loanType:
       primaryProduct?.loanType ||
       productData.loan_type ||
@@ -153,6 +135,8 @@ export function applyComparisonOverrides(bank, overrides) {
 export function productDataFromForm(form) {
   return {
     loan_type: form.loanType,
+    product_category_slug: form.productCategorySlug || null,
+    catalog_api_key: form.catalogApiKey || null,
     interest_rate_min: form.interestRateMin !== '' ? Number(form.interestRateMin) : null,
     interest_rate_max: form.interestRateMax !== '' ? Number(form.interestRateMax) : null,
     processing_fee_percentage:
@@ -164,15 +148,31 @@ export function productDataFromForm(form) {
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean),
+    eligibility_criteria: (form.eligibilityCriteriaText || '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean),
   };
 }
 
 export function formFromProduct(product, loanTypeDefault = 'personal_loan') {
   const data = parseProductData(product);
   const features = normalizeFeatures(data.features, []);
+  const eligibility = normalizeFeatures(
+    data.eligibility_criteria || data.eligibilityCriteria,
+    [],
+  );
   return {
     id: product?.id || '',
+    productName: product?.name || '',
     loanType: data.loan_type || data.loanType || loanTypeDefault,
+    productCategorySlug:
+      data.product_category_slug ||
+      data.productCategorySlug ||
+      data.catalog_slug ||
+      data.catalogSlug ||
+      '',
+    catalogApiKey: data.catalog_api_key || data.catalogApiKey || '',
     interestRateMin: data.interest_rate_min ?? data.interestRateMin ?? '',
     interestRateMax: data.interest_rate_max ?? data.interestRateMax ?? '',
     processingFeePercentage:
@@ -181,5 +181,6 @@ export function formFromProduct(product, loanTypeDefault = 'personal_loan') {
     maxLoanAmount: data.max_loan_amount ?? data.maxLoanAmount ?? '',
     maxTenureYears: data.max_tenure_years ?? data.maxTenureYears ?? '',
     featuresText: features.join('\n'),
+    eligibilityCriteriaText: eligibility.join('\n'),
   };
 }

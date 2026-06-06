@@ -3,37 +3,65 @@ import React, { useState, useEffect } from 'react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
-import { LOAN_PRODUCTS } from '../../constants/loanProducts';
 import { formFromProduct, productDataFromForm } from '../../utils/bankMarketplace';
+import { pickProductForCategory } from '../../utils/bankProductMatching';
+import { useLoanProducts } from '../../contexts/LoanProductsContext';
 import BankLogoFields from '../../components/admin/BankLogoFields';
 import { bankService, auditService } from '../../services/apiServices';
 import { resolveBankLogoUrl } from '../../utils/bankBranding';
 
-const emptyProductForm = () => ({
+const emptyProductForm = (categorySlug = 'personal') => ({
   id: '',
+  productName: '',
   loanType: 'personal_loan',
-  interestRateMin: '8.5',
-  interestRateMax: '12',
-  processingFeePercentage: '1',
-  otherCharges: 'Legal & documentation as applicable',
-  maxLoanAmount: '4000000',
-  maxTenureYears: '5',
-  featuresText: 'Quick disbursal\nNo collateral\nFlexible tenure',
+  productCategorySlug: categorySlug,
+  catalogApiKey: '',
+  interestRateMin: '',
+  interestRateMax: '',
+  processingFeePercentage: '',
+  otherCharges: '',
+  maxLoanAmount: '',
+  maxTenureYears: '',
+  featuresText: '',
+  eligibilityCriteriaText: '',
 });
 
-const loanTypeOptions = LOAN_PRODUCTS.map((p) => ({
-  value: p.apiKey,
-  label: p.label,
-}));
-
 const BankMarketplaceManagement = () => {
+  const { products: catalogProducts } = useLoanProducts();
   const [banks, setBanks] = useState([]);
+  const [bankProducts, setBankProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingBank, setEditingBank] = useState(null);
   const [pendingLogoFile, setPendingLogoFile] = useState(null);
   const [productForm, setProductForm] = useState(emptyProductForm());
+  const [selectedCategorySlug, setSelectedCategorySlug] = useState('personal');
+
+  const categoryOptions = (catalogProducts || []).map((p) => ({
+    value: p.slug,
+    label: p.label,
+  }));
+
+  const applyCategoryToForm = (categorySlug, products = bankProducts) => {
+    const catalog = catalogProducts.find((p) => p.slug === categorySlug);
+    const existing = pickProductForCategory(products, catalog || categorySlug);
+    if (existing) {
+      const form = formFromProduct(existing, catalog?.apiKey || 'personal_loan');
+      setProductForm({
+        ...form,
+        productCategorySlug: categorySlug,
+        catalogApiKey: catalog?.apiKey || form.catalogApiKey || '',
+      });
+    } else {
+      setProductForm({
+        ...emptyProductForm(categorySlug),
+        loanType: catalog?.apiKey || 'personal_loan',
+        productCategorySlug: categorySlug,
+        catalogApiKey: catalog?.apiKey || '',
+      });
+    }
+  };
   const [formData, setFormData] = useState({
     name: '',
     logoUrl: '',
@@ -64,13 +92,15 @@ const BankMarketplaceManagement = () => {
     }
   };
 
-  const loadProductForBank = async (bankId) => {
+  const loadProductForBank = async (bankId, categorySlug = selectedCategorySlug) => {
     try {
       const products = await bankService.getBankProducts(bankId);
-      const first = products?.[0];
-      setProductForm(first ? formFromProduct(first) : emptyProductForm());
+      const list = Array.isArray(products) ? products : [];
+      setBankProducts(list);
+      applyCategoryToForm(categorySlug, list);
     } catch {
-      setProductForm(emptyProductForm());
+      setBankProducts([]);
+      setProductForm(emptyProductForm(categorySlug));
     }
   };
 
@@ -94,7 +124,9 @@ const BankMarketplaceManagement = () => {
       await loadProductForBank(bank.id);
     } else {
       setEditingBank(null);
-      setProductForm(emptyProductForm());
+      setBankProducts([]);
+      setSelectedCategorySlug('personal');
+      setProductForm(emptyProductForm('personal'));
       setFormData({
         name: '',
         logoUrl: '',
@@ -119,11 +151,15 @@ const BankMarketplaceManagement = () => {
   };
 
   const saveBankProduct = async (bankId) => {
-    const loanLabel =
-      loanTypeOptions.find((o) => o.value === productForm.loanType)?.label || 'Loan';
+    const catalog = catalogProducts.find((p) => p.slug === productForm.productCategorySlug);
+    const loanLabel = catalog?.label || 'Loan';
     const payload = {
-      name: `${formData.name} ${loanLabel}`.trim(),
-      ...productDataFromForm(productForm),
+      name: (productForm.productName || `${formData.name} ${loanLabel}`).trim(),
+      ...productDataFromForm({
+        ...productForm,
+        catalogApiKey: catalog?.apiKey || productForm.catalogApiKey,
+        loanType: catalog?.apiKey || productForm.loanType,
+      }),
     };
     if (productForm.id) {
       await bankService.updateBankProduct(productForm.id, payload);
@@ -387,16 +423,28 @@ const BankMarketplaceManagement = () => {
 
               <div className="border-t border-border pt-4 mt-2 space-y-4">
                 <h3 className="text-base font-semibold text-foreground">
-                  Loan product (marketplace comparison)
+                  Bank product mapping
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  These fields appear on bank cards for customers comparing interest rate, fees, and features.
+                  Assign this bank to a product category. Only banks with a product mapped to a
+                  category appear on that category&apos;s marketplace page.
                 </p>
                 <Select
-                  label="Loan type"
-                  options={loanTypeOptions}
-                  value={productForm.loanType}
-                  onChange={(value) => setProductForm({ ...productForm, loanType: value })}
+                  label="Product category"
+                  options={categoryOptions}
+                  value={selectedCategorySlug}
+                  onChange={(value) => {
+                    setSelectedCategorySlug(value);
+                    applyCategoryToForm(value, bankProducts);
+                  }}
+                />
+                <Input
+                  label="Product name (shown to customers)"
+                  value={productForm.productName}
+                  onChange={(e) =>
+                    setProductForm({ ...productForm, productName: e.target.value })
+                  }
+                  placeholder="e.g. HDFC School Business Loan"
                 />
                 <div className="grid grid-cols-2 gap-4">
                   <Input
@@ -463,9 +511,43 @@ const BankMarketplaceManagement = () => {
                     onChange={(e) =>
                       setProductForm({ ...productForm, featuresText: e.target.value })
                     }
-                    placeholder="Quick disbursal&#10;No collateral"
+                    placeholder="Up to ₹2 Cr.&#10;At least 5 years old school"
                   />
                 </div>
+                <div>
+                  <label className="text-sm font-medium text-foreground mb-1 block">
+                    Eligibility criteria (one per line)
+                  </label>
+                  <textarea
+                    className="flex min-h-[80px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={productForm.eligibilityCriteriaText}
+                    onChange={(e) =>
+                      setProductForm({
+                        ...productForm,
+                        eligibilityCriteriaText: e.target.value,
+                      })
+                    }
+                    placeholder="School operational 5+ years&#10;Minimum annual turnover"
+                  />
+                </div>
+                {editingBank && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const catalog = catalogProducts.find((p) => p.slug === selectedCategorySlug);
+                      setProductForm({
+                        ...emptyProductForm(selectedCategorySlug),
+                        loanType: catalog?.apiKey || 'personal_loan',
+                        productCategorySlug: selectedCategorySlug,
+                        catalogApiKey: catalog?.apiKey || '',
+                      });
+                    }}
+                  >
+                    Add new product for this category
+                  </Button>
+                )}
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">

@@ -1,10 +1,29 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import BrandLogo from '../../../components/ui/BrandLogo';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
 import { useSiteContact } from '../../../contexts/SiteContactContext';
+
+const normalizeAddress = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+
+function getAdditionalFooterOffices(contact) {
+  const primary = new Set(
+    [contact.registeredAddress, contact.branchAddress]
+      .filter(Boolean)
+      .map(normalizeAddress),
+  );
+  const offices = (contact.offices || []).filter((o) => o?.address?.trim());
+  if (offices.length) {
+    return offices.filter((o) => !primary.has(normalizeAddress(o.address)));
+  }
+  return [];
+}
 
 const linkClass =
   'group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors text-left';
@@ -33,6 +52,8 @@ const Footer = () => {
   const { products: loanProducts } = useLoanProducts();
   const { contact } = useSiteContact();
   const currentYear = new Date()?.getFullYear();
+  const additionalOffices = useMemo(() => getAdditionalFooterOffices(contact), [contact]);
+  const hasAdditionalOffices = additionalOffices.length > 0;
 
   const footerLinks = {
     products: (Array.isArray(loanProducts) ? loanProducts : [])
@@ -77,7 +98,9 @@ const Footer = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 md:py-14 lg:py-16">
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-10 lg:gap-8 mb-10 md:mb-12">
-          <div className="sm:col-span-2 lg:col-span-4">
+          <div
+            className={`sm:col-span-2 ${hasAdditionalOffices ? 'lg:col-span-3' : 'lg:col-span-4'}`}
+          >
             <div className="mb-5">
               <BrandLogo size="md" />
             </div>
@@ -139,28 +162,49 @@ const Footer = () => {
             </div>
           </div>
 
-          <div className="lg:col-span-2">
+          {hasAdditionalOffices && (
+            <div className="sm:col-span-2 lg:col-span-3">
+              <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
+                <span className="w-1 h-4 rounded-full bg-primary shrink-0" aria-hidden />
+                {t('footer.officeLocations', { defaultValue: 'Office locations' })}
+              </h3>
+              <div className="grid gap-3">
+                {additionalOffices.map((office, index) => (
+                  <div
+                    key={`${office.title}-${index}`}
+                    className="rounded-lg border border-border/60 bg-muted/30 px-3 py-3 text-xs leading-relaxed text-muted-foreground"
+                  >
+                    <p className="font-semibold text-foreground mb-1 flex items-center gap-1.5">
+                      <Icon name="MapPin" size={14} className="text-primary shrink-0" />
+                      {office.title || t('footer.office', { defaultValue: 'Office' })}
+                    </p>
+                    <p>{office.address}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          <div
+            className={`sm:col-span-2 ${
+              hasAdditionalOffices ? 'lg:col-span-6' : 'lg:col-span-8'
+            } grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-8 lg:gap-6`}
+          >
             <FooterColumn
               title={t('footer.products')}
               links={footerLinks.products}
               onNavigate={navigate}
             />
-          </div>
-          <div className="lg:col-span-2">
             <FooterColumn
               title={t('footer.company')}
               links={footerLinks.company}
               onNavigate={navigate}
             />
-          </div>
-          <div className="lg:col-span-2">
             <FooterColumn
               title={t('footer.resources')}
               links={footerLinks.resources}
               onNavigate={navigate}
             />
-          </div>
-          <div className="lg:col-span-2">
             <FooterColumn
               title={t('footer.legal')}
               links={footerLinks.legal}

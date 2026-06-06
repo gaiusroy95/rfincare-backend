@@ -65,7 +65,10 @@ const BankOffersSection = ({ product }) => {
   const probabilityMap = getBankProbabilityMap(eligibility);
 
   const marketplaceBanks = useMemo(
-    () => banks.map((bank) => mapBankForMarketplace(bank, product.slug, probabilityMap)),
+    () =>
+      banks
+        .map((bank) => mapBankForMarketplace(bank, product.slug, probabilityMap))
+        .filter(Boolean),
     [banks, product.slug, probabilityMap],
   );
 

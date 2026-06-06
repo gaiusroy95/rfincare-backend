@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import { bankService } from '../../../services/apiServices';
 import { loanProductCatalogService } from '../../../services/loanProductCatalogService';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
 
@@ -19,6 +20,8 @@ const ICON_OPTIONS = [
   { value: 'TrendingUp', label: 'Investment' },
 ];
 
+const ADD_CATEGORY_VALUE = '__add_category__';
+
 const EMPTY_FORM = {
   label: '',
   slug: '',
@@ -31,23 +34,53 @@ const EMPTY_FORM = {
   color: 'var(--color-primary)',
   sortOrder: '0',
   isActive: true,
+  bankId: '',
+  categoryId: '',
 };
 
 const LoanProductsTab = () => {
   const { refresh: refreshPublic } = useLoanProducts();
   const [products, setProducts] = useState([]);
+  const [banks, setBanks] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
+  const [showAddCategory, setShowAddCategory] = useState(false);
+  const [newCategoryLabel, setNewCategoryLabel] = useState('');
+  const [addingCategory, setAddingCategory] = useState(false);
+
+  const bankOptions = useMemo(
+    () => [
+      { value: '', label: '— No bank (category landing only) —' },
+      ...banks.map((b) => ({ value: b.id, label: b.name })),
+    ],
+    [banks],
+  );
+
+  const categoryOptions = useMemo(
+    () => [
+      { value: '', label: 'Select product category' },
+      ...categories.map((c) => ({ value: c.id, label: c.label })),
+      { value: ADD_CATEGORY_VALUE, label: '+ Add new category…' },
+    ],
+    [categories],
+  );
 
   const load = async () => {
     setLoading(true);
     setError('');
-    const { data, error: err } = await loanProductCatalogService.listAll();
-    if (err) setError(err.message);
-    setProducts(data || []);
+    const [prodRes, catRes, bankList] = await Promise.all([
+      loanProductCatalogService.listAll(),
+      loanProductCatalogService.listCategories(),
+      bankService.getAllBanks().catch(() => []),
+    ]);
+    if (prodRes.error) setError(prodRes.error.message);
+    setProducts(prodRes.data || []);
+    setCategories(catRes.data || []);
+    setBanks(Array.isArray(bankList) ? bankList : []);
     setLoading(false);
   };
 
@@ -57,8 +90,38 @@ const LoanProductsTab = () => {
 
   const setField = (key, value) => setForm((prev) => ({ ...prev, [key]: value }));
 
+  const handleCategoryChange = (value) => {
+    if (value === ADD_CATEGORY_VALUE) {
+      setShowAddCategory(true);
+      return;
+    }
+    setShowAddCategory(false);
+    setField('categoryId', value);
+  };
+
+  const handleAddCategory = async () => {
+    const label = newCategoryLabel.trim();
+    if (!label) {
+      setError('Enter a category name');
+      return;
+    }
+    setAddingCategory(true);
+    setError('');
+    const { data, error: err } = await loanProductCatalogService.createCategory({ label });
+    setAddingCategory(false);
+    if (err) {
+      setError(err.message);
+      return;
+    }
+    setCategories((prev) => [...prev, data].sort((a, b) => a.label.localeCompare(b.label)));
+    setField('categoryId', data.id);
+    setNewCategoryLabel('');
+    setShowAddCategory(false);
+  };
+
   const startEdit = (product) => {
     setEditingId(product.id);
+    setShowAddCategory(false);
     setForm({
       label: product.label || '',
       slug: product.slug || '',
@@ -71,6 +134,8 @@ const LoanProductsTab = () => {
       color: product.color || 'var(--color-primary)',
       sortOrder: String(product.sortOrder ?? 0),
       isActive: product.isActive !== false,
+      bankId: product.bankId || '',
+      categoryId: product.categoryId || '',
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -78,6 +143,8 @@ const LoanProductsTab = () => {
   const resetForm = () => {
     setEditingId(null);
     setForm({ ...EMPTY_FORM });
+    setShowAddCategory(false);
+    setNewCategoryLabel('');
   };
 
   const buildPayload = () => ({
@@ -95,12 +162,22 @@ const LoanProductsTab = () => {
     color: form.color,
     sort_order: Number(form.sortOrder) || 0,
     is_active: form.isActive,
+    bank_id: form.bankId || null,
+    category_id: form.categoryId || null,
   });
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.label.trim()) {
       setError('Product name is required');
+      return;
+    }
+    if (!form.categoryId) {
+      setError('Product category is required');
+      return;
+    }
+    if (!form.bankId) {
+      setError('Bank name is required — select the lender for this product');
       return;
     }
     setSaving(true);
@@ -148,7 +225,8 @@ const LoanProductsTab = () => {
         <div>
           <h2 className="text-xl font-bold text-foreground">Loan product catalog</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Add or update loan types shown on the homepage, product pages, and application forms.
+            Map each product to a bank and category. Only banks with a product under a category
+            appear on that category&apos;s marketplace page.
           </p>
         </div>
         <Button variant="outline" iconName="RefreshCw" onClick={load} disabled={loading}>
@@ -160,18 +238,65 @@ const LoanProductsTab = () => {
         <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div>
       )}
 
-      <form onSubmit={handleSubmit} className="border border-border rounded-xl p-4 md:p-6 bg-muted/20 space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="border border-border rounded-xl p-4 md:p-6 bg-muted/20 space-y-4"
+      >
         <h3 className="font-semibold text-foreground flex items-center gap-2">
           <Icon name={editingId ? 'Pencil' : 'Plus'} size={18} />
           {editingId ? 'Edit product' : 'Add new product'}
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Select
+            label="Bank name"
+            description="Lender offering this product (from Banks tab)"
+            options={bankOptions}
+            value={form.bankId}
+            onChange={(v) => setField('bankId', v)}
+            required
+          />
+          <Select
+            label="Product category"
+            description="Category shown in dropdown and marketplace filter"
+            options={categoryOptions}
+            value={showAddCategory ? ADD_CATEGORY_VALUE : form.categoryId}
+            onChange={handleCategoryChange}
+            required
+          />
+        </div>
+
+        {showAddCategory && (
+          <div className="flex flex-col sm:flex-row gap-3 items-end p-3 rounded-lg border border-border bg-card">
+            <Input
+              label="New category name"
+              value={newCategoryLabel}
+              onChange={(e) => setNewCategoryLabel(e.target.value)}
+              placeholder="e.g. Gold Loan"
+              className="flex-1"
+            />
+            <Button type="button" onClick={handleAddCategory} disabled={addingCategory}>
+              {addingCategory ? 'Adding…' : 'Add category'}
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setShowAddCategory(false);
+                setNewCategoryLabel('');
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Input
             label="Product name"
             value={form.label}
             onChange={(e) => setField('label', e.target.value)}
-            placeholder="e.g. Gold Loan"
+            placeholder="e.g. HDFC School Business Loan"
             required
           />
           <Input
@@ -179,13 +304,13 @@ const LoanProductsTab = () => {
             description="Used in /products/your-slug (auto-generated from name if empty)"
             value={form.slug}
             onChange={(e) => setField('slug', e.target.value)}
-            placeholder="gold"
+            placeholder="hdfc_school_loan"
           />
           <Input
             label="Short label"
             value={form.shortLabel}
             onChange={(e) => setField('shortLabel', e.target.value)}
-            placeholder="Gold"
+            placeholder="School"
           />
           <Select
             label="Icon"
@@ -241,7 +366,7 @@ const LoanProductsTab = () => {
             className="w-full min-h-[100px] px-3 py-2 border border-border rounded-lg text-sm font-mono"
             value={form.featuresText}
             onChange={(e) => setField('featuresText', e.target.value)}
-            placeholder={'Up to ₹40 Lakhs\nQuick approval'}
+            placeholder={'Up to ₹2 Cr.\nAt least 5 years old school'}
           />
         </div>
 
@@ -286,7 +411,11 @@ const LoanProductsTab = () => {
                 <div className="min-w-0 flex-1">
                   <h4 className="font-bold text-foreground">{product.label}</h4>
                   <p className="text-xs text-muted-foreground">
-                    /products/{product.slug} · API: {product.apiKey}
+                    {product.bankName ? `${product.bankName} · ` : ''}
+                    {product.categoryLabel || 'No category'}
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    /products/{product.categorySlug || product.slug}
                   </p>
                   <p className="text-sm text-primary font-semibold mt-1">{product.interestRange}</p>
                 </div>
@@ -315,8 +444,7 @@ const LoanProductsTab = () => {
           ))}
           {products.length === 0 && (
             <p className="col-span-full text-center text-muted-foreground py-8">
-              No catalog products yet. Add one above or run{' '}
-              <code className="text-xs bg-muted px-1 rounded">npm run seed:loan-products</code> on the backend.
+              No catalog products yet. Add one above with bank and category mapping.
             </p>
           )}
         </div>

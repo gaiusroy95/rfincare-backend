@@ -212,7 +212,7 @@ const SiteContactSettingsForm = () => {
 
       <div className="border border-border rounded-lg p-4 space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="font-semibold text-foreground">Contact page — office locations</h4>
+          <h4 className="font-semibold text-foreground">Additional office locations</h4>
           <Button
             size="sm"
             variant="outline"
@@ -221,6 +221,11 @@ const SiteContactSettingsForm = () => {
             Add office
           </Button>
         </div>
+        <p className="text-xs text-muted-foreground">
+          Shown in the footer (between primary addresses and navigation) and on the Contact page.
+          Registered and branch/corporate addresses above are always shown on the left; other offices
+          listed here appear in the additional column.
+        </p>
         {form.offices.map((office, index) => (
           <div key={index} className="grid gap-2 p-3 bg-muted/30 rounded-lg">
             <Input

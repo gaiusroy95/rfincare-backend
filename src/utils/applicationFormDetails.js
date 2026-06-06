@@ -1,3 +1,5 @@
+import { calculateTotalMonthlyEmi } from './calculateTotalMonthlyEmi';
+
 const LABELS = {
   title: 'Title',
   firstName: 'First name',
@@ -31,8 +33,7 @@ const LABELS = {
   loanPurpose: 'Loan purpose',
   loanAmount: 'Loan amount',
   creditScoreRange: 'Credit score range',
-  monthlyDebtPayments: 'Monthly debt payments',
-  totalAssets: 'Total assets',
+  monthlyDebtPayments: 'Total monthly EMI (auto-calculated)',
   hasRunningLoanOrCard: 'Any running loan / credit card',
   personalLoanEmi1: 'Personal loan 1 EMI',
   personalLoanEmi2: 'Personal loan 2 EMI',
@@ -79,7 +80,7 @@ function formatValue(key, value) {
   if (value == null || value === '') return '—';
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (value === 'yes' || value === 'no') return value === 'yes' ? 'Yes' : 'No';
-  if (key.toLowerCase().includes('income') || key === 'loanAmount' || key === 'monthlyRent' || key === 'totalAssets' || key === 'monthlyDebtPayments') {
+  if (key.toLowerCase().includes('income') || key === 'loanAmount' || key === 'monthlyRent' || key === 'monthlyDebtPayments') {
     const num = Number(String(value).replace(/,/g, ''));
     if (Number.isFinite(num) && num > 0) return `₹${num.toLocaleString('en-IN')}`;
   }
@@ -164,8 +165,11 @@ export function buildApplicationDetailSections(application) {
     loanPurpose:
       field(data, 'loanPurpose', 'loan_purpose') ?? application?.loanType ?? application?.loan_type,
     creditScoreRange: field(data, 'creditScoreRange', 'credit_score_range'),
-    monthlyDebtPayments: field(data, 'monthlyDebtPayments', 'monthly_debt_payments'),
-    totalAssets: field(data, 'totalAssets', 'total_assets'),
+    monthlyDebtPayments: (() => {
+      const calculated = calculateTotalMonthlyEmi(data);
+      if (calculated > 0) return calculated;
+      return field(data, 'monthlyDebtPayments', 'monthly_debt_payments');
+    })(),
     preferredBankName: field(data, 'preferredBankName', 'preferred_bank_name'),
   };
 
@@ -199,7 +203,7 @@ export function buildApplicationDetailSections(application) {
       title: 'Loan & financial',
       icon: 'IndianRupee',
       fields: pickFields(merged, [
-        'loanPurpose', 'loanAmount', 'creditScoreRange', 'monthlyDebtPayments', 'totalAssets',
+        'loanPurpose', 'loanAmount', 'creditScoreRange', 'monthlyDebtPayments',
         'hasRunningLoanOrCard',
         'personalLoanEmi1', 'personalLoanEmi2',
         'housingLoanEmi1', 'housingLoanEmi2',

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { customerJourneyService } from '../../../services/customerJourneyService';
-import { getDocumentPreviewUrl } from '../../../utils/documentUrls';
+import { loadDocumentPreviewUrl } from '../../../utils/documentUrls';
 
 const DocumentPreviewModal = ({ isOpen, document, onClose }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
@@ -23,40 +23,32 @@ const DocumentPreviewModal = ({ isOpen, document, onClose }) => {
       return undefined;
     }
 
-    const staticUrl = getDocumentPreviewUrl(document);
-    if (staticUrl && (document.mimeType || '').startsWith('image/')) {
-      setPreviewUrl(staticUrl);
-      setLoading(false);
-      setError('');
-      return undefined;
-    }
-
-    if (!document.id) {
-      setError('Document preview is not available.');
-      return undefined;
-    }
-
-    let objectUrl = null;
+    let revoke = () => {};
     let cancelled = false;
 
     (async () => {
       setLoading(true);
       setError('');
-      const { data, error: downloadError } = await customerJourneyService.downloadDocument(document.id);
-      if (cancelled) return;
-      if (downloadError || !data?.blob) {
-        setError('Could not load document. Please try again.');
-        setLoading(false);
+      const result = await loadDocumentPreviewUrl(
+        document,
+        customerJourneyService.downloadDocument.bind(customerJourneyService),
+      );
+      if (cancelled) {
+        result.revoke();
         return;
       }
-      objectUrl = URL.createObjectURL(data.blob);
-      setPreviewUrl(objectUrl);
+      revoke = result.revoke;
+      if (result.url) {
+        setPreviewUrl(result.url);
+      } else {
+        setError(result.error || 'Could not load document. Please try again.');
+      }
       setLoading(false);
     })();
 
     return () => {
       cancelled = true;
-      if (objectUrl) URL.revokeObjectURL(objectUrl);
+      revoke();
     };
   }, [isOpen, document?.id, document?.localPreviewUrl]);
 

@@ -22,9 +22,56 @@ export function getDocumentPreviewUrl(doc) {
   const filePath = doc.filePath || doc.file_path;
   if (filePath) {
     const name = filePath.split(/[/\\]/).pop();
-    if (name) return `${base}/uploads/${encodeURIComponent(name)}`;
+    if (name && base) return `${base}/uploads/${encodeURIComponent(name)}`;
   }
   return null;
+}
+
+/**
+ * Load preview via authenticated download (works when /uploads static files are missing).
+ * Returns a blob object URL when successful — call revoke() on cleanup when isBlob is true.
+ */
+export async function loadDocumentPreviewUrl(doc, downloadDocument) {
+  if (!doc) {
+    return { url: null, error: 'No document', isBlob: false, revoke: () => {} };
+  }
+  if (doc.localPreviewUrl) {
+    return {
+      url: doc.localPreviewUrl,
+      error: null,
+      isBlob: false,
+      revoke: () => {},
+    };
+  }
+  if (doc.id && typeof downloadDocument === 'function') {
+    const { data, error } = await downloadDocument(doc.id, { inline: true });
+    if (data?.blob) {
+      const url = URL.createObjectURL(data.blob);
+      return {
+        url,
+        error: null,
+        isBlob: true,
+        mimeType: data.mimeType || data.blob.type || doc.mimeType || doc.mime_type || '',
+        revoke: () => URL.revokeObjectURL(url),
+      };
+    }
+    return {
+      url: null,
+      error: error?.message || 'Could not load document',
+      isBlob: false,
+      revoke: () => {},
+    };
+  }
+  const staticUrl = getDocumentPreviewUrl(doc);
+  if (staticUrl) {
+    return { url: staticUrl, error: null, isBlob: false, revoke: () => {} };
+  }
+  return {
+    url: null,
+    error: 'Document preview is not available',
+    isBlob: false,
+    revoke: () => {},
+  };
 }
 
 export const DOCUMENT_TYPE_LABELS = {

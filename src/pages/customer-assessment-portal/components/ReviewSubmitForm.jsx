@@ -7,6 +7,7 @@ import {
   financialHistoryLabel,
 } from '../../../constants/assessmentFinancialHistory';
 import { getCreditScoreRangeLabel } from '../../../constants/creditScoreRanges';
+import { calculateTotalMonthlyEmi } from '../../../utils/calculateTotalMonthlyEmi';
 
 const displayValue = (val) => {
   if (val == null || val === '') return '';
@@ -22,6 +23,7 @@ const ReviewSubmitForm = ({ formData, errors, onChange }) => {
   };
   const showCoApplicant = requiresCoApplicant(formData?.employmentType);
   const ca = formData?.coApplicant || {};
+  const totalMonthlyEmi = calculateTotalMonthlyEmi(formData);
 
   const sections = [
     {
@@ -91,8 +93,7 @@ const ReviewSubmitForm = ({ formData, errors, onChange }) => {
         { label: 'Loan Purpose', value: displayValue(formData?.loanPurpose) },
         { label: 'Requested Amount', value: formatCurrency(formData?.loanAmount) },
         { label: 'Credit Score Range', value: getCreditScoreRangeLabel(formData?.creditScoreRange) },
-        { label: 'Monthly Debt Payments', value: formatCurrency(formData?.monthlyDebtPayments) },
-        { label: 'Total Assets', value: formatCurrency(formData?.totalAssets) },
+        { label: 'Total Monthly EMI (auto-calculated)', value: formatCurrency(totalMonthlyEmi) },
         { label: 'Any running loan / credit card', value: formData?.hasRunningLoanOrCard === 'yes' ? 'Yes' : formData?.hasRunningLoanOrCard === 'no' ? 'No' : '' },
         { label: 'Personal Loan 1 EMI', value: formatCurrency(formData?.personalLoanEmi1) },
         { label: 'Personal Loan 2 EMI', value: formatCurrency(formData?.personalLoanEmi2) },

@@ -33,6 +33,7 @@ import {
   buildAssessmentEntryState,
   stripUnsafeFormFields,
 } from '../../utils/assessmentFormData';
+import { calculateTotalMonthlyEmi, EMI_FORM_FIELDS } from '../../utils/calculateTotalMonthlyEmi';
 
 const SESSION_KEY = 'loan_assessment_session';
 
@@ -65,7 +66,7 @@ const INITIAL_FORM_DATA = {
   yearsEmployed: '', annualIncome: '', monthlyIncome: '', employerPhone: '', retirementIncome: '',
   coApplicant: { ...INITIAL_CO_APPLICANT },
   loanPurpose: '', loanAmount: '', creditScoreRange: '',
-  monthlyDebtPayments: '', totalAssets: '',
+  monthlyDebtPayments: '',
   hasRunningLoanOrCard: '',
   personalLoanEmi1: '',
   personalLoanEmi2: '',
@@ -366,6 +367,10 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
       if (field === 'employmentType' && prev.employmentType === 'retired' && value !== 'retired') {
         next.coApplicant = { ...INITIAL_CO_APPLICANT };
       }
+      if (EMI_FORM_FIELDS.includes(field) || field === 'hasRunningLoanOrCard') {
+        const total = calculateTotalMonthlyEmi(next);
+        next.monthlyDebtPayments = total > 0 ? String(total) : '';
+      }
       return next;
     });
     if (field === 'employmentType' && value !== 'retired') {
@@ -489,8 +494,6 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         if (!formData?.loanPurpose) newErrors.loanPurpose = 'Loan purpose is required';
         if (!formData?.loanAmount) newErrors.loanAmount = 'Loan amount is required';
         if (!formData?.creditScoreRange) newErrors.creditScoreRange = 'Credit score range is required';
-        if (!formData?.monthlyDebtPayments && formData?.monthlyDebtPayments !== 0) newErrors.monthlyDebtPayments = 'Monthly debt payments is required';
-        if (!formData?.totalAssets && formData?.totalAssets !== 0) newErrors.totalAssets = 'Total assets is required';
         if (!formData?.hasRunningLoanOrCard) {
           newErrors.hasRunningLoanOrCard = 'Please select Yes or No';
         }
@@ -620,8 +623,11 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
     loan_purpose: formData?.loanPurpose,
     requested_loan_amount: formData?.loanAmount ? parseFloat(formData?.loanAmount) : 0,
     credit_score_range: formData?.creditScoreRange || null,
-    monthly_debt_payments: formData?.monthlyDebtPayments ? parseFloat(formData?.monthlyDebtPayments) : null,
-    total_assets: formData?.totalAssets ? parseFloat(formData?.totalAssets) : null,
+    monthly_debt_payments: (() => {
+      const total = calculateTotalMonthlyEmi(formData);
+      return total > 0 ? total : null;
+    })(),
+    total_assets: null,
     has_running_loan_or_card: formData?.hasRunningLoanOrCard || null,
     personal_loan_emi_1: formData?.personalLoanEmi1 ? parseFloat(formData?.personalLoanEmi1) : null,
     personal_loan_emi_2: formData?.personalLoanEmi2 ? parseFloat(formData?.personalLoanEmi2) : null,
@@ -894,6 +900,11 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
       localStorage.removeItem('loan_assessment_step');
       localStorage.removeItem('loan_assessment_application_id');
       localStorage.removeItem(SESSION_KEY);
+      try {
+        sessionStorage.removeItem('rfincare_registration_prefill');
+      } catch {
+        /* ignore */
+      }
 
       setShowSuccessModal(true);
     } catch (err) {

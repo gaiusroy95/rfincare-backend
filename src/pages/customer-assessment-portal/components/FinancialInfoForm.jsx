@@ -7,6 +7,7 @@ import {
   FINANCIAL_YES_NO_OPTIONS,
 } from '../../../constants/assessmentFinancialHistory';
 import { CREDIT_SCORE_RANGE_OPTIONS_FULL } from '../../../constants/creditScoreRanges';
+import { calculateTotalMonthlyEmi } from '../../../utils/calculateTotalMonthlyEmi';
 
 const FinancialInfoForm = ({ formData, errors, onChange }) => {
   const { products } = useLoanProducts();
@@ -21,6 +22,7 @@ const FinancialInfoForm = ({ formData, errors, onChange }) => {
   const yesNoOptions = FINANCIAL_YES_NO_OPTIONS;
   const hasRunningLoans = formData?.hasRunningLoanOrCard === 'yes';
   const hasOverdue = formData?.hasAnyOverdue === 'yes';
+  const totalMonthlyEmi = calculateTotalMonthlyEmi(formData);
 
   const overdueLoanTypeOptions = [
     { value: 'personal_loan', label: 'Personal loan' },
@@ -66,30 +68,16 @@ const FinancialInfoForm = ({ formData, errors, onChange }) => {
         error={errors?.creditScoreRange}
         required
       />
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-        <Input
-          label="Total Monthly Debt Payments"
-          type="number"
-          placeholder="20000"
-          description="Include all loans, credit cards, etc. in INR (₹)"
-          value={formData?.monthlyDebtPayments}
-          onChange={(e) => onChange('monthlyDebtPayments', e?.target?.value)}
-          error={errors?.monthlyDebtPayments}
-          required
-          min={0}
-        />
-
-        <Input
-          label="Total Savings & Assets"
-          type="number"
-          placeholder="500000"
-          description="Bank accounts, investments, etc. in INR (₹)"
-          value={formData?.totalAssets}
-          onChange={(e) => onChange('totalAssets', e?.target?.value)}
-          error={errors?.totalAssets}
-          required
-          min={0}
-        />
+      <div className="rounded-lg border border-border bg-muted/40 p-4 md:p-6">
+        <p className="text-sm md:text-base font-medium text-foreground">Total Monthly EMI (auto-calculated)</p>
+        <p className="text-2xl md:text-3xl font-semibold text-foreground mt-2">
+          {totalMonthlyEmi > 0 ? `₹${Math.round(totalMonthlyEmi).toLocaleString('en-IN')}` : '—'}
+        </p>
+        <p className="text-xs md:text-sm text-muted-foreground mt-2">
+          {hasRunningLoans
+            ? 'Sum of all loan EMIs entered below. Updates automatically as you fill in existing loan details.'
+            : 'Select "Yes" below if you have running loans, then enter EMI amounts to calculate the total.'}
+        </p>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-4 md:p-6 space-y-4">

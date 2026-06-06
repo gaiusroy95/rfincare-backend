@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Image from '../../../components/AppImage';
-import { documentTypeLabel, getDocumentPreviewUrl, inferDocumentMediaType } from '../../../utils/documentUrls';
+import { documentTypeLabel, inferDocumentMediaType, loadDocumentPreviewUrl } from '../../../utils/documentUrls';
 import {
   documentManagementService,
   DOC_STATUS_LABELS,
@@ -54,39 +54,36 @@ const DocumentReviewModal = ({
     });
     setMediaType(resolvedType);
 
-    const staticUrl = getDocumentPreviewUrl(raw);
-    if (staticUrl && (resolvedType === 'image' || resolvedType === 'pdf')) {
-      setPreviewUrl(staticUrl);
-      setPreviewLoading(false);
-      return undefined;
-    }
-
     let cancelled = false;
     (async () => {
       setPreviewLoading(true);
       setPreviewUrl(null);
-      const { data, error: dlErr } = await documentManagementService.downloadDocument(document.id, {
-        inline: true,
-      });
-      if (cancelled) return;
+      const result = await loadDocumentPreviewUrl(
+        { ...raw, id: document.id },
+        documentManagementService.downloadDocument.bind(documentManagementService),
+      );
+      if (cancelled) {
+        result.revoke();
+        return;
+      }
 
-      if (dlErr || !data?.blob) {
-        setPreviewError(dlErr?.message || 'Could not load document preview.');
+      if (!result.url) {
+        setPreviewError(result.error || 'Could not load document preview.');
         setPreviewLoading(false);
         return;
       }
 
-      const blobType = data.mimeType || data.blob.type || '';
       const fromBlob = inferDocumentMediaType({
-        mimeType: blobType,
-        documentName: data.fileName || document.name,
+        mimeType: result.mimeType,
+        documentName: document.name,
       });
       if (fromBlob !== 'doc') setMediaType(fromBlob);
 
-      revokeBlobUrl();
-      const objectUrl = URL.createObjectURL(data.blob);
-      blobUrlRef.current = objectUrl;
-      setPreviewUrl(objectUrl);
+      if (result.isBlob) {
+        revokeBlobUrl();
+        blobUrlRef.current = result.url;
+      }
+      setPreviewUrl(result.url);
       setPreviewLoading(false);
     })();
 
