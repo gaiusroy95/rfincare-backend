@@ -20,8 +20,16 @@ import BankPreferencesStep from './components/BankPreferencesStep';
 import { getLoanPriorities, serializeLoanPriorities } from '../../utils/loanPriorities';
 import Icon from '../../components/AppIcon';
 import { leadService, loadEligibilityResults } from '../../services/leadService';
-import { downloadConsentRecord } from '../../utils/consentRecord';
-import { getRequiredDocumentTypes, requiresCoApplicant } from '../../constants/assessmentDocuments';
+import {
+  getAssessmentDocumentTypes,
+  requiresCoApplicant,
+} from '../../constants/assessmentDocuments';
+import {
+  createEmptyLoanRow,
+  getCompleteExistingLoans,
+  normalizeExistingLoans,
+  serializeExistingLoansForPayload,
+} from '../../utils/existingLoans';
 import {
   FINANCIAL_HISTORY_INITIAL,
   FINANCIAL_HISTORY_QUESTIONS,
@@ -29,6 +37,7 @@ import {
 } from '../../constants/assessmentFinancialHistory';
 import { agentApplicationService } from '../../services/agentApplicationService';
 import AgentAssistedBanner from './components/AgentAssistedBanner';
+import ApplicationConfirmation from './components/ApplicationConfirmation';
 import {
   buildAssessmentEntryState,
   stripUnsafeFormFields,
@@ -68,6 +77,7 @@ const INITIAL_FORM_DATA = {
   loanPurpose: '', loanAmount: '', creditScoreRange: '',
   monthlyDebtPayments: '',
   hasRunningLoanOrCard: '',
+  existingLoans: [],
   personalLoanEmi1: '',
   personalLoanEmi2: '',
   housingLoanEmi1: '',
@@ -173,7 +183,17 @@ const normalizeAssessmentFormData = (raw = {}) => {
   });
 
   merged.hasRunningLoanOrCard = coerceYesNo(merged.hasRunningLoanOrCard);
+  merged.existingLoans = normalizeExistingLoans(raw, merged);
   merged.hasAnyOverdue = coerceYesNo(merged.hasAnyOverdue);
+  const emiTotal = calculateTotalMonthlyEmi(merged);
+  merged.monthlyDebtPayments = emiTotal > 0 ? String(emiTotal) : '';
+  if (!merged.hasAnyOverdue) {
+    const legacyOverdue =
+      coerceYesNo(merged.creditBureauOverdue)
+      || coerceYesNo(merged.credit_bureau_overdue)
+      || coerceYesNo(merged.has_tax_liens);
+    if (legacyOverdue) merged.hasAnyOverdue = legacyOverdue;
+  }
 
   const priorities = getLoanPriorities(merged);
   merged.loanPriorities = priorities;
@@ -202,6 +222,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [submissionConfirmation, setSubmissionConfirmation] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPreparingAccount, setIsPreparingAccount] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState(null);
@@ -367,7 +388,15 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
       if (field === 'employmentType' && prev.employmentType === 'retired' && value !== 'retired') {
         next.coApplicant = { ...INITIAL_CO_APPLICANT };
       }
-      if (EMI_FORM_FIELDS.includes(field) || field === 'hasRunningLoanOrCard') {
+      if (field === 'hasRunningLoanOrCard') {
+        if (value === 'yes' && (!next.existingLoans || next.existingLoans.length === 0)) {
+          next.existingLoans = [createEmptyLoanRow()];
+        }
+        if (value === 'no') {
+          next.existingLoans = [];
+        }
+      }
+      if (field === 'existingLoans' || field === 'hasRunningLoanOrCard' || EMI_FORM_FIELDS.includes(field)) {
         const total = calculateTotalMonthlyEmi(next);
         next.monthlyDebtPayments = total > 0 ? String(total) : '';
       }
@@ -497,6 +526,21 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         if (!formData?.hasRunningLoanOrCard) {
           newErrors.hasRunningLoanOrCard = 'Please select Yes or No';
         }
+        if (formData?.hasRunningLoanOrCard === 'yes') {
+          const completeLoans = getCompleteExistingLoans(formData?.existingLoans);
+          if (!completeLoans.length) {
+            newErrors.existingLoans = 'Add at least one loan with type and EMI amount';
+          }
+          (formData?.existingLoans || []).forEach((row) => {
+            if (!row?.loanType) {
+              newErrors[`existingLoan_${row.id}_type`] = 'Select loan type';
+            }
+            const emi = Number.parseFloat(row?.emiAmount);
+            if (!Number.isFinite(emi) || emi <= 0) {
+              newErrors[`existingLoan_${row.id}_emi`] = 'Enter EMI amount';
+            }
+          });
+        }
         if (!formData?.hasAnyOverdue) {
           newErrors.hasAnyOverdue = 'Please select Yes or No';
         }
@@ -532,8 +576,12 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         break;
 
       case 6: {
-        const requirementDefs = documentRequirements?.length ? documentRequirements : undefined;
-        getRequiredDocumentTypes(formData?.employmentType, requirementDefs).forEach((type) => {
+        getAssessmentDocumentTypes({
+          employmentType: formData?.employmentType,
+          requirements: documentRequirements,
+          existingLoans: formData?.existingLoans,
+          hasRunningLoanOrCard: formData?.hasRunningLoanOrCard,
+        }).forEach((type) => {
           if (!uploadedDocs?.[type]) {
             newErrors[type] = 'This document is required';
           }
@@ -629,6 +677,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
     })(),
     total_assets: null,
     has_running_loan_or_card: formData?.hasRunningLoanOrCard || null,
+    existing_loans: serializeExistingLoansForPayload(formData?.existingLoans),
     personal_loan_emi_1: formData?.personalLoanEmi1 ? parseFloat(formData?.personalLoanEmi1) : null,
     personal_loan_emi_2: formData?.personalLoanEmi2 ? parseFloat(formData?.personalLoanEmi2) : null,
     housing_loan_emi_1: formData?.housingLoanEmi1 ? parseFloat(formData?.housingLoanEmi1) : null,
@@ -652,7 +701,8 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
     ),
     has_bankruptcy: isFinancialHistoryYes(formData?.loanDefaultPast36Months),
     has_foreclosure: isFinancialHistoryYes(formData?.accountNpaWrittenOff),
-    has_tax_liens: isFinancialHistoryYes(formData?.creditBureauOverdue),
+    has_tax_liens: isFinancialHistoryYes(formData?.hasAnyOverdue),
+    credit_bureau_overdue: formData?.hasAnyOverdue || null,
     has_co_signed_loans: isFinancialHistoryYes(formData?.coApplicantOrGuarantor),
     preferred_bank_id: formData?.preferredBankId || null,
     loan_priority: serializeLoanPriorities(getLoanPriorities(formData)) || null,
@@ -867,9 +917,12 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         ...signaturePayload,
       };
 
+      let confirmation = null;
+
       if (assistedByAgent) {
         await agentApplicationService.updateApplication(appId, finalPayload);
-        await agentApplicationService.submitApplication(appId);
+        const agentSubmit = await agentApplicationService.submitApplication(appId);
+        confirmation = agentSubmit?.confirmation || null;
       } else {
         await applicationService.updateApplication(appId, finalPayload);
 
@@ -888,13 +941,30 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         if (submitResult?.error) {
           throw new Error(submitResult.error.message || 'Failed to submit application');
         }
+        confirmation = submitResult?.data?.confirmation || null;
+        if (!confirmation?.applicationNumber && submitResult?.data?.applicationNumber) {
+          confirmation = {
+            ...(confirmation || {}),
+            applicationNumber: submitResult.data.applicationNumber,
+          };
+        }
       }
 
-      downloadConsentRecord({
-        formData,
-        applicationId: appId,
-        authMethod: formData.submitAuthMethod,
-      });
+      if (!confirmation) {
+        const applicantName = [formData.firstName, formData.middleName, formData.lastName]
+          .filter(Boolean)
+          .join(' ');
+        confirmation = {
+          applicationId: appId,
+          applicationNumber: finalPayload.application_number || `RFC${Date.now()}`,
+          applicantName,
+          submittedAt: new Date().toISOString(),
+          status: 'submitted',
+          statusLabel: 'Submitted Successfully',
+        };
+      }
+
+      setSubmissionConfirmation(confirmation);
 
       localStorage.removeItem('loan_assessment_form_data');
       localStorage.removeItem('loan_assessment_step');
@@ -975,6 +1045,8 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
             onRequirementsLoaded={setDocumentRequirements}
             errors={errors}
             employmentType={formData?.employmentType}
+            existingLoans={formData?.existingLoans}
+            hasRunningLoanOrCard={formData?.hasRunningLoanOrCard}
           />
         );
       case 7:
@@ -1085,59 +1157,13 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         </div>
       </main>
       {/* Success Modal with Credentials */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
-          <div className="bg-card rounded-lg shadow-lg max-w-md w-full p-6 md:p-8 animate-scale-in">
-            <div className="text-center">
-              <div className="inline-flex items-center justify-center w-16 h-16 md:w-20 md:h-20 rounded-full bg-success/10 mb-4 md:mb-6">
-                <Icon name="CheckCircle2" size={40} className="text-success md:w-12 md:h-12" />
-              </div>
-              <h2 className="text-xl md:text-2xl font-bold text-foreground mb-3 md:mb-4">
-                {assistedByAgent ? 'Application Submitted!' : 'Assessment Complete!'}
-              </h2>
-              <p className="text-sm md:text-base text-muted-foreground mb-4">
-                {assistedByAgent
-                  ? 'The customer application is saved under your agent code and will appear in your commission tracker.'
-                  : 'Your account has been created automatically. Please save your login credentials below.'}
-              </p>
-
-              {generatedCredentials && (
-                <div className="bg-muted rounded-lg p-4 mb-6 text-left border border-border">
-                  <h3 className="text-sm font-semibold text-foreground mb-3 flex items-center gap-2">
-                    <Icon name="Key" size={16} className="text-primary" />
-                    Your Login Credentials
-                  </h3>
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Email / Username:</span>
-                      <span className="text-xs font-mono font-semibold text-foreground bg-background px-2 py-1 rounded border">
-                        {generatedCredentials?.email}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs text-muted-foreground">Password:</span>
-                      <span className="text-xs font-mono font-semibold text-foreground bg-background px-2 py-1 rounded border">
-                        {generatedCredentials?.password}
-                      </span>
-                    </div>
-                  </div>
-                  <p className="text-xs text-warning mt-3 flex items-start gap-1">
-                    <Icon name="AlertTriangle" size={12} className="mt-0.5 flex-shrink-0" />
-                    Please save these credentials. You will need them to log in to your account.
-                  </p>
-                </div>
-              )}
-
-              <button
-                onClick={handleSuccessRedirect}
-                className="w-full inline-flex items-center justify-center px-6 py-3 bg-primary text-primary-foreground rounded-lg font-medium hover:bg-primary/90 transition-colors"
-              >
-                <Icon name="LayoutDashboard" size={16} className="mr-2" />
-                {assistedByAgent ? 'Back to Agent Dashboard' : 'Go to My Dashboard'}
-              </button>
-            </div>
-          </div>
-        </div>
+      {showSuccessModal && submissionConfirmation && (
+        <ApplicationConfirmation
+          confirmation={submissionConfirmation}
+          assistedByAgent={assistedByAgent}
+          generatedCredentials={generatedCredentials}
+          onContinue={handleSuccessRedirect}
+        />
       )}
     </div>
   );

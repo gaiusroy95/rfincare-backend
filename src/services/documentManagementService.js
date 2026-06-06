@@ -85,6 +85,7 @@ export function mapApiDocumentToCard(doc) {
     verificationNote: doc.verificationNotes || doc.verification_notes || '',
     mimeType: mime,
     previewUrl: doc.previewUrl || doc.preview_url,
+    documentUrl: doc.documentUrl || doc.document_url,
     filePath: doc.filePath || doc.file_path,
     raw: doc,
   };

@@ -3,6 +3,7 @@ import Icon from '../AppIcon';
 import Button from '../ui/Button';
 import BankComparisonTable from './BankComparisonTable';
 import { MAX_BANK_COMPARE } from '../../constants/bankComparison';
+import { getMarketplaceCompareKey } from '../../utils/bankMarketplace';
 
 const BankComparisonPanel = ({
   productLabel,
@@ -31,34 +32,41 @@ const BankComparisonPanel = ({
           </div>
           <div>
             <h2 className="text-lg md:text-xl font-bold text-foreground">
-              {productLabel ? `${productLabel} — bank comparison` : 'Compare banks side by side'}
+              {productLabel ? `${productLabel} — product comparison` : 'Compare products side by side'}
             </h2>
             <p className="text-xs md:text-sm text-muted-foreground mt-0.5">
               {canCompare
-                ? `Comparing ${banks.length} lenders on this page. Select up to ${maxCompare} banks from the list below.`
-                : `Select ${2 - compareCount} more bank${compareCount === 1 ? '' : 's'} using the compare checkbox on each card.`}
+                ? `Comparing ${banks.length} products on rates, fees, features, and policies. Select up to ${maxCompare} from the list below.`
+                : `Select ${2 - compareCount} more product${compareCount === 1 ? '' : 's'} using the compare checkbox on each card.`}
             </p>
           </div>
         </div>
         <div className="flex flex-wrap gap-2 shrink-0">
-          {banks.map((bank) => (
-            <span
-              key={bank.id}
-              className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-background border border-border text-xs font-medium"
-            >
-              {bank.name}
-              {onRemoveBank && (
-                <button
-                  type="button"
-                  className="p-0.5 hover:bg-muted rounded-full"
-                  onClick={() => onRemoveBank(bank.id)}
-                  aria-label={`Remove ${bank.name} from comparison`}
-                >
-                  <Icon name="X" size={14} />
-                </button>
-              )}
-            </span>
-          ))}
+          {banks.map((bank) => {
+            const compareKey = getMarketplaceCompareKey(bank);
+            const label =
+              bank?.productName && bank.productName !== bank?.name
+                ? `${bank.name} — ${bank.productName}`
+                : bank.name;
+            return (
+              <span
+                key={compareKey}
+                className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-background border border-border text-xs font-medium"
+              >
+                {label}
+                {onRemoveBank && (
+                  <button
+                    type="button"
+                    className="p-0.5 hover:bg-muted rounded-full"
+                    onClick={() => onRemoveBank(compareKey)}
+                    aria-label={`Remove ${label} from comparison`}
+                  >
+                    <Icon name="X" size={14} />
+                  </button>
+                )}
+              </span>
+            );
+          })}
           {onClearAll && compareCount > 0 && (
             <Button variant="ghost" size="sm" onClick={onClearAll}>
               Clear all

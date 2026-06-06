@@ -1,8 +1,7 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
-import Image from '../../../components/AppImage';
-import { documentTypeLabel, getDocumentPreviewUrl } from '../../../utils/documentUrls';
+import { documentTypeLabel } from '../../../utils/documentUrls';
 import { DOC_STATUS_LABELS } from '../../../services/documentManagementService';
 import AgentDocumentUploadPanel from './AgentDocumentUploadPanel';
 
@@ -72,8 +71,8 @@ const ApplicationDocumentsView = ({
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {documents.map((doc) => {
-            const thumb = getDocumentPreviewUrl(doc.raw || doc);
             const isImage = (doc.mimeType || '').startsWith('image/');
+            const isPdf = String(doc.mimeType || doc.name || '').toLowerCase().includes('pdf');
             const status = doc.status || 'pending';
             return (
               <div
@@ -86,11 +85,11 @@ const ApplicationDocumentsView = ({
               >
                 <div className="flex gap-3">
                   <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                    {isImage && thumb ? (
-                      <Image src={thumb} alt={doc.name} className="w-full h-full object-cover" />
-                    ) : (
-                      <Icon name="FileText" size={24} className="text-primary" />
-                    )}
+                    <Icon
+                      name={isImage ? 'Image' : isPdf ? 'FileText' : 'FileText'}
+                      size={24}
+                      className="text-primary"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm text-foreground truncate">

@@ -26,6 +26,9 @@ const BankListItem = ({ bank, onApply, onCompare, isComparing }) => {
             <h3 className="text-base md:text-lg font-bold text-foreground line-clamp-1 mb-1">
               {bank?.name}
             </h3>
+            {bank?.productName && bank.productName !== bank?.name && (
+              <p className="text-xs text-primary line-clamp-1 mb-1">{bank.productName}</p>
+            )}
             <div className="flex items-center space-x-2 mb-2">
               <div className="flex items-center">
                 {[...Array(5)]?.map((_, i) => (
@@ -107,7 +110,7 @@ const BankListItem = ({ bank, onApply, onCompare, isComparing }) => {
           <Button
             variant={isComparing ? 'default' : 'outline'}
             size="sm"
-            onClick={() => onCompare(bank?.id)}
+            onClick={() => onCompare(bank)}
             iconName={isComparing ? 'CheckSquare' : 'Square'}
             iconPosition="left"
             className="flex-1 md:flex-initial"

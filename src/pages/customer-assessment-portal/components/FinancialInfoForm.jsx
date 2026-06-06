@@ -1,5 +1,4 @@
 import React from 'react';
-import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
 import {
@@ -8,6 +7,7 @@ import {
 } from '../../../constants/assessmentFinancialHistory';
 import { CREDIT_SCORE_RANGE_OPTIONS_FULL } from '../../../constants/creditScoreRanges';
 import { calculateTotalMonthlyEmi } from '../../../utils/calculateTotalMonthlyEmi';
+import ExistingLoansForm from './ExistingLoansForm';
 
 const FinancialInfoForm = ({ formData, errors, onChange }) => {
   const { products } = useLoanProducts();
@@ -68,17 +68,6 @@ const FinancialInfoForm = ({ formData, errors, onChange }) => {
         error={errors?.creditScoreRange}
         required
       />
-      <div className="rounded-lg border border-border bg-muted/40 p-4 md:p-6">
-        <p className="text-sm md:text-base font-medium text-foreground">Total Monthly EMI (auto-calculated)</p>
-        <p className="text-2xl md:text-3xl font-semibold text-foreground mt-2">
-          {totalMonthlyEmi > 0 ? `₹${Math.round(totalMonthlyEmi).toLocaleString('en-IN')}` : '—'}
-        </p>
-        <p className="text-xs md:text-sm text-muted-foreground mt-2">
-          {hasRunningLoans
-            ? 'Sum of all loan EMIs entered below. Updates automatically as you fill in existing loan details.'
-            : 'Select "Yes" below if you have running loans, then enter EMI amounts to calculate the total.'}
-        </p>
-      </div>
 
       <div className="rounded-lg border border-border bg-card p-4 md:p-6 space-y-4">
         <div>
@@ -99,150 +88,30 @@ const FinancialInfoForm = ({ formData, errors, onChange }) => {
         />
 
         {hasRunningLoans && (
-          <div className="space-y-4">
-            <p className="text-xs md:text-sm text-muted-foreground">
-              If Yes, enter the details below.
-            </p>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <Input
-                label="Personal Loan 1 EMI"
-                type="number"
-                placeholder="0"
-                description="Monthly EMI in INR (₹)"
-                value={formData?.personalLoanEmi1}
-                onChange={(e) => onChange('personalLoanEmi1', e?.target?.value)}
-                error={errors?.personalLoanEmi1}
-                min={0}
-              />
-              <Input
-                label="Personal Loan 2 EMI"
-                type="number"
-                placeholder="0"
-                description="Monthly EMI in INR (₹)"
-                value={formData?.personalLoanEmi2}
-                onChange={(e) => onChange('personalLoanEmi2', e?.target?.value)}
-                error={errors?.personalLoanEmi2}
-                min={0}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <Input
-                label="Housing Loan 1 EMI"
-                type="number"
-                placeholder="0"
-                description="Monthly EMI in INR (₹)"
-                value={formData?.housingLoanEmi1}
-                onChange={(e) => onChange('housingLoanEmi1', e?.target?.value)}
-                error={errors?.housingLoanEmi1}
-                min={0}
-              />
-              <Input
-                label="Housing Loan 2 EMI"
-                type="number"
-                placeholder="0"
-                description="Monthly EMI in INR (₹)"
-                value={formData?.housingLoanEmi2}
-                onChange={(e) => onChange('housingLoanEmi2', e?.target?.value)}
-                error={errors?.housingLoanEmi2}
-                min={0}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <Input
-                label="Car Loan EMI"
-                type="number"
-                placeholder="0"
-                description="Monthly EMI in INR (₹)"
-                value={formData?.carLoanEmi}
-                onChange={(e) => onChange('carLoanEmi', e?.target?.value)}
-                error={errors?.carLoanEmi}
-                min={0}
-              />
-              <Input
-                label="Two Wheeler Loan EMI"
-                type="number"
-                placeholder="0"
-                description="Monthly EMI in INR (₹)"
-                value={formData?.twoWheelerLoanEmi}
-                onChange={(e) => onChange('twoWheelerLoanEmi', e?.target?.value)}
-                error={errors?.twoWheelerLoanEmi}
-                min={0}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <Input
-                label="Other Loan EMI 1"
-                type="number"
-                placeholder="0"
-                description="Monthly EMI in INR (₹)"
-                value={formData?.otherLoanEmi1}
-                onChange={(e) => onChange('otherLoanEmi1', e?.target?.value)}
-                error={errors?.otherLoanEmi1}
-                min={0}
-              />
-              <Input
-                label="Other Loan EMI 2"
-                type="number"
-                placeholder="0"
-                description="Monthly EMI in INR (₹)"
-                value={formData?.otherLoanEmi2}
-                onChange={(e) => onChange('otherLoanEmi2', e?.target?.value)}
-                error={errors?.otherLoanEmi2}
-                min={0}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <Input
-                label="Credit Card 1 outstanding"
-                type="number"
-                placeholder="0"
-                description="Outstanding amount in INR (₹)"
-                value={formData?.creditCardOutstanding1}
-                onChange={(e) => onChange('creditCardOutstanding1', e?.target?.value)}
-                error={errors?.creditCardOutstanding1}
-                min={0}
-              />
-              <Input
-                label="Credit Card 2 outstanding"
-                type="number"
-                placeholder="0"
-                description="Outstanding amount in INR (₹)"
-                value={formData?.creditCardOutstanding2}
-                onChange={(e) => onChange('creditCardOutstanding2', e?.target?.value)}
-                error={errors?.creditCardOutstanding2}
-                min={0}
-              />
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
-              <Input
-                label="Credit Card 3 outstanding"
-                type="number"
-                placeholder="0"
-                description="Outstanding amount in INR (₹)"
-                value={formData?.creditCardOutstanding3}
-                onChange={(e) => onChange('creditCardOutstanding3', e?.target?.value)}
-                error={errors?.creditCardOutstanding3}
-                min={0}
-              />
-              <Input
-                label="Credit Card 4 outstanding"
-                type="number"
-                placeholder="0"
-                description="Outstanding amount in INR (₹)"
-                value={formData?.creditCardOutstanding4}
-                onChange={(e) => onChange('creditCardOutstanding4', e?.target?.value)}
-                error={errors?.creditCardOutstanding4}
-                min={0}
-              />
-            </div>
-          </div>
+          <ExistingLoansForm
+            existingLoans={formData?.existingLoans}
+            errors={errors}
+            onChange={onChange}
+          />
         )}
+      </div>
+
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-4 md:p-6">
+        <p className="text-sm md:text-base font-semibold text-foreground">Total Monthly EMI (auto-calculated)</p>
+        <p className="text-2xl md:text-3xl font-semibold text-foreground mt-2">
+          {formData?.hasRunningLoanOrCard === 'no'
+            ? '₹0'
+            : totalMonthlyEmi > 0
+              ? `₹${Math.round(totalMonthlyEmi).toLocaleString('en-IN')}`
+              : '—'}
+        </p>
+        <p className="text-xs md:text-sm text-muted-foreground mt-2">
+          {formData?.hasRunningLoanOrCard === 'no'
+            ? 'No running loans or credit cards reported.'
+            : hasRunningLoans
+              ? 'Sum of all loan EMIs entered above. Updates automatically as you fill in each EMI field.'
+              : 'Select "Yes" above if you have running loans, then enter EMI amounts to calculate the total.'}
+        </p>
       </div>
 
       <div className="rounded-lg border border-border bg-card p-4 md:p-6 space-y-4">

@@ -26,13 +26,6 @@ export const FINANCIAL_HISTORY_QUESTIONS = [
     legacyBooleanKey: 'has_foreclosure',
   },
   {
-    field: 'creditBureauOverdue',
-    label: 'Do you currently have overdue amounts on your credit bureau report (CIBIL/Experian)?',
-    description: 'Outstanding dues shown on your latest credit report',
-    payloadKey: 'credit_bureau_overdue',
-    legacyBooleanKey: 'has_tax_liens',
-  },
-  {
     field: 'coApplicantOrGuarantor',
     label: 'Are you a co-applicant or guarantor on any other active loan?',
     description: 'Include loans where you are not the primary borrower',

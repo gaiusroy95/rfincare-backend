@@ -39,6 +39,59 @@ function formatProcessingFee(productData) {
   return 'Contact bank';
 }
 
+function formatCurrency(amount) {
+  if (amount == null || amount === '') return null;
+  return `₹${Number(amount).toLocaleString('en-IN')}`;
+}
+
+function formatTenure(years) {
+  if (years == null || years === '') return null;
+  return `${years} years`;
+}
+
+function readTextField(productData, ...keys) {
+  for (const key of keys) {
+    const value = productData[key];
+    if (value != null && String(value).trim() !== '') return String(value).trim();
+  }
+  return '';
+}
+
+export function emptyProductForm(categorySlug = 'personal') {
+  return {
+    id: '',
+    productName: '',
+    loanType: 'personal_loan',
+    productCategorySlug: categorySlug,
+    catalogApiKey: '',
+    interestRateMin: '',
+    interestRateMax: '',
+    processingFeePercentage: '',
+    processingFeeFixed: '',
+    otherCharges: '',
+    maxLoanAmount: '',
+    minLoanAmount: '',
+    maxTenureYears: '',
+    minTenureYears: '',
+    featuresText: '',
+    eligibilityCriteriaText: '',
+    policiesText: '',
+    documentationRequiredText: '',
+    prepaymentCharges: '',
+    foreclosureCharges: '',
+    latePaymentCharges: '',
+    documentationCharges: '',
+    disbursalTimeline: '',
+    collateralRequired: '',
+  };
+}
+
+export function getMarketplaceCompareKey(bank) {
+  if (bank?.compareKey) return String(bank.compareKey);
+  if (bank?.productId) return String(bank.productId);
+  return String(bank?.id ?? '');
+}
+
 /**
  * Map API bank + products into marketplace / comparison card shape.
  */
@@ -61,7 +114,10 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
         : null;
 
   const maxLoan = productData.maxLoanAmount ?? productData.max_loan_amount ?? 2000000;
+  const minLoan = productData.minLoanAmount ?? productData.min_loan_amount ?? null;
   const maxTenure = productData.maxTenureYears ?? productData.max_tenure_years ?? 20;
+  const minTenure = productData.minTenureYears ?? productData.min_tenure_years ?? null;
+
   const otherCharges =
     productData.otherCharges ??
     productData.other_charges ??
@@ -74,11 +130,52 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
     productData.eligibility_criteria || productData.eligibilityCriteria,
     [],
   );
+  const policies = normalizeFeatures(productData.policies, []);
+  const documentationRequired = normalizeFeatures(
+    productData.documentation_required || productData.documentationRequired,
+    [],
+  );
+
+  const prepaymentCharges = readTextField(
+    productData,
+    'prepayment_charges',
+    'prepaymentCharges',
+  );
+  const foreclosureCharges = readTextField(
+    productData,
+    'foreclosure_charges',
+    'foreclosureCharges',
+  );
+  const latePaymentCharges = readTextField(
+    productData,
+    'late_payment_charges',
+    'latePaymentCharges',
+  );
+  const documentationCharges = readTextField(
+    productData,
+    'documentation_charges',
+    'documentationCharges',
+  );
+  const disbursalTimeline = readTextField(productData, 'disbursal_timeline', 'disbursalTimeline');
+  const collateralRequired = readTextField(
+    productData,
+    'collateral_required',
+    'collateralRequired',
+  );
+
+  const productId = primaryProduct?.id;
+  const compareKey = productId ? String(productId) : String(bank?.id);
 
   return {
     id: bank?.id,
-    productId: primaryProduct?.id,
+    productId,
+    compareKey,
     productName: primaryProduct?.name,
+    productCategorySlug:
+      productData.product_category_slug ||
+      productData.productCategorySlug ||
+      activeProduct?.slug ||
+      '',
     name: bank?.name,
     logo: getBankLogoUrl(bank),
     logoAlt: getBankLogoAlt(bank),
@@ -99,10 +196,20 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
     processingFeePercentage:
       productData.processingFeePercentage ?? productData.processing_fee_percentage ?? null,
     otherCharges: otherCharges || 'As per bank schedule',
-    maxAmount: `₹${Number(maxLoan).toLocaleString('en-IN')}`,
-    maxTenure: `${maxTenure} years`,
+    prepaymentCharges: prepaymentCharges || 'As per bank schedule',
+    foreclosureCharges: foreclosureCharges || 'As per bank schedule',
+    latePaymentCharges: latePaymentCharges || 'As per bank schedule',
+    documentationCharges: documentationCharges || 'As per bank schedule',
+    minAmount: formatCurrency(minLoan) || 'Contact bank',
+    maxAmount: formatCurrency(maxLoan) || 'Contact bank',
+    minTenure: formatTenure(minTenure) || '—',
+    maxTenure: formatTenure(maxTenure) || '20 years',
+    disbursalTimeline: disbursalTimeline || 'Contact bank',
+    collateralRequired: collateralRequired || 'Contact bank',
     features,
     eligibilityCriteria,
+    policies,
+    documentationRequired,
     loanType:
       primaryProduct?.loanType ||
       productData.loan_type ||
@@ -141,14 +248,32 @@ export function productDataFromForm(form) {
     interest_rate_max: form.interestRateMax !== '' ? Number(form.interestRateMax) : null,
     processing_fee_percentage:
       form.processingFeePercentage !== '' ? Number(form.processingFeePercentage) : null,
+    processing_fee_fixed:
+      form.processingFeeFixed !== '' ? Number(form.processingFeeFixed) : null,
     other_charges: form.otherCharges || '',
     max_loan_amount: form.maxLoanAmount !== '' ? Number(form.maxLoanAmount) : null,
+    min_loan_amount: form.minLoanAmount !== '' ? Number(form.minLoanAmount) : null,
     max_tenure_years: form.maxTenureYears !== '' ? Number(form.maxTenureYears) : null,
+    min_tenure_years: form.minTenureYears !== '' ? Number(form.minTenureYears) : null,
+    prepayment_charges: form.prepaymentCharges || '',
+    foreclosure_charges: form.foreclosureCharges || '',
+    late_payment_charges: form.latePaymentCharges || '',
+    documentation_charges: form.documentationCharges || '',
+    disbursal_timeline: form.disbursalTimeline || '',
+    collateral_required: form.collateralRequired || '',
     features: (form.featuresText || '')
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean),
     eligibility_criteria: (form.eligibilityCriteriaText || '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    policies: (form.policiesText || '')
+      .split('\n')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    documentation_required: (form.documentationRequiredText || '')
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean),
@@ -160,6 +285,11 @@ export function formFromProduct(product, loanTypeDefault = 'personal_loan') {
   const features = normalizeFeatures(data.features, []);
   const eligibility = normalizeFeatures(
     data.eligibility_criteria || data.eligibilityCriteria,
+    [],
+  );
+  const policies = normalizeFeatures(data.policies, []);
+  const documentationRequired = normalizeFeatures(
+    data.documentation_required || data.documentationRequired,
     [],
   );
   return {
@@ -177,10 +307,27 @@ export function formFromProduct(product, loanTypeDefault = 'personal_loan') {
     interestRateMax: data.interest_rate_max ?? data.interestRateMax ?? '',
     processingFeePercentage:
       data.processing_fee_percentage ?? data.processingFeePercentage ?? '',
+    processingFeeFixed: data.processing_fee_fixed ?? data.processingFeeFixed ?? '',
     otherCharges: data.other_charges ?? data.otherCharges ?? '',
     maxLoanAmount: data.max_loan_amount ?? data.maxLoanAmount ?? '',
+    minLoanAmount: data.min_loan_amount ?? data.minLoanAmount ?? '',
     maxTenureYears: data.max_tenure_years ?? data.maxTenureYears ?? '',
+    minTenureYears: data.min_tenure_years ?? data.minTenureYears ?? '',
+    prepaymentCharges: data.prepayment_charges ?? data.prepaymentCharges ?? '',
+    foreclosureCharges: data.foreclosure_charges ?? data.foreclosureCharges ?? '',
+    latePaymentCharges: data.late_payment_charges ?? data.latePaymentCharges ?? '',
+    documentationCharges: data.documentation_charges ?? data.documentationCharges ?? '',
+    disbursalTimeline: data.disbursal_timeline ?? data.disbursalTimeline ?? '',
+    collateralRequired: data.collateral_required ?? data.collateralRequired ?? '',
     featuresText: features.join('\n'),
     eligibilityCriteriaText: eligibility.join('\n'),
+    policiesText: policies.join('\n'),
+    documentationRequiredText: documentationRequired.join('\n'),
   };
+}
+
+export function getProductCategoryLabel(product, catalogProducts = []) {
+  const form = formFromProduct(product);
+  const catalog = catalogProducts.find((p) => p.slug === form.productCategorySlug);
+  return catalog?.label || form.productCategorySlug || 'Loan product';
 }

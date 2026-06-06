@@ -20,8 +20,9 @@ import {
 } from '../../services/employeeLearningService';
 import SessionTimeout from '../../components/SessionTimeout';
 import { useAuth } from '../../contexts/AuthContext';
-import { employeeProfileService, resolveAvatarUrl } from '../../services/employeeProfileService';
 import { usePortalPolling } from '../../hooks/usePortalPolling';
+import StaffCommunicationPanel from '../agent-dashboard/components/StaffCommunicationPanel';
+import { staffMessagingService } from '../../services/staffMessagingService';
 
 
 const EmployeePortal = () => {
@@ -44,8 +45,12 @@ const EmployeePortal = () => {
   const [activityLog, setActivityLog] = useState([]);
 
   const [trainingResources, setTrainingResources] = useState([]);
-  const [profileAvatar, setProfileAvatar] = useState(null);
-
+  const [communicationOpen, setCommunicationOpen] = useState(false);
+  const [communicationContext, setCommunicationContext] = useState({
+    applicationId: null,
+    clientLabel: '',
+  });
+  const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
@@ -102,12 +107,39 @@ const EmployeePortal = () => {
 
   useEffect(() => {
     loadDashboardData();
-    employeeProfileService.getProfile().then((p) => {
-      if (p?.profile?.avatarUrl) setProfileAvatar(resolveAvatarUrl(p.profile.avatarUrl));
-    }).catch(() => {});
   }, [loadDashboardData]);
 
   usePortalPolling(loadDashboardData, 20000, !loading);
+
+  const refreshUnreadMessages = useCallback(async () => {
+    try {
+      const count = await staffMessagingService.getUnreadCount();
+      setUnreadMessageCount(count);
+    } catch {
+      setUnreadMessageCount(0);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshUnreadMessages();
+  }, [refreshUnreadMessages]);
+
+  usePortalPolling(refreshUnreadMessages, 20000, !communicationOpen);
+
+  const openCommunication = (item = {}) => {
+    const customerName =
+      item?.clientName ||
+      item?.customer?.fullName ||
+      item?.customerName ||
+      '';
+    setCommunicationContext({
+      applicationId: item?.applicationId || item?.id || null,
+      clientLabel: customerName
+        ? `${customerName}${item?.applicationNumber ? ` · ${item.applicationNumber}` : ''}`
+        : item?.applicationNumber || '',
+    });
+    setCommunicationOpen(true);
+  };
 
   const handleApproveAgent = async (agentUserId, notes) => {
     const { error } = await employeeService?.approveAgentOnboarding(agentUserId, notes);
@@ -233,14 +265,6 @@ const EmployeePortal = () => {
             </div>
           </div>
           <Button
-            variant="outline"
-            className="flex items-center gap-2"
-            onClick={() => navigate('/employee/settings')}
-          >
-            <Icon name="Settings" className="w-4 h-4" />
-            Settings
-          </Button>
-          <Button
             onClick={async () => {
               await signOut();
               navigate('/employee-login');
@@ -265,30 +289,24 @@ const EmployeePortal = () => {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <button
-                type="button"
-                onClick={() => navigate('/employee/settings')}
-                className="rounded-full border-4 border-employee-primary/20 focus:outline-none focus:ring-2 focus:ring-employee-primary shrink-0"
-                title="Profile settings"
-              >
-                {profileAvatar ? (
-                  <img
-                    src={profileAvatar}
-                    alt="Profile"
-                    className="w-12 h-12 rounded-full object-cover"
-                  />
-                ) : (
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-employee-primary to-employee-secondary flex items-center justify-center">
-                    <Icon name="User" className="w-6 h-6 text-white" />
-                  </div>
-                )}
-              </button>
               <Button
                 variant="outline"
-                iconName="Settings"
+                iconName="MessageSquare"
+                onClick={() => openCommunication({})}
+              >
+                Agent messages
+                {unreadMessageCount > 0 && (
+                  <span className="ml-2 px-2 py-0.5 bg-destructive text-destructive-foreground rounded-full text-xs font-semibold">
+                    {unreadMessageCount}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="outline"
+                iconName="User"
                 onClick={() => navigate('/employee/settings')}
               >
-                Settings
+                Profile
               </Button>
               <Button
                 variant="outline"
@@ -406,6 +424,14 @@ const EmployeePortal = () => {
                         </div>
                       </div>
                       <div className="flex gap-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openCommunication(app)}
+                        >
+                          <Icon name="MessageSquare" size={14} className="mr-1" />
+                          Message agent
+                        </Button>
                         <Button
                           variant="default"
                           size="sm"
@@ -590,8 +616,19 @@ const EmployeePortal = () => {
           isOpen={!!workspaceApplication}
           onClose={() => setWorkspaceApplication(null)}
           onRefresh={loadDashboardData}
+          onMessageAgent={() => openCommunication(workspaceApplication)}
         />
       )}
+
+      <StaffCommunicationPanel
+        isOpen={communicationOpen}
+        onClose={() => {
+          setCommunicationOpen(false);
+          refreshUnreadMessages();
+        }}
+        applicationId={communicationContext.applicationId}
+        clientLabel={communicationContext.clientLabel}
+      />
     </div>
   );
 };

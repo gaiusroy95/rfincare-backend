@@ -1,3 +1,8 @@
+import {
+  buildExistingLoanStatementDocuments,
+  isExistingLoanStatementDocType,
+} from '../utils/existingLoans';
+
 export const APPLICANT_DOCUMENTS = [
   {
     type: 'customer_photo',
@@ -64,3 +69,31 @@ export function getRequiredDocumentTypes(employmentType, requirements = APPLICAN
   if (!requiresCoApplicant(employmentType)) return base;
   return [...base, ...base.map(coApplicantDocType)];
 }
+
+/** Base applicant docs plus one statement upload per existing loan row. */
+export function getAssessmentDocumentTypes({
+  employmentType,
+  requirements = APPLICANT_DOCUMENTS,
+  existingLoans = [],
+  hasRunningLoanOrCard,
+}) {
+  const baseDefs = normalizeDynamicDocumentRequirements(requirements);
+  const baseTypes = getRequiredDocumentTypes(employmentType, baseDefs);
+  if (hasRunningLoanOrCard !== 'yes') return baseTypes;
+
+  const loanStatementTypes = buildExistingLoanStatementDocuments(existingLoans).map((d) => d.type);
+  return [...baseTypes, ...loanStatementTypes];
+}
+
+/** Merge server/base document defs with dynamic loan-statement uploads. */
+export function mergeAssessmentDocumentDefinitions({
+  requirements = APPLICANT_DOCUMENTS,
+  existingLoans = [],
+  hasRunningLoanOrCard,
+}) {
+  const base = normalizeDynamicDocumentRequirements(requirements);
+  if (hasRunningLoanOrCard !== 'yes') return base;
+  return [...base, ...buildExistingLoanStatementDocuments(existingLoans)];
+}
+
+export { isExistingLoanStatementDocType };

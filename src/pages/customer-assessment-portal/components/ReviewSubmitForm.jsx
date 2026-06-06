@@ -8,6 +8,8 @@ import {
 } from '../../../constants/assessmentFinancialHistory';
 import { getCreditScoreRangeLabel } from '../../../constants/creditScoreRanges';
 import { calculateTotalMonthlyEmi } from '../../../utils/calculateTotalMonthlyEmi';
+import { getExistingLoanTypeLabel } from '../../../constants/existingLoanTypes';
+import { getCompleteExistingLoans } from '../../../utils/existingLoans';
 
 const displayValue = (val) => {
   if (val == null || val === '') return '';
@@ -20,6 +22,10 @@ const ReviewSubmitForm = ({ formData, errors, onChange }) => {
     const n = Number.parseFloat(val);
     if (!Number.isFinite(n) || n <= 0) return '';
     return `₹${Math.round(n).toLocaleString('en-IN')}`;
+  };
+  const formatTotalEmi = () => {
+    if (formData?.hasRunningLoanOrCard === 'no') return '₹0';
+    return formatCurrency(totalMonthlyEmi) || '—';
   };
   const showCoApplicant = requiresCoApplicant(formData?.employmentType);
   const ca = formData?.coApplicant || {};
@@ -93,20 +99,12 @@ const ReviewSubmitForm = ({ formData, errors, onChange }) => {
         { label: 'Loan Purpose', value: displayValue(formData?.loanPurpose) },
         { label: 'Requested Amount', value: formatCurrency(formData?.loanAmount) },
         { label: 'Credit Score Range', value: getCreditScoreRangeLabel(formData?.creditScoreRange) },
-        { label: 'Total Monthly EMI (auto-calculated)', value: formatCurrency(totalMonthlyEmi) },
+        { label: 'Total Monthly EMI (auto-calculated)', value: formatTotalEmi() },
         { label: 'Any running loan / credit card', value: formData?.hasRunningLoanOrCard === 'yes' ? 'Yes' : formData?.hasRunningLoanOrCard === 'no' ? 'No' : '' },
-        { label: 'Personal Loan 1 EMI', value: formatCurrency(formData?.personalLoanEmi1) },
-        { label: 'Personal Loan 2 EMI', value: formatCurrency(formData?.personalLoanEmi2) },
-        { label: 'Housing Loan 1 EMI', value: formatCurrency(formData?.housingLoanEmi1) },
-        { label: 'Housing Loan 2 EMI', value: formatCurrency(formData?.housingLoanEmi2) },
-        { label: 'Car Loan EMI', value: formatCurrency(formData?.carLoanEmi) },
-        { label: 'Two Wheeler Loan EMI', value: formatCurrency(formData?.twoWheelerLoanEmi) },
-        { label: 'Other Loan EMI 1', value: formatCurrency(formData?.otherLoanEmi1) },
-        { label: 'Other Loan EMI 2', value: formatCurrency(formData?.otherLoanEmi2) },
-        { label: 'Credit Card 1 outstanding', value: formatCurrency(formData?.creditCardOutstanding1) },
-        { label: 'Credit Card 2 outstanding', value: formatCurrency(formData?.creditCardOutstanding2) },
-        { label: 'Credit Card 3 outstanding', value: formatCurrency(formData?.creditCardOutstanding3) },
-        { label: 'Credit Card 4 outstanding', value: formatCurrency(formData?.creditCardOutstanding4) },
+        ...getCompleteExistingLoans(formData?.existingLoans).map((loan, index) => ({
+          label: `Existing loan ${index + 1}`,
+          value: `${getExistingLoanTypeLabel(loan.loanType)} — ${formatCurrency(loan.emiAmount)}/month`,
+        })),
         { label: 'Any overdue in any loan', value: formData?.hasAnyOverdue === 'yes' ? 'Yes' : formData?.hasAnyOverdue === 'no' ? 'No' : '' },
         { label: 'Overdue amount', value: formatCurrency(formData?.overdueAmount) },
         { label: 'Overdue loan type', value: displayValue(formData?.overdueLoanType) },

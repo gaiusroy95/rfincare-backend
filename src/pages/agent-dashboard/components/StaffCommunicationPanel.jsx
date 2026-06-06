@@ -30,6 +30,7 @@ const StaffCommunicationPanel = ({
 
   const peer = context?.peer;
   const activeApplicationId = applicationId || context?.applications?.[0]?.id;
+  const isEmployee = context?.role === 'employee';
 
   const loadThread = useCallback(async () => {
     if (!peer?.id) return;
@@ -70,6 +71,14 @@ const StaffCommunicationPanel = ({
     if (!isOpen) return;
     loadContext();
   }, [isOpen, loadContext]);
+
+  useEffect(() => {
+    if (!isOpen || !peer?.id) return undefined;
+    const timer = setInterval(() => {
+      loadThread().catch(() => {});
+    }, 12000);
+    return () => clearInterval(timer);
+  }, [isOpen, peer?.id, loadThread]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -167,15 +176,16 @@ const StaffCommunicationPanel = ({
             <Icon name="Users" size={40} className="mx-auto text-muted-foreground mb-3" />
             <p className="text-sm text-foreground font-medium">No hierarchy contact mapped</p>
             <p className="text-xs text-muted-foreground mt-2 max-w-sm mx-auto">
-              Ask your admin to map you to an employee under Admin → Hierarchy mapping. Messages and
-              emails route through that contact&apos;s communication address.
+              {isEmployee
+                ? 'Ask your admin to map you to an agent under Admin → Hierarchy mapping before in-app chat is available.'
+                : 'Ask your admin to map you to an employee under Admin → Hierarchy mapping. Messages and emails route through that contact\'s communication address.'}
             </p>
           </div>
         ) : (
           <>
             <div className="px-4 py-3 bg-muted/50 border-b border-border text-sm space-y-1">
               <p>
-                <span className="text-muted-foreground">Contact: </span>
+                <span className="text-muted-foreground">{isEmployee ? 'Agent: ' : 'Contact: '}</span>
                 <strong>{peer.name}</strong>
                 {peer.hierarchyLevel != null && (
                   <span className="text-xs text-muted-foreground ml-2">

@@ -1,0 +1,22 @@
+/** Rows shown in customer product-to-product comparison table. */
+export const PRODUCT_COMPARISON_ROWS = [
+  { key: 'interestRate', label: 'Interest rate (% p.a.)', type: 'rate' },
+  { key: 'processingFee', label: 'Processing fee', type: 'text' },
+  { key: 'otherCharges', label: 'Other charges', type: 'text' },
+  { key: 'prepaymentCharges', label: 'Prepayment / part-prepayment', type: 'text' },
+  { key: 'foreclosureCharges', label: 'Foreclosure charges', type: 'text' },
+  { key: 'latePaymentCharges', label: 'Late payment charges', type: 'text' },
+  { key: 'documentationCharges', label: 'Documentation charges', type: 'text' },
+  { key: 'minAmount', label: 'Min loan amount', type: 'text' },
+  { key: 'maxAmount', label: 'Max loan amount', type: 'text' },
+  { key: 'minTenure', label: 'Min tenure', type: 'text' },
+  { key: 'maxTenure', label: 'Max tenure', type: 'text' },
+  { key: 'disbursalTimeline', label: 'Disbursal timeline', type: 'text' },
+  { key: 'collateralRequired', label: 'Collateral', type: 'text' },
+  { key: 'features', label: 'Key features', type: 'list' },
+  { key: 'eligibilityCriteria', label: 'Eligibility criteria', type: 'list' },
+  { key: 'policies', label: 'Policies & terms', type: 'list' },
+  { key: 'documentationRequired', label: 'Documentation required', type: 'list' },
+  { key: 'probability', label: 'Approval match', type: 'static' },
+  { key: 'rating', label: 'Rating', type: 'static' },
+];

@@ -25,6 +25,7 @@ const EmploymentInfoForm = ({ formData, errors, onChange, onCoApplicantChange })
 
   const isEmployed = ['salaried', 'business_owner', 'professional']?.includes(formData?.employmentType);
   const isSelfEmployed = formData?.employmentType === 'self_employed';
+  const usesBusinessName = ['self_employed', 'business_owner'].includes(formData?.employmentType);
 
   return (
     <div className="space-y-6 md:space-y-8">
@@ -41,9 +42,9 @@ const EmploymentInfoForm = ({ formData, errors, onChange, onCoApplicantChange })
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <Input
-              label={isSelfEmployed ? 'Business Name' : 'Employer Name'}
+              label={usesBusinessName ? 'Business Name' : 'Employer Name'}
               type="text"
-              placeholder={isSelfEmployed ? 'Enter your business name' : 'Enter employer name'}
+              placeholder={usesBusinessName ? 'Enter your business name' : 'Enter employer name'}
               value={formData?.employerName}
               onChange={(e) => onChange('employerName', e?.target?.value)}
               error={errors?.employerName}

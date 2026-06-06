@@ -4,6 +4,7 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import Button from '../../../components/ui/Button';
+import { BANK_TYPE_OPTIONS } from '../../../constants/bankTypes';
 
 const FilterPanel = ({ filters, onFilterChange, onReset, isOpen, onToggle }) => {
   const interestRateOptions = [
@@ -120,36 +121,19 @@ const FilterPanel = ({ filters, onFilterChange, onReset, isOpen, onToggle }) => 
           <div>
             <label className="text-sm font-semibold text-foreground mb-3 block">Bank Type</label>
             <div className="space-y-2">
-              <Checkbox
-                label="Public Sector"
-                checked={filters?.bankTypes?.includes('public')}
-                onChange={(e) => {
-                  const newTypes = e?.target?.checked
-                    ? [...filters?.bankTypes, 'public']
-                    : filters?.bankTypes?.filter(t => t !== 'public');
-                  onFilterChange('bankTypes', newTypes);
-                }}
-              />
-              <Checkbox
-                label="Private Sector"
-                checked={filters?.bankTypes?.includes('private')}
-                onChange={(e) => {
-                  const newTypes = e?.target?.checked
-                    ? [...filters?.bankTypes, 'private']
-                    : filters?.bankTypes?.filter(t => t !== 'private');
-                  onFilterChange('bankTypes', newTypes);
-                }}
-              />
-              <Checkbox
-                label="Foreign Banks"
-                checked={filters?.bankTypes?.includes('foreign')}
-                onChange={(e) => {
-                  const newTypes = e?.target?.checked
-                    ? [...filters?.bankTypes, 'foreign']
-                    : filters?.bankTypes?.filter(t => t !== 'foreign');
-                  onFilterChange('bankTypes', newTypes);
-                }}
-              />
+              {BANK_TYPE_OPTIONS.map((option) => (
+                <Checkbox
+                  key={option.value}
+                  label={option.label}
+                  checked={filters?.bankTypes?.includes(option.value)}
+                  onChange={(e) => {
+                    const newTypes = e?.target?.checked
+                      ? [...(filters?.bankTypes || []), option.value]
+                      : (filters?.bankTypes || []).filter((t) => t !== option.value);
+                    onFilterChange('bankTypes', newTypes);
+                  }}
+                />
+              ))}
             </div>
           </div>
 

@@ -270,10 +270,19 @@ export const customerJourneyService = {
         error: null,
       };
     } catch (error) {
-      const message =
-        error?.response?.data?.error ||
-        error?.message ||
-        'Could not open document';
+      let message = error?.message || 'Could not open document';
+      const responseData = error?.response?.data;
+      if (responseData instanceof Blob) {
+        try {
+          const text = await responseData.text();
+          const parsed = JSON.parse(text);
+          message = parsed.error || parsed.message || message;
+        } catch {
+          /* keep axios message */
+        }
+      } else if (responseData?.error || responseData?.message) {
+        message = responseData.error || responseData.message;
+      }
       return { data: null, error: { message } };
     }
   },

@@ -1,8 +1,12 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
-import Image from '../../../components/AppImage';
-import { documentTypeLabel, inferDocumentMediaType, loadDocumentPreviewUrl } from '../../../utils/documentUrls';
+import {
+  documentTypeLabel,
+  getDocumentPreviewUrl,
+  inferDocumentMediaType,
+  loadDocumentPreviewUrl,
+} from '../../../utils/documentUrls';
 import {
   documentManagementService,
   DOC_STATUS_LABELS,
@@ -101,21 +105,26 @@ const DocumentReviewModal = ({
     const { data, error: dlErr } = await documentManagementService.downloadDocument(document.id, {
       inline: true,
     });
-    if (dlErr || !data?.blob) {
-      setPreviewError(dlErr?.message || 'Could not open document');
+    if (data?.blob) {
+      const url = URL.createObjectURL(data.blob);
+      const opened = window.open(url, '_blank', 'noopener,noreferrer');
+      if (!opened) {
+        const link = window.document.createElement('a');
+        link.href = url;
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        link.click();
+      }
+      window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
       return;
     }
-    const url = URL.createObjectURL(data.blob);
-    const opened = window.open(url, '_blank', 'noopener,noreferrer');
-    if (!opened) {
-      const link = window.document.createElement('a');
-      link.href = url;
-      link.target = '_blank';
-      link.rel = 'noopener noreferrer';
-      link.click();
+    const staticUrl = getDocumentPreviewUrl(document.raw || document);
+    if (staticUrl) {
+      const opened = window.open(staticUrl, '_blank', 'noopener,noreferrer');
+      if (opened) return;
     }
-    window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-  }, [document?.id, previewUrl, previewError]);
+    setPreviewError(dlErr?.message || 'Could not open document');
+  }, [document, previewUrl, previewError]);
 
   if (!isOpen || !document) return null;
 
@@ -142,16 +151,26 @@ const DocumentReviewModal = ({
 
   const handleDownload = async () => {
     const { data, error: dlErr } = await documentManagementService.downloadDocument(document.id);
-    if (dlErr || !data?.blob) {
-      setPreviewError(dlErr?.message || 'Download failed');
+    if (data?.blob) {
+      const url = URL.createObjectURL(data.blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = data.fileName || document.name;
+      a.click();
+      URL.revokeObjectURL(url);
       return;
     }
-    const url = URL.createObjectURL(data.blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = data.fileName || document.name;
-    a.click();
-    URL.revokeObjectURL(url);
+    const staticUrl = getDocumentPreviewUrl(document.raw || document);
+    if (staticUrl) {
+      const a = window.document.createElement('a');
+      a.href = staticUrl;
+      a.download = document.name || 'document';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.click();
+      return;
+    }
+    setPreviewError(dlErr?.message || 'Download failed');
   };
 
   const showPreview = !previewLoading && !previewError && previewUrl;
@@ -213,10 +232,16 @@ const DocumentReviewModal = ({
             )}
 
             {showPreview && mediaType === 'image' && (
-              <Image
+              <img
                 src={previewUrl}
                 alt={document.name}
                 className="max-w-full max-h-[50vh] object-contain rounded-lg"
+                onError={() => {
+                  setPreviewError(
+                    'Could not display this image. Try Download or Open in tab.',
+                  );
+                  setPreviewUrl(null);
+                }}
               />
             )}
 

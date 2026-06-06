@@ -43,6 +43,11 @@ export const staffMessagingService = {
     });
     return toCamelCase(res.data);
   },
+
+  async getUnreadCount() {
+    const res = await apiClient.get('/portal/communication/unread-count');
+    return Number(res.data?.count || 0);
+  },
 };
 
 export const hierarchyService = {

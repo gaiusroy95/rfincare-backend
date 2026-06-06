@@ -1,4 +1,6 @@
 import { calculateTotalMonthlyEmi } from './calculateTotalMonthlyEmi';
+import { getExistingLoanTypeLabel } from '../constants/existingLoanTypes';
+import { getCompleteExistingLoans, normalizeExistingLoans } from './existingLoans';
 
 const LABELS = {
   title: 'Title',
@@ -52,7 +54,6 @@ const LABELS = {
   overdueLoanType: 'Overdue loan type',
   loanDefaultPast36Months: 'Loan default (90+ days, 36 months)',
   accountNpaWrittenOff: 'NPA / write-off / settlement',
-  creditBureauOverdue: 'Credit bureau overdue',
   coApplicantOrGuarantor: 'Co-applicant or guarantor on other loan',
   preferredBankName: 'Preferred bank',
   relationship: 'Relationship',
@@ -174,6 +175,14 @@ export function buildApplicationDetailSections(application) {
   };
 
   const coApplicant = normalizeCoApplicant(data);
+  const existingLoanFields = getCompleteExistingLoans(
+    normalizeExistingLoans(data, data),
+  ).map((loan, index) => ({
+    key: `existingLoan_${index}`,
+    label: `Existing loan ${index + 1}`,
+    value: `${getExistingLoanTypeLabel(loan.loanType)} — ₹${Math.round(Number(loan.emiAmount)).toLocaleString('en-IN')}/month`,
+  }));
+
   const sections = [
     {
       title: 'Personal information',
@@ -202,18 +211,16 @@ export function buildApplicationDetailSections(application) {
     {
       title: 'Loan & financial',
       icon: 'IndianRupee',
-      fields: pickFields(merged, [
-        'loanPurpose', 'loanAmount', 'creditScoreRange', 'monthlyDebtPayments',
-        'hasRunningLoanOrCard',
-        'personalLoanEmi1', 'personalLoanEmi2',
-        'housingLoanEmi1', 'housingLoanEmi2',
-        'carLoanEmi', 'twoWheelerLoanEmi',
-        'otherLoanEmi1', 'otherLoanEmi2',
-        'creditCardOutstanding1', 'creditCardOutstanding2', 'creditCardOutstanding3', 'creditCardOutstanding4',
-        'hasAnyOverdue', 'overdueAmount', 'overdueLoanType',
-        'loanDefaultPast36Months', 'accountNpaWrittenOff', 'creditBureauOverdue', 'coApplicantOrGuarantor',
-        'preferredBankName',
-      ]),
+      fields: [
+        ...pickFields(merged, [
+          'loanPurpose', 'loanAmount', 'creditScoreRange', 'monthlyDebtPayments',
+          'hasRunningLoanOrCard',
+          'hasAnyOverdue', 'overdueAmount', 'overdueLoanType',
+          'loanDefaultPast36Months', 'accountNpaWrittenOff', 'coApplicantOrGuarantor',
+          'preferredBankName',
+        ]),
+        ...existingLoanFields,
+      ],
     },
   ];
 

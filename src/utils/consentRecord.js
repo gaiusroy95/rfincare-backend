@@ -1,9 +1,18 @@
+import { calculateTotalMonthlyEmi } from './calculateTotalMonthlyEmi';
+
+function formatInr(value) {
+  const n = Number.parseFloat(value);
+  if (!Number.isFinite(n) || n < 0) return '—';
+  return `₹${Math.round(n).toLocaleString('en-IN')}`;
+}
+
 /**
  * Download a printable consent / signature record (HTML) for the customer.
  */
 export function downloadConsentRecord({ formData, applicationId, authMethod }) {
   const name = [formData?.firstName, formData?.middleName, formData?.lastName].filter(Boolean).join(' ');
   const signedAt = new Date().toLocaleString('en-IN');
+  const totalMonthlyEmi = calculateTotalMonthlyEmi(formData);
   const signatureBlock =
     authMethod === 'otp'
       ? '<p><strong>Verification:</strong> Mobile OTP verified</p>'
@@ -20,6 +29,19 @@ export function downloadConsentRecord({ formData, applicationId, authMethod }) {
 <p><strong>Email:</strong> ${formData?.email || ''}</p>
 <p><strong>Phone:</strong> ${formData?.phone || ''}</p>
 <p><strong>Signed at:</strong> ${signedAt}</p>
+<hr/>
+<h2>Loan summary</h2>
+<ul>
+<li><strong>Loan purpose:</strong> ${formData?.loanPurpose || '—'}</li>
+<li><strong>Requested amount:</strong> ${formatInr(formData?.loanAmount)}</li>
+<li><strong>Credit score range:</strong> ${formData?.creditScoreRange || '—'}</li>
+<li><strong>Total monthly EMI (auto-calculated):</strong> ${
+    formData?.hasRunningLoanOrCard === 'no' ? '₹0' : formatInr(totalMonthlyEmi)
+  }</li>
+<li><strong>Running loans / credit cards:</strong> ${
+    formData?.hasRunningLoanOrCard === 'yes' ? 'Yes' : formData?.hasRunningLoanOrCard === 'no' ? 'No' : '—'
+  }</li>
+</ul>
 <hr/>
 <p>I confirm that all information provided is accurate and authorize Rfincare to process my application.</p>
 <ul>

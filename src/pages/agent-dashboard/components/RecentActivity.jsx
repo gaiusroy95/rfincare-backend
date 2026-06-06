@@ -11,6 +11,7 @@ const RecentActivity = ({ activities }) => {
       'commission-earned': 'IndianRupee',
       'meeting-scheduled': 'Calendar',
       'message-sent': 'MessageSquare',
+      'message-received': 'MessageSquare',
       'application-submitted': 'Send'
     };
     return icons?.[type] || 'Activity';
@@ -24,6 +25,7 @@ const RecentActivity = ({ activities }) => {
       'commission-earned': 'bg-green-100 text-green-700',
       'meeting-scheduled': 'bg-indigo-100 text-indigo-700',
       'message-sent': 'bg-pink-100 text-pink-700',
+      'message-received': 'bg-sky-100 text-sky-700',
       'application-submitted': 'bg-teal-100 text-teal-700'
     };
     return colors?.[type] || 'bg-gray-100 text-gray-700';
@@ -50,7 +52,13 @@ const RecentActivity = ({ activities }) => {
         <button className="text-xs text-primary hover:underline">View All</button>
       </div>
       <div className="space-y-4">
-        {activities?.map((activity, index) => (
+        {!activities?.length ? (
+          <p className="text-sm text-muted-foreground py-4 text-center">
+            No recent activity yet. Client registrations, document uploads, and status updates will
+            appear here as they happen on the portal.
+          </p>
+        ) : (
+          activities.map((activity, index) => (
           <div key={activity?.id} className="relative">
             {index !== activities?.length - 1 && (
               <div className="absolute left-5 top-12 bottom-0 w-px bg-border" />
@@ -101,7 +109,8 @@ const RecentActivity = ({ activities }) => {
               </div>
             </div>
           </div>
-        ))}
+        ))
+        )}
       </div>
     </div>
   );

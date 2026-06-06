@@ -41,6 +41,9 @@ const BankCard = ({
             <h3 className="text-base md:text-lg lg:text-xl font-bold text-foreground line-clamp-1">
               {bank?.name}
             </h3>
+            {bank?.productName && bank.productName !== bank?.name && (
+              <p className="text-xs text-primary line-clamp-1 mt-0.5">{bank.productName}</p>
+            )}
             <div className="flex items-center space-x-2 mt-1">
               <div className="flex items-center">
                 {[...Array(5)]?.map((_, i) => (
@@ -60,7 +63,7 @@ const BankCard = ({
         </div>
 
         <button
-          onClick={() => onCompare(bank?.id)}
+          onClick={() => onCompare(bank)}
           className={`p-2 rounded-lg transition-colors flex-shrink-0 ${
             isComparing ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
           }`}

@@ -12,12 +12,16 @@ let refreshingPromise = null;
 function redirectToLoginByPath() {
   if (typeof window === 'undefined') return;
   const p = window.location.pathname || '';
-  if (p.startsWith('/admin') || p.startsWith('/reports') || p.startsWith('/interest-matrix') || p.startsWith('/approval-matrix')) {
+  if (p.startsWith('/admin') || p.startsWith('/interest-matrix') || p.startsWith('/approval-matrix')) {
     window.location.assign('/admin-login');
     return;
   }
   if (p.startsWith('/employee')) {
     window.location.assign('/employee-login');
+    return;
+  }
+  if (p.startsWith('/reports-and-analytics')) {
+    window.location.assign('/login-page');
     return;
   }
   if (p.startsWith('/agent')) {

@@ -6,6 +6,7 @@ import Icon from '../../../components/AppIcon';
 import BankLogoFields from '../../../components/admin/BankLogoFields';
 import { bankService, auditService } from '../../../services/apiServices';
 import { resolveBankLogoUrl } from '../../../utils/bankBranding';
+import { BANK_TYPE_OPTIONS, getBankTypeLabel } from '../../../constants/bankTypes';
 
 const BankManagementTab = () => {
   const [banks, setBanks] = useState([]);
@@ -149,12 +150,7 @@ const BankManagementTab = () => {
     }
   };
 
-  const bankTypeOptions = [
-    { value: 'public', label: 'Public Sector' },
-    { value: 'private', label: 'Private Sector' },
-    { value: 'foreign', label: 'Foreign Bank' },
-    { value: 'cooperative', label: 'Cooperative Bank' }
-  ];
+  const bankTypeOptions = BANK_TYPE_OPTIONS;
 
   const statusOptions = [
     { value: 'active', label: 'Active' },
@@ -238,7 +234,7 @@ const BankManagementTab = () => {
                         {bank?.status}
                       </span>
                       <span className="px-2 py-1 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                        {bank?.bankType}
+                        {getBankTypeLabel(bank?.bankType)}
                       </span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">

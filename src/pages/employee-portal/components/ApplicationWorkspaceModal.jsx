@@ -46,7 +46,7 @@ function statusBadgeClass(status) {
   return 'bg-amber-100 text-amber-800';
 }
 
-const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) => {
+const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh, onMessageAgent }) => {
   const [documents, setDocuments] = useState([]);
   const [docsLoading, setDocsLoading] = useState(false);
   const [docBusy, setDocBusy] = useState(null);
@@ -171,9 +171,16 @@ const ApplicationWorkspaceModal = ({ application, isOpen, onClose, onRefresh }) 
               {application?.customer?.fullName} · {application?.applicationNumber}
             </p>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <Icon name="X" size={24} />
-          </Button>
+          <div className="flex items-center gap-2">
+            {onMessageAgent && (
+              <Button variant="outline" size="sm" iconName="MessageSquare" onClick={onMessageAgent}>
+                Message agent
+              </Button>
+            )}
+            <Button variant="ghost" size="icon" onClick={onClose}>
+              <Icon name="X" size={24} />
+            </Button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">

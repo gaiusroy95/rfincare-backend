@@ -23,6 +23,7 @@ import {
   resolveLearningOpenUrl,
 } from '../../services/agentLearningService';
 import { resolveAvatarUrl } from '../../services/agentProfileService';
+import { resolveUploadUrl } from '../../utils/documentUrls';
 import { useAuth } from '../../contexts/AuthContext';
 
 const signOut = async () => {
@@ -197,60 +198,10 @@ const AgentDashboard = () => {
   };
 
 
-  const recentActivities = [
-  {
-    id: 1,
-    type: 'client-added',
-    title: 'New client registered',
-    description: 'David Thompson added for home loan application',
-    clientName: 'David Thompson',
-    clientAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1a184de25-1763292715446.png",
-    clientAvatarAlt: 'Professional headshot of African American man with short hair wearing gray suit',
-    timestamp: new Date(Date.now() - 300000),
-    metadata: { amount: '₹520,000' }
-  },
-  {
-    id: 2,
-    type: 'document-uploaded',
-    title: 'Documents submitted',
-    description: 'Income verification documents uploaded for Emily Chen',
-    clientName: 'Emily Chen',
-    clientAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_18a713e78-1763297858426.png",
-    clientAvatarAlt: 'Professional headshot of Asian woman with long black hair wearing white blouse',
-    timestamp: new Date(Date.now() - 3600000),
-    metadata: null
-  },
-  {
-    id: 3,
-    type: 'commission-earned',
-    title: 'Commission received',
-    description: 'Payment processed for Robert Anderson home loan',
-    clientName: 'Robert Anderson',
-    timestamp: new Date(Date.now() - 7200000),
-    metadata: { amount: '₹4,500', status: 'Paid' }
-  },
-  {
-    id: 4,
-    type: 'status-changed',
-    title: 'Application status updated',
-    description: 'Priya Sharma application moved to submitted stage',
-    clientName: 'Priya Sharma',
-    clientAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_1cfa37edb-1763295967528.png",
-    clientAvatarAlt: 'Professional headshot of Indian woman with black hair in elegant blue dress',
-    timestamp: new Date(Date.now() - 10800000),
-    metadata: { status: 'Submitted' }
-  },
-  {
-    id: 5,
-    type: 'meeting-scheduled',
-    title: 'Appointment scheduled',
-    description: 'Initial consultation booked with Michael Rodriguez',
-    clientName: 'Michael Rodriguez',
-    clientAvatar: "https://img.rocket.new/generatedImages/rocket_gen_img_143b978a3-1763294952544.png",
-    clientAvatarAlt: 'Professional headshot of Hispanic man with short black hair in navy suit',
-    timestamp: new Date(Date.now() - 14400000),
-    metadata: null
-  }];
+  const recentActivities = (dashboard?.recentActivities || []).map((activity) => ({
+    ...activity,
+    timestamp: activity.timestamp ? new Date(activity.timestamp) : new Date(),
+  }));
 
 
   const handleClientClick = (client) => {
@@ -465,7 +416,7 @@ const AgentDashboard = () => {
                   {circulars.map((c) => (
                     <a
                       key={c.id}
-                      href={c.file_url || c.fileUrl}
+                      href={resolveUploadUrl(c.file_url || c.fileUrl)}
                       target="_blank"
                       rel="noreferrer"
                       className="block text-sm text-primary hover:underline"

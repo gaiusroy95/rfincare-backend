@@ -1,3 +1,5 @@
+import { getCompleteExistingLoans, sumExistingLoanEmi } from './existingLoans';
+
 export const EMI_FORM_FIELDS = [
   'personalLoanEmi1',
   'personalLoanEmi2',
@@ -25,9 +27,15 @@ function parseEmi(value) {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/** Sum all loan EMI fields; returns 0 when customer has no running loans. */
+/** Sum dynamic existing-loan rows, with legacy fixed-field fallback. */
 export function calculateTotalMonthlyEmi(formData) {
   if (!formData || formData.hasRunningLoanOrCard === 'no') return 0;
+
+  const fromDynamic = sumExistingLoanEmi(formData.existingLoans);
+  if (fromDynamic > 0) return fromDynamic;
+
+  const complete = getCompleteExistingLoans(formData.existing_loans);
+  if (complete.length) return sumExistingLoanEmi(complete);
 
   const fromCamel = EMI_FORM_FIELDS.reduce((sum, key) => sum + parseEmi(formData[key]), 0);
   if (fromCamel > 0) return fromCamel;

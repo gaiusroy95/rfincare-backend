@@ -13,7 +13,7 @@ import BankComparisonPanel from '../../components/bank-comparison/BankComparison
 import { MAX_BANK_COMPARE } from '../../constants/bankComparison';
 import { bankService } from '../../services/apiServices';
 import { useAuth } from '../../contexts/AuthContext';
-import { mapBankForMarketplace } from '../../utils/bankMarketplace';
+import { getMarketplaceCompareKey, mapBankForMarketplace } from '../../utils/bankMarketplace';
 import { getBankProbabilityMap, loadEligibilityResults, saveEligibilityResults } from '../../services/leadService';
 import { homepageService } from '../../services/homepageService';
 import MarketplaceEligibilityBanner from './components/MarketplaceEligibilityBanner';
@@ -124,15 +124,16 @@ const BankMarketplace = () => {
     comparisonSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
-  const handleCompareToggle = (bankId) => {
+  const handleCompareToggle = (bank) => {
+    const compareKey = getMarketplaceCompareKey(bank);
     setCompareList((prev) => {
       let next;
-      if (prev?.includes(bankId)) {
-        next = prev.filter((id) => id !== bankId);
-      } else if (prev?.length >= 3) {
+      if (prev?.includes(compareKey)) {
+        next = prev.filter((key) => key !== compareKey);
+      } else if (prev?.length >= MAX_BANK_COMPARE) {
         return prev;
       } else {
-        next = [...prev, bankId];
+        next = [...prev, compareKey];
       }
       if (next.length >= 2) {
         setTimeout(scrollToComparison, 100);
@@ -141,8 +142,8 @@ const BankMarketplace = () => {
     });
   };
 
-  const handleRemoveFromCompare = (bankId) => {
-    setCompareList((prev) => prev.filter((id) => id !== bankId));
+  const handleRemoveFromCompare = (compareKey) => {
+    setCompareList((prev) => prev.filter((key) => key !== compareKey));
   };
 
   const handleClearCompare = () => setCompareList([]);
@@ -209,7 +210,9 @@ const BankMarketplace = () => {
     return result;
   }, [banks, filters, sortBy]);
 
-  const comparedBanks = banks?.filter((bank) => compareList?.includes(bank?.id));
+  const comparedBanks = banks?.filter((bank) =>
+    compareList?.includes(getMarketplaceCompareKey(bank)),
+  );
 
   return (
     <div className="min-h-screen bg-background">
@@ -333,7 +336,7 @@ const BankMarketplace = () => {
               <BankComparisonPanel
                 productLabel={activeProduct?.label}
                 banks={comparedBanks}
-                rawBanks={banks.filter((b) => compareList.includes(b.id))}
+                rawBanks={banks.filter((b) => compareList.includes(getMarketplaceCompareKey(b)))}
                 onApply={handleApply}
                 onRemoveBank={handleRemoveFromCompare}
                 onClearAll={handleClearCompare}
@@ -377,7 +380,7 @@ const BankMarketplace = () => {
                 bank={bank}
                 onApply={handleApply}
                 onCompare={handleCompareToggle}
-                isComparing={compareList?.includes(bank?.id)}
+                isComparing={compareList?.includes(getMarketplaceCompareKey(bank))}
               /> :
 
 
@@ -386,7 +389,7 @@ const BankMarketplace = () => {
                 bank={bank}
                 onApply={handleApply}
                 onCompare={handleCompareToggle}
-                isComparing={compareList?.includes(bank?.id)}
+                isComparing={compareList?.includes(getMarketplaceCompareKey(bank))}
               />
 
 

@@ -37,6 +37,7 @@ const CoApplicantForm = ({ coApplicant, errors, onChange }) => {
 
   const isEmployed = ['salaried', 'business_owner', 'professional']?.includes(data?.employmentType);
   const isSelfEmployed = data?.employmentType === 'self_employed';
+  const usesBusinessName = ['self_employed', 'business_owner'].includes(data?.employmentType);
   const showWorkDetails = isEmployed || isSelfEmployed;
 
   return (
@@ -140,9 +141,9 @@ const CoApplicantForm = ({ coApplicant, errors, onChange }) => {
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
             <Input
-              label={isSelfEmployed ? 'Business name' : 'Employer name'}
+              label={usesBusinessName ? 'Business name' : 'Employer name'}
               type="text"
-              placeholder={isSelfEmployed ? 'Business name' : 'Employer name'}
+              placeholder={usesBusinessName ? 'Business name' : 'Employer name'}
               value={data.employerName}
               onChange={(e) => onChange('employerName', e?.target?.value)}
               error={err('employerName')}

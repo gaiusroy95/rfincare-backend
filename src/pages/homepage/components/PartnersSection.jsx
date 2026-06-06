@@ -4,6 +4,7 @@ import Button from '../../../components/ui/Button';
 import { useNavigate } from 'react-router-dom';
 import { bankService } from '../../../services/apiServices';
 import { getBankLogoAlt, getBankLogoUrl } from '../../../utils/bankBranding';
+import { getBankTypeLabel } from '../../../constants/bankTypes';
 
 const PartnersSection = () => {
   const navigate = useNavigate();
@@ -28,10 +29,7 @@ const PartnersSection = () => {
         logo: getBankLogoUrl(bank),
         logoAlt: getBankLogoAlt(bank),
         displayPriority: bank?.displayPriority || bank?.display_priority || 0,
-        type: bank?.bankType === 'public' ? 'Public Sector Bank' : 
-              bank?.bankType === 'private' ? 'Private Sector Bank' :
-              bank?.bankType === 'foreign' ? 'Foreign Bank' :
-              bank?.bankType === 'cooperative' ? 'Cooperative Bank' : 'Bank',
+        type: getBankTypeLabel(bank?.bankType) === '—' ? 'Bank' : getBankTypeLabel(bank?.bankType),
         rating: bank?.rating || 4.5,
         customers: bank?.customersServed || '10K+'
       })) || [];

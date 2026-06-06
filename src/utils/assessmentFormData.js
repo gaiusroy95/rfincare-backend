@@ -1,5 +1,7 @@
 import { getLoanPriorities, serializeLoanPriorities } from './loanPriorities';
 import { normalizeLoanApiKey } from '../constants/loanProducts';
+import { calculateTotalMonthlyEmi } from './calculateTotalMonthlyEmi';
+import { normalizeExistingLoans } from './existingLoans';
 
 /** Scalar fields copied from eligibility / quick-check (never nested API payloads). */
 export function pickEligibilityPrefill(source) {
@@ -11,7 +13,6 @@ export function pickEligibilityPrefill(source) {
     loanType: source.loanType,
     employmentType: source.employmentType,
     existingLoans: source.existingLoans,
-    monthlyDebtPayments: source.monthlyDebtPayments ?? source.existingLoans,
   };
 }
 
@@ -102,10 +103,6 @@ export function buildAssessmentEntryState({
       loanPurpose:
         normalizeLoanApiKey(quick.loanType || loanTypeParam) || merged.loanPurpose,
       employmentType: quick.employmentType || merged.employmentType,
-      monthlyDebtPayments:
-        quick.monthlyDebtPayments != null
-          ? String(quick.monthlyDebtPayments)
-          : merged.monthlyDebtPayments,
     };
   } else if (loanTypeParam) {
     merged.loanPurpose = normalizeLoanApiKey(loanTypeParam) || merged.loanPurpose;
@@ -130,10 +127,21 @@ export function buildAssessmentEntryState({
   });
 
   merged.hasRunningLoanOrCard = coerceYesNo(merged.hasRunningLoanOrCard);
+  merged.existingLoans = normalizeExistingLoans(merged, merged);
   merged.hasAnyOverdue = coerceYesNo(merged.hasAnyOverdue);
+  if (!merged.hasAnyOverdue) {
+    const legacyOverdue =
+      coerceYesNo(merged.creditBureauOverdue)
+      || coerceYesNo(merged.credit_bureau_overdue)
+      || coerceYesNo(merged.has_tax_liens);
+    if (legacyOverdue) merged.hasAnyOverdue = legacyOverdue;
+  }
   if (!merged.hasRunningLoanOrCard && merged.hasBankruptcy != null) {
     merged.hasRunningLoanOrCard = coerceYesNo(merged.hasBankruptcy);
   }
+
+  const emiTotal = calculateTotalMonthlyEmi(merged);
+  merged.monthlyDebtPayments = emiTotal > 0 ? String(emiTotal) : '';
 
   const priorities = getLoanPriorities(merged);
   merged.loanPriorities = priorities;

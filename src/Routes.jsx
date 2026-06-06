@@ -4,6 +4,7 @@ import ScrollToTop from 'components/ScrollToTop';
 import ErrorBoundary from 'components/ErrorBoundary';
 import ProtectedRoute from 'components/ProtectedRoute';
 import AdminRouteShell from './components/layout/AdminRouteShell';
+import ReportsRouteShell from './components/layout/ReportsRouteShell';
 import PageLoader from './components/PageLoader';
 import { LoanProductsProvider } from './contexts/LoanProductsContext';
 import { SiteContactProvider } from './contexts/SiteContactContext';
@@ -105,11 +106,23 @@ function Routes() {
                 <Route element={<AdminRouteShell />}>
                   <Route path="/admin-dashboard" element={<SuspenseRoute><AdminDashboard /></SuspenseRoute>} />
                   <Route path="/admin-security-dashboard" element={<SuspenseRoute><AdminSecurityDashboard /></SuspenseRoute>} />
-                  <Route path="/reports-and-analytics" element={<SuspenseRoute><ReportsAndAnalytics /></SuspenseRoute>} />
                   <Route path="/bank-marketplace-management" element={<SuspenseRoute><BankMarketplaceManagement /></SuspenseRoute>} />
                   <Route path="/approval-matrix-management" element={<SuspenseRoute><ApprovalMatrixManagement /></SuspenseRoute>} />
                   <Route path="/interest-matrix-management" element={<SuspenseRoute><InterestMatrixManagement /></SuspenseRoute>} />
                   <Route path="/admin/documents" element={<SuspenseRoute><DocumentManagementCenter /></SuspenseRoute>} />
+                </Route>
+
+                <Route
+                  element={
+                    <ProtectedRoute allowedRoles={['admin', 'super_admin', 'employee']}>
+                      <ReportsRouteShell />
+                    </ProtectedRoute>
+                  }
+                >
+                  <Route
+                    path="/reports-and-analytics"
+                    element={<SuspenseRoute><ReportsAndAnalytics /></SuspenseRoute>}
+                  />
                 </Route>
 
                 <Route

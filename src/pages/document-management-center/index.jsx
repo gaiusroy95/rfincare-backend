@@ -13,6 +13,7 @@ import {
   mapApiDocumentToCard,
   DOC_SUMMARY_LABELS,
 } from '../../services/documentManagementService';
+import { getDocumentPreviewUrl } from '../../utils/documentUrls';
 
 const DocumentManagementCenter = () => {
   const location = useLocation();
@@ -91,16 +92,26 @@ const DocumentManagementCenter = () => {
 
   const handleDownload = async (doc) => {
     const { data, error: dlErr } = await documentManagementService.downloadDocument(doc.id);
-    if (dlErr || !data?.blob) {
-      window.alert(dlErr?.message || 'Could not download document');
+    if (data?.blob) {
+      const url = URL.createObjectURL(data.blob);
+      const a = window.document.createElement('a');
+      a.href = url;
+      a.download = data.fileName || doc.name;
+      a.click();
+      URL.revokeObjectURL(url);
       return;
     }
-    const url = URL.createObjectURL(data.blob);
-    const a = window.document.createElement('a');
-    a.href = url;
-    a.download = data.fileName || doc.name;
-    a.click();
-    URL.revokeObjectURL(url);
+    const staticUrl = getDocumentPreviewUrl(doc.raw || doc);
+    if (staticUrl) {
+      const a = window.document.createElement('a');
+      a.href = staticUrl;
+      a.download = doc.name || 'document';
+      a.target = '_blank';
+      a.rel = 'noopener noreferrer';
+      a.click();
+      return;
+    }
+    window.alert(dlErr?.message || 'Could not download document');
   };
 
   const handleDocumentUpdated = async () => {

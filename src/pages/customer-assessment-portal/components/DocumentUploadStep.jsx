@@ -5,7 +5,8 @@ import { customerJourneyService } from '../../../services/customerJourneyService
 import {
   APPLICANT_DOCUMENTS,
   coApplicantDocType,
-  normalizeDynamicDocumentRequirements,
+  isExistingLoanStatementDocType,
+  mergeAssessmentDocumentDefinitions,
   requiresCoApplicant,
 } from '../../../constants/assessmentDocuments';
 import DocumentPreviewModal from './DocumentPreviewModal';
@@ -100,6 +101,8 @@ const DocumentUploadStep = ({
   onRequirementsLoaded,
   errors,
   employmentType,
+  existingLoans = [],
+  hasRunningLoanOrCard,
 }) => {
   const fileRefs = useRef({});
   const localPreviewUrls = useRef({});
@@ -110,6 +113,11 @@ const DocumentUploadStep = ({
 
   const dualUpload = requiresCoApplicant(employmentType);
   const serverDocsSynced = useRef(false);
+  const allDocumentDefinitions = mergeAssessmentDocumentDefinitions({
+    requirements: documentDefinitions,
+    existingLoans,
+    hasRunningLoanOrCard,
+  });
 
   useEffect(() => {
     serverDocsSynced.current = false;
@@ -260,15 +268,19 @@ const DocumentUploadStep = ({
               {dualUpload
                 ? 'Upload the same documents for you and your co-applicant side by side. Photos: JPG or PNG only. Other files: JPG, PNG, or PDF (max 10 MB each).'
                 : 'Customer photo: JPG or PNG only. Other documents: JPG, PNG, or PDF (max 10 MB each).'}
+              {hasRunningLoanOrCard === 'yes' && existingLoans?.length > 0
+                ? ' Upload a statement for each existing loan or credit card you listed in the Financial step.'
+                : ''}
             </p>
           </div>
         </div>
       </div>
 
       <div className="space-y-6">
-        {documentDefinitions.map((doc) => {
+        {allDocumentDefinitions.map((doc) => {
           const applicantType = doc.type;
           const coType = coApplicantDocType(doc.type);
+          const loanStatementOnly = isExistingLoanStatementDocType(doc.type);
 
           return (
             <div key={doc.type} className="space-y-2">
@@ -276,7 +288,7 @@ const DocumentUploadStep = ({
                 <Icon name={doc.icon} size={16} className="text-primary" />
                 {doc.label}
               </h4>
-              <div className={`grid grid-cols-1 ${dualUpload ? 'md:grid-cols-2' : ''} gap-4`}>
+              <div className={`grid grid-cols-1 ${dualUpload && !loanStatementOnly ? 'md:grid-cols-2' : ''} gap-4`}>
                 <DocumentUploadCard
                   doc={doc}
                   personLabel="Applicant (you)"
@@ -293,7 +305,7 @@ const DocumentUploadStep = ({
                     setPreviewDoc({ ...uploadedDocs[applicantType], label: `${doc.label} — Applicant` })
                   }
                 />
-                {dualUpload && (
+                {dualUpload && !loanStatementOnly && (
                   <DocumentUploadCard
                     doc={doc}
                     personLabel="Co-applicant"
