@@ -9,15 +9,19 @@ import {
   productDataFromForm,
 } from '../../utils/bankMarketplace';
 import { pickProductForCategory } from '../../utils/bankProductMatching';
-import { useLoanProducts } from '../../contexts/LoanProductsContext';
+import {
+  getMarketplaceProductCategory,
+  mergeMarketplaceProductCategories,
+} from '../../constants/bankMarketplaceProductCategories';
 import BankLogoFields from '../../components/admin/BankLogoFields';
 import BankProductEditor from '../../components/admin/BankProductEditor';
 import { bankService, auditService } from '../../services/apiServices';
+import { loanProductCatalogService } from '../../services/loanProductCatalogService';
 import { resolveBankLogoUrl } from '../../utils/bankBranding';
 import { BANK_TYPE_OPTIONS, getBankTypeLabel } from '../../constants/bankTypes';
 
 const BankMarketplaceManagement = () => {
-  const { products: catalogProducts } = useLoanProducts();
+  const [productCategories, setProductCategories] = useState([]);
   const [banks, setBanks] = useState([]);
   const [bankProducts, setBankProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,21 +33,23 @@ const BankMarketplaceManagement = () => {
   const [savingProduct, setSavingProduct] = useState(false);
 
   const applyCategoryToForm = (categorySlug, products = bankProducts) => {
-    const catalog = catalogProducts.find((p) => p.slug === categorySlug);
-    const existing = pickProductForCategory(products, catalog || categorySlug);
+    const category = getMarketplaceProductCategory(categorySlug);
+    const normalizedSlug = category?.slug || categorySlug;
+    const existing = pickProductForCategory(products, normalizedSlug);
     if (existing) {
-      const form = formFromProduct(existing, catalog?.apiKey || 'personal_loan');
+      const form = formFromProduct(existing, category?.parentLoanType || 'personal_loan');
       setProductForm({
         ...form,
-        productCategorySlug: categorySlug,
-        catalogApiKey: catalog?.apiKey || form.catalogApiKey || '',
+        productCategorySlug: normalizedSlug,
+        catalogApiKey: category?.parentLoanType || form.catalogApiKey || '',
+        loanType: category?.parentLoanType || form.loanType || 'personal_loan',
       });
     } else {
       setProductForm({
-        ...emptyProductForm(categorySlug),
-        loanType: catalog?.apiKey || 'personal_loan',
-        productCategorySlug: categorySlug,
-        catalogApiKey: catalog?.apiKey || '',
+        ...emptyProductForm(normalizedSlug),
+        productCategorySlug: normalizedSlug,
+        catalogApiKey: category?.parentLoanType || '',
+        loanType: category?.parentLoanType || 'personal_loan',
       });
     }
   };
@@ -62,8 +68,14 @@ const BankMarketplaceManagement = () => {
     displayPriority: 0,
   });
 
+  const loadProductCategories = async () => {
+    const { data } = await loanProductCatalogService.listCategories();
+    setProductCategories(mergeMarketplaceProductCategories(data || []));
+  };
+
   useEffect(() => {
     loadBanks({ showFullLoader: true });
+    loadProductCategories();
   }, []);
 
   const loadBanks = async ({ forceRefresh = false, showFullLoader = false } = {}) => {
@@ -78,7 +90,7 @@ const BankMarketplaceManagement = () => {
     }
   };
 
-  const loadProductForBank = async (bankId, categorySlug = 'personal') => {
+  const loadProductForBank = async (bankId, categorySlug = 'personal_loan') => {
     try {
       const products = await bankService.getBankProducts(bankId);
       const list = Array.isArray(products) ? products : [];
@@ -118,7 +130,7 @@ const BankMarketplaceManagement = () => {
     } else {
       setEditingBank(null);
       setBankProducts([]);
-      setProductForm(emptyProductForm('personal'));
+      setProductForm(emptyProductForm('personal_loan'));
       setFormData({
         name: '',
         logoUrl: '',
@@ -143,16 +155,26 @@ const BankMarketplaceManagement = () => {
   };
 
   const buildProductPayload = () => {
-    const catalog = catalogProducts.find((p) => p.slug === productForm.productCategorySlug);
-    const loanLabel = catalog?.label || 'Loan';
+    const category = getMarketplaceProductCategory(productForm.productCategorySlug);
+    const loanLabel = category?.label || 'Loan';
     return {
       name: (productForm.productName || `${formData.name} ${loanLabel}`).trim(),
       ...productDataFromForm({
         ...productForm,
-        catalogApiKey: catalog?.apiKey || productForm.catalogApiKey,
-        loanType: catalog?.apiKey || productForm.loanType,
+        catalogApiKey: category?.parentLoanType || productForm.catalogApiKey,
+        loanType: category?.parentLoanType || productForm.loanType,
       }),
     };
+  };
+
+  const handleCreateCategory = async (label) => {
+    const { data, error } = await loanProductCatalogService.createCategory({ label });
+    if (error) {
+      setError(error.message || 'Failed to add product type');
+      return null;
+    }
+    await loadProductCategories();
+    return data;
   };
 
   const saveBankProduct = async (bankId) => {
@@ -200,7 +222,7 @@ const BankMarketplaceManagement = () => {
         const form = formFromProduct(list[0]);
         setProductForm(form);
       } else {
-        setProductForm(emptyProductForm('personal'));
+        setProductForm(emptyProductForm('personal_loan'));
       }
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Failed to delete product');
@@ -211,7 +233,13 @@ const BankMarketplaceManagement = () => {
 
   const handleSelectProduct = (product) => {
     const form = formFromProduct(product);
-    setProductForm(form);
+    const category = getMarketplaceProductCategory(form.productCategorySlug);
+    setProductForm({
+      ...form,
+      productCategorySlug: category?.slug || form.productCategorySlug,
+      catalogApiKey: category?.parentLoanType || form.catalogApiKey,
+      loanType: category?.parentLoanType || form.loanType,
+    });
   };
 
   const handleAddProduct = (categorySlug) => {
@@ -476,11 +504,12 @@ const BankMarketplaceManagement = () => {
               <BankProductEditor
                 bankName={formData.name}
                 bankProducts={bankProducts}
-                catalogProducts={catalogProducts}
+                productCategories={productCategories}
                 productForm={productForm}
                 onProductFormChange={setProductForm}
                 onSelectProduct={handleSelectProduct}
                 onAddProduct={handleAddProduct}
+                onCreateCategory={handleCreateCategory}
                 onSaveProduct={editingBank ? handleSaveProductOnly : null}
                 onDeleteProduct={editingBank ? handleDeleteProduct : null}
                 savingProduct={savingProduct}

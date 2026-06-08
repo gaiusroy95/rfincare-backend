@@ -1,3 +1,4 @@
+import { getMarketplaceProductCategory } from '../constants/bankMarketplaceProductCategories';
 import { getLoanProductBySlug } from '../constants/loanProducts';
 import { pickProductForCategory } from './bankProductMatching';
 import { getBankLogoAlt, getBankLogoUrl } from './bankBranding';
@@ -57,13 +58,15 @@ function readTextField(productData, ...keys) {
   return '';
 }
 
-export function emptyProductForm(categorySlug = 'personal') {
+export function emptyProductForm(categorySlug = 'personal_loan') {
+  const category = getMarketplaceProductCategory(categorySlug);
+  const normalizedSlug = category?.slug || categorySlug;
   return {
     id: '',
     productName: '',
-    loanType: 'personal_loan',
-    productCategorySlug: categorySlug,
-    catalogApiKey: '',
+    loanType: category?.parentLoanType || 'personal_loan',
+    productCategorySlug: normalizedSlug,
+    catalogApiKey: category?.parentLoanType || '',
     interestRateMin: '',
     interestRateMax: '',
     processingFeePercentage: '',
@@ -326,8 +329,12 @@ export function formFromProduct(product, loanTypeDefault = 'personal_loan') {
   };
 }
 
-export function getProductCategoryLabel(product, catalogProducts = []) {
+export function getProductCategoryLabel(product, catalogProducts = [], productCategories = []) {
   const form = formFromProduct(product);
+  const fromTaxonomy =
+    productCategories.find((p) => p.slug === form.productCategorySlug)
+    || getMarketplaceProductCategory(form.productCategorySlug);
+  if (fromTaxonomy?.label) return fromTaxonomy.label;
   const catalog = catalogProducts.find((p) => p.slug === form.productCategorySlug);
   return catalog?.label || form.productCategorySlug || 'Loan product';
 }

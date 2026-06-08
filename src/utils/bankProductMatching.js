@@ -1,6 +1,11 @@
+import {
+  getMarketplaceProductCategory,
+  MARKETPLACE_BASE_CATEGORY_SLUGS,
+  normalizeMarketplaceCategorySlug,
+} from '../constants/bankMarketplaceProductCategories';
 import { getLoanProductBySlug } from '../constants/loanProducts';
 
-const BASE_CATEGORY_SLUGS = new Set(['personal', 'home', 'business', 'auto', 'education']);
+const LEGACY_BASE_CATEGORY_SLUGS = new Set(['personal', 'home', 'business', 'auto', 'education']);
 
 function normalizeKey(value) {
   return String(value || '')
@@ -48,15 +53,39 @@ export function getProductCategoryFields(product) {
 
 export function resolveCatalogCategory(catalogProductOrSlug) {
   if (!catalogProductOrSlug) return null;
+
+  const rawKey =
+    typeof catalogProductOrSlug === 'string'
+      ? catalogProductOrSlug
+      : catalogProductOrSlug.slug || catalogProductOrSlug.apiKey;
+
+  const marketplaceCat = getMarketplaceProductCategory(rawKey);
+  if (marketplaceCat) {
+    const slug = normalizeKey(marketplaceCat.slug);
+    return {
+      slug,
+      apiKey: normalizeKey(marketplaceCat.parentLoanType),
+      isBaseCategory: MARKETPLACE_BASE_CATEGORY_SLUGS.has(slug),
+    };
+  }
+
   const catalogProduct =
     typeof catalogProductOrSlug === 'string'
       ? getLoanProductBySlug(catalogProductOrSlug)
       : catalogProductOrSlug;
-  if (!catalogProduct) return null;
+  if (!catalogProduct) {
+    const normalized = normalizeMarketplaceCategorySlug(rawKey);
+    if (!normalized) return null;
+    return {
+      slug: normalized,
+      apiKey: normalized.endsWith('_loan') ? normalized : `${normalized}_loan`,
+      isBaseCategory: MARKETPLACE_BASE_CATEGORY_SLUGS.has(normalized),
+    };
+  }
   return {
     slug: normalizeKey(catalogProduct.slug),
     apiKey: normalizeKey(catalogProduct.apiKey),
-    isBaseCategory: BASE_CATEGORY_SLUGS.has(normalizeKey(catalogProduct.slug)),
+    isBaseCategory: LEGACY_BASE_CATEGORY_SLUGS.has(normalizeKey(catalogProduct.slug)),
   };
 }
 
