@@ -3,8 +3,9 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import { staffMessagingService } from '../../../services/staffMessagingService';
+import { customerJourneyService } from '../../../services/customerJourneyService';
 import { apiClient } from '../../../lib/apiClient';
-import { getApiBaseUrl } from '../../../lib/runtimeConfig';
+import { resolveUploadUrl } from '../../../utils/documentUrls';
 import { useAuth } from '../../../contexts/AuthContext';
 
 const StaffCommunicationPanel = ({
@@ -23,6 +24,8 @@ const StaffCommunicationPanel = ({
   const [selectedDocIds, setSelectedDocIds] = useState([]);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [openingAttachmentId, setOpeningAttachmentId] = useState(null);
+  const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -89,7 +92,7 @@ const StaffCommunicationPanel = ({
     setSending(true);
     setError('');
     try {
-      await staffMessagingService.sendMessage({
+      const result = await staffMessagingService.sendMessage({
         peerId: peer.id,
         applicationId: activeApplicationId,
         subject: channel === 'email' ? subject || `Message regarding ${clientLabel || 'application'}` : subject,
@@ -98,7 +101,25 @@ const StaffCommunicationPanel = ({
         documentIds: selectedDocIds,
       });
       setBody('');
+      setSubject('');
       setSelectedDocIds([]);
+      setNotice('');
+      if (channel === 'email') {
+        const delivery = result?.emailDelivery;
+        if (delivery?.sent && delivery?.channel === 'smtp') {
+          setNotice(
+            `Email sent to ${delivery.to || peer.communicationEmail || peer.email}${
+              delivery.attachmentCount ? ` with ${delivery.attachmentCount} attachment(s)` : ''
+            }. A copy is also shown in this chat.`,
+          );
+        } else if (delivery?.warning) {
+          setNotice(delivery.warning);
+        } else if (delivery?.to) {
+          setNotice(
+            `Message saved in chat. Email could not be delivered to ${delivery.to} — ask your admin to configure SMTP on the server.`,
+          );
+        }
+      }
       await loadThread();
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Send failed');
@@ -136,11 +157,33 @@ const StaffCommunicationPanel = ({
     }
   };
 
-  const docDownloadUrl = (url) => {
-    if (!url) return '#';
-    if (url.startsWith('http')) return url;
-    const base = getApiBaseUrl().replace(/\/$/, '');
-    return `${base}${url.startsWith('/') ? url : `/${url}`}`;
+  const handleOpenAttachment = async (att) => {
+    setOpeningAttachmentId(att.id);
+    setError('');
+    try {
+      if (att.documentId) {
+        const { data, error: dlErr } = await customerJourneyService.downloadDocument(att.documentId, {
+          inline: true,
+        });
+        if (dlErr || !data?.blob) {
+          throw new Error(dlErr?.message || 'Could not open document');
+        }
+        const blobUrl = URL.createObjectURL(data.blob);
+        window.open(blobUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => URL.revokeObjectURL(blobUrl), 120000);
+        return;
+      }
+      const staticUrl = resolveUploadUrl(att.fileUrl);
+      if (staticUrl) {
+        window.open(staticUrl, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      throw new Error('Document link is not available');
+    } catch (err) {
+      setError(err?.message || 'Could not open attachment');
+    } finally {
+      setOpeningAttachmentId(null);
+    }
   };
 
   if (!isOpen) return null;
@@ -227,21 +270,23 @@ const StaffCommunicationPanel = ({
                           <ul className="mt-2 space-y-1 text-xs">
                             {msg.attachments.map((att) => (
                               <li key={att.id}>
-                                <a
-                                  href={docDownloadUrl(att.fileUrl)}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="underline flex items-center gap-1"
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenAttachment(att)}
+                                  disabled={openingAttachmentId === att.id}
+                                  className="underline flex items-center gap-1 text-left disabled:opacity-60"
                                 >
                                   <Icon name="Paperclip" size={12} />
-                                  {att.fileName || att.documentType}
-                                </a>
+                                  {openingAttachmentId === att.id
+                                    ? 'Opening…'
+                                    : att.fileName || att.documentType}
+                                </button>
                               </li>
                             ))}
                           </ul>
                         )}
                         <p className="text-[10px] opacity-70 mt-1">
-                          {msg.channel === 'email' ? 'Email · ' : ''}
+                          {msg.channel === 'email' ? 'Sent as email · ' : ''}
                           {new Date(msg.createdAt).toLocaleString('en-IN')}
                         </p>
                       </div>
@@ -325,12 +370,19 @@ const StaffCommunicationPanel = ({
                 </button>
               </div>
               {channel === 'email' && (
-                <Input
-                  label="Email subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Document review / follow-up"
-                />
+                <>
+                  <p className="text-xs text-muted-foreground -mt-1">
+                    Delivers to the hierarchy communication email ({peer.communicationEmail || peer.email}).
+                    A copy also appears in this chat. Attachments are included in the email when the server
+                    can read the files.
+                  </p>
+                  <Input
+                    label="Email subject"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                    placeholder="Document review / follow-up"
+                  />
+                </>
               )}
               <textarea
                 className="w-full min-h-[80px] rounded-lg border border-border bg-background px-3 py-2 text-sm"
@@ -338,6 +390,11 @@ const StaffCommunicationPanel = ({
                 value={body}
                 onChange={(e) => setBody(e.target.value)}
               />
+              {notice && (
+                <p className="text-xs text-primary bg-primary/5 border border-primary/20 rounded-lg px-3 py-2">
+                  {notice}
+                </p>
+              )}
               {error && <p className="text-xs text-destructive">{error}</p>}
               <Button
                 type="button"

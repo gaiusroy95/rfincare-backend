@@ -23,11 +23,17 @@ import { useAuth } from '../../contexts/AuthContext';
 import { usePortalPolling } from '../../hooks/usePortalPolling';
 import StaffCommunicationPanel from '../agent-dashboard/components/StaffCommunicationPanel';
 import { staffMessagingService } from '../../services/staffMessagingService';
+import {
+  employeeCan,
+  grantedModuleLabels,
+  isAccessConfigured,
+  isEmployeeAccessActive,
+} from '../../utils/employeeAccess';
 
 
 const EmployeePortal = () => {
   const navigate = useNavigate();
-  const { signOut } = useAuth();
+  const { signOut, employeeAccess: authEmployeeAccess, refreshEmployeeAccess } = useAuth();
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [workspaceApplication, setWorkspaceApplication] = useState(null);
@@ -51,36 +57,52 @@ const EmployeePortal = () => {
     clientLabel: '',
   });
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
+  const [employeeAccess, setEmployeeAccess] = useState(null);
   const loadDashboardData = useCallback(async () => {
     setLoading(true);
     try {
       const { data: dashboard } = await employeeService.getEmployeeDashboard();
       setDashboardStats(dashboard?.stats || dashboard);
+      const access = dashboard?.access || authEmployeeAccess || null;
+      setEmployeeAccess(access);
+      if (dashboard?.access) {
+        refreshEmployeeAccess(dashboard.access);
+      }
 
-      // Load pending agents
-      const { data: agents } = await employeeService?.getPendingAgentOnboarding();
-      setPendingAgents(agents || []);
-
-      // Load assigned applications
-      const { data: applications } = await employeeService?.getAssignedApplications();
-      const appList = applications || [];
+      const appList = dashboard?.applications?.length
+        ? dashboard.applications
+        : employeeCan(access, 'applications', 'read')
+          ? (await employeeService.getAssignedApplications())?.data || []
+          : [];
       setAssignedApplications(appList);
       const appById = Object.fromEntries(appList.map((a) => [a.id, a]));
 
-      // Load pending documents
-      const { data: documents } = await employeeService?.getPendingDocuments();
-      setPendingDocuments(
-        (documents || []).map((doc) => ({
-          ...doc,
-          applicationNumber:
-            doc.applicationNumber ||
-            appById[doc.applicationId]?.applicationNumber,
-        })),
-      );
+      if (employeeCan(access, 'agents', 'read')) {
+        const { data: agents } = await employeeService.getPendingAgentOnboarding();
+        setPendingAgents(agents || []);
+      } else {
+        setPendingAgents([]);
+      }
 
-      // Load activity log
-      const { data: activities } = await employeeService?.getEmployeeActivityLog();
-      setActivityLog(activities || []);
+      if (employeeCan(access, 'documents', 'read')) {
+        const { data: documents } = await employeeService.getPendingDocuments();
+        setPendingDocuments(
+          (documents || []).map((doc) => ({
+            ...doc,
+            applicationNumber:
+              doc.applicationNumber ||
+              appById[doc.applicationId]?.applicationNumber,
+          })),
+        );
+      } else {
+        setPendingDocuments([]);
+      }
+
+      if (employeeCan(access, 'reports', 'read')) {
+        setActivityLog(dashboard?.activities || []);
+      } else {
+        setActivityLog([]);
+      }
 
       const learning = dashboard?.learningResources?.length
         ? dashboard.learningResources
@@ -103,11 +125,17 @@ const EmployeePortal = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [authEmployeeAccess, refreshEmployeeAccess]);
 
   useEffect(() => {
     loadDashboardData();
   }, [loadDashboardData]);
+
+  useEffect(() => {
+    if (authEmployeeAccess) {
+      setEmployeeAccess((prev) => prev || authEmployeeAccess);
+    }
+  }, [authEmployeeAccess]);
 
   usePortalPolling(loadDashboardData, 20000, !loading);
 
@@ -238,12 +266,27 @@ const EmployeePortal = () => {
     return matchesSearch;
   });
 
-  const tabs = [
-  { id: 'applications', label: 'Applications', icon: 'FileText', count: assignedApplications?.length },
-  { id: 'agents', label: 'Agent Verification', icon: 'UserCheck', count: pendingAgents?.length },
-  { id: 'documents', label: 'Pending documents', icon: 'FolderOpen', count: pendingDocuments?.length },
-  { id: 'activity', label: 'Activity Log', icon: 'Activity' },
-  { id: 'training', label: 'Training', icon: 'GraduationCap' }];
+  const effectiveAccess = employeeAccess || authEmployeeAccess;
+
+  const allTabs = [
+    { id: 'applications', label: 'Applications', icon: 'FileText', count: assignedApplications?.length, module: 'applications' },
+    { id: 'agents', label: 'Agent Verification', icon: 'UserCheck', count: pendingAgents?.length, module: 'agents' },
+    { id: 'documents', label: 'Pending documents', icon: 'FolderOpen', count: pendingDocuments?.length, module: 'documents' },
+    { id: 'activity', label: 'Activity Log', icon: 'Activity', module: 'reports' },
+    { id: 'training', label: 'Training', icon: 'GraduationCap' },
+  ];
+
+  const tabs = allTabs.filter((tab) => !tab.module || employeeCan(effectiveAccess, tab.module, 'read'));
+
+  useEffect(() => {
+    if (!tabs.length) return;
+    if (!tabs.some((tab) => tab.id === activeTab)) {
+      setActiveTab(tabs[0].id);
+    }
+  }, [tabs, activeTab]);
+
+  const accessLabels = grantedModuleLabels(effectiveAccess);
+  const accessBlocked = effectiveAccess?.configured && !isEmployeeAccessActive(effectiveAccess);
 
 
   return (
@@ -289,18 +332,20 @@ const EmployeePortal = () => {
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="outline"
-                iconName="MessageSquare"
-                onClick={() => openCommunication({})}
-              >
-                Agent messages
-                {unreadMessageCount > 0 && (
-                  <span className="ml-2 px-2 py-0.5 bg-destructive text-destructive-foreground rounded-full text-xs font-semibold">
-                    {unreadMessageCount}
-                  </span>
-                )}
-              </Button>
+              {employeeCan(effectiveAccess, 'agents', 'read') && (
+                <Button
+                  variant="outline"
+                  iconName="MessageSquare"
+                  onClick={() => openCommunication({})}
+                >
+                  Agent messages
+                  {unreadMessageCount > 0 && (
+                    <span className="ml-2 px-2 py-0.5 bg-destructive text-destructive-foreground rounded-full text-xs font-semibold">
+                      {unreadMessageCount}
+                    </span>
+                  )}
+                </Button>
+              )}
               <Button
                 variant="outline"
                 iconName="User"
@@ -308,13 +353,15 @@ const EmployeePortal = () => {
               >
                 Profile
               </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate('/document-management-center')}
-              >
-                <Icon name="FolderOpen" size={16} className="mr-2" />
-                All documents
-              </Button>
+              {employeeCan(effectiveAccess, 'documents', 'read') && (
+                <Button
+                  variant="outline"
+                  onClick={() => navigate('/document-management-center')}
+                >
+                  <Icon name="FolderOpen" size={16} className="mr-2" />
+                  All documents
+                </Button>
+              )}
               <Button
                 variant="default"
                 onClick={() => loadDashboardData()}>
@@ -323,6 +370,43 @@ const EmployeePortal = () => {
               </Button>
             </div>
           </div>
+
+          {accessBlocked && (
+            <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              Your portal access has expired or been disabled. Contact your administrator.
+            </div>
+          )}
+
+          {!accessBlocked && (
+            <div className="mb-4 rounded-lg border border-border bg-muted/40 px-4 py-3">
+              <p className="text-xs font-semibold text-foreground mb-2">Your assigned access</p>
+              {accessLabels.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {accessLabels.map((label) => (
+                    <span
+                      key={label}
+                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20"
+                    >
+                      {label}
+                    </span>
+                  ))}
+                </div>
+              ) : isAccessConfigured(effectiveAccess) ? (
+                <p className="text-xs text-amber-700">
+                  Access is configured but no modules are enabled. Contact your administrator.
+                </p>
+              ) : (
+                <p className="text-xs text-muted-foreground">
+                  Full employee access — all modules available (not restricted by admin).
+                </p>
+              )}
+              {effectiveAccess?.expiresAt && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Access valid until {new Date(effectiveAccess.expiresAt).toLocaleDateString('en-IN')}
+                </p>
+              )}
+            </div>
+          )}
 
           {dashboardStats && (
             <PerformanceMetrics metrics={{

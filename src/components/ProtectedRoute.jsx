@@ -1,9 +1,10 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { employeeCanReachRoute } from '../utils/employeeAccess';
 
-const ProtectedRoute = ({ children, allowedRoles = [] }) => {
-  const { user, userProfile, loading } = useAuth();
+const ProtectedRoute = ({ children, allowedRoles = [], employeeRoute = null }) => {
+  const { user, userProfile, loading, employeeAccess } = useAuth();
   const location = useLocation();
 
   // Show loading state while checking authentication
@@ -40,7 +41,15 @@ const ProtectedRoute = ({ children, allowedRoles = [] }) => {
     return <Navigate to={redirectPath} replace />;
   }
 
-  // User is authenticated and has correct role
+  if (
+    effectiveRole === 'employee'
+    && employeeRoute
+    && employeeAccess?.configured
+    && !employeeCanReachRoute(employeeAccess, employeeRoute)
+  ) {
+    return <Navigate to="/employee-portal" replace />;
+  }
+
   return children;
 };
 

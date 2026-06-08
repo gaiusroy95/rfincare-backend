@@ -26,6 +26,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
+  const [employeeAccess, setEmployeeAccess] = useState(null)
   const [loading, setLoading] = useState(true)
   const [profileLoading, setProfileLoading] = useState(false)
 
@@ -38,6 +39,7 @@ export const AuthProvider = ({ children }) => {
         const res = await apiClient.get('/auth/me')
         const profile = res?.data?.profile
         if (profile) setUserProfile(profile)
+        setEmployeeAccess(res?.data?.employeeAccess ?? null)
       } catch (error) {
         console.error('Profile load error:', error)
       } finally {
@@ -47,6 +49,7 @@ export const AuthProvider = ({ children }) => {
 
     clear() {
       setUserProfile(null)
+      setEmployeeAccess(null)
       setProfileLoading(false)
     }
   }
@@ -74,6 +77,7 @@ export const AuthProvider = ({ children }) => {
         const meProfile = meRes?.data?.profile
         setUser(meUser ?? null)
         setUserProfile(meProfile ?? null)
+        setEmployeeAccess(meRes?.data?.employeeAccess ?? null)
       } catch {
         setUser(null)
         setUserProfile(null)
@@ -118,6 +122,25 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
+  const refreshEmployeeAccess = async (accessOverride = null) => {
+    if (userProfile?.role !== 'employee' && user?.role !== 'employee') return
+    if (accessOverride) {
+      setEmployeeAccess(accessOverride)
+      return
+    }
+    try {
+      const res = await apiClient.get('/portal/employee/access')
+      setEmployeeAccess(res?.data?.access ?? null)
+    } catch {
+      try {
+        const meRes = await apiClient.get('/auth/me')
+        setEmployeeAccess(meRes?.data?.employeeAccess ?? null)
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
   const updateProfile = async (updates) => {
     if (!user) return { error: { message: 'No user logged in' } }
     
@@ -138,6 +161,8 @@ export const AuthProvider = ({ children }) => {
     signIn,
     signOut,
     updateProfile,
+    employeeAccess,
+    refreshEmployeeAccess,
     isAuthenticated: !!user,
     getRoleBasedRoute: () => getRoleBasedRoute(userProfile?.role)
   }

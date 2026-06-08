@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
+import { employeeCanReachRoute } from '../../utils/employeeAccess';
 import Icon from '../AppIcon';
 import Button from './Button';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -32,7 +33,7 @@ const Header = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, employeeAccess } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
@@ -91,7 +92,13 @@ const Header = ({ children }) => {
     [t],
   );
 
-  const authItems = authenticatedNav.filter((item) => item.roles.includes(currentRole));
+  const authItems = authenticatedNav.filter((item) => {
+    if (!item.roles.includes(currentRole)) return false;
+    if (currentRole === 'employee' && employeeAccess?.configured) {
+      return employeeCanReachRoute(employeeAccess, item.path);
+    }
+    return true;
+  });
   const visibleNavItems = showGuestNav ? guestPrimaryNav : authItems.slice(0, 5);
   const moreNavItems = showGuestNav ? guestMoreNav : authItems.slice(5);
   const mobileItems = showGuestNav ? [...guestPrimaryNav, ...guestMoreNav] : authItems;

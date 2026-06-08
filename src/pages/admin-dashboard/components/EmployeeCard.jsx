@@ -64,14 +64,22 @@ const EmployeeCard = ({
             </div>
           </div>
           <div className="flex flex-wrap gap-2">
-            {employee?.permissions?.map((permission, index) => (
-              <span
-                key={index}
-                className="inline-flex items-center px-2 py-1 rounded text-xs bg-muted text-muted-foreground"
-              >
-                {permission}
-              </span>
-            ))}
+            {employee?.accessConfigured ? (
+              employee?.permissions?.length > 0 ? (
+                employee.permissions.map((permission, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center px-2 py-1 rounded text-xs bg-primary/10 text-primary border border-primary/20"
+                  >
+                    {permission}
+                  </span>
+                ))
+              ) : (
+                <span className="text-xs text-amber-700">Access configured — no modules enabled</span>
+              )
+            ) : (
+              <span className="text-xs text-muted-foreground">Full employee access (not restricted)</span>
+            )}
           </div>
         </div>
       </div>

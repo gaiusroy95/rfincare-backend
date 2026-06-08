@@ -335,7 +335,8 @@ const AdminDashboard = () => {
               tasksTotal: 0,
               lastActive: '5 min ago',
               isOnline: emp?.userProfile?.isActive || false,
-              permissions: emp?.accessControls?.map(ac => ac?.moduleName) || []
+              permissions: emp?.grantedModules || [],
+              accessConfigured: Boolean(emp?.accessConfigured),
             })));
           }
         }

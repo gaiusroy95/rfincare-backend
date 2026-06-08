@@ -114,7 +114,10 @@ function Routes() {
 
                 <Route
                   element={
-                    <ProtectedRoute allowedRoles={['admin', 'super_admin', 'employee']}>
+                    <ProtectedRoute
+                      allowedRoles={['admin', 'super_admin', 'employee']}
+                      employeeRoute="/reports-and-analytics"
+                    >
                       <ReportsRouteShell />
                     </ProtectedRoute>
                   }
@@ -194,7 +197,10 @@ function Routes() {
                 <Route
                   path="/document-management-center"
                   element={
-                    <ProtectedRoute allowedRoles={['customer', 'employee', 'agent']}>
+                    <ProtectedRoute
+                      allowedRoles={['customer', 'employee', 'agent']}
+                      employeeRoute="/document-management-center"
+                    >
                       <SuspenseRoute><DocumentManagementCenter /></SuspenseRoute>
                     </ProtectedRoute>
                   }
