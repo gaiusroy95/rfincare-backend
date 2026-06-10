@@ -116,8 +116,18 @@ export function bankProductMatchesCategory(product, category) {
 
 export function filterProductsForCategory(products, catalogProductOrSlug) {
   const category = resolveCatalogCategory(catalogProductOrSlug);
-  if (!category) return products || [];
-  return (products || []).filter((product) => bankProductMatchesCategory(product, category));
+  const unique = [];
+  const seenIds = new Set();
+  for (const product of products || []) {
+    const id = product?.id ? String(product.id) : null;
+    if (id) {
+      if (seenIds.has(id)) continue;
+      seenIds.add(id);
+    }
+    unique.push(product);
+  }
+  if (!category) return unique;
+  return unique.filter((product) => bankProductMatchesCategory(product, category));
 }
 
 export function pickProductForCategory(products, catalogProductOrSlug) {

@@ -50,7 +50,55 @@ function formatTenure(years) {
   return `${years} years`;
 }
 
-function readTextField(productData, ...keys) {
+function normalizeKey(value) {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/-/g, '_');
+}
+
+function normalizeBankName(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+/** Collapse duplicate bank/product rows that render identical marketplace cards. */
+export function dedupeMarketplaceOffers(offers) {
+  const seen = new Map();
+
+  for (const offer of offers || []) {
+    const dedupeKey = [
+      normalizeBankName(offer?.name),
+      offer?.productCategorySlug || offer?.loanType || '',
+      normalizeKey(offer?.productName || offer?.productCategoryLabel || ''),
+      offer?.interestRateMin ?? '',
+      offer?.interestRateMax ?? '',
+      offer?.processingFee ?? '',
+      offer?.maxAmount ?? '',
+    ].join('::');
+
+    const existing = seen.get(dedupeKey);
+    if (!existing) {
+      seen.set(dedupeKey, offer);
+      continue;
+    }
+
+    const existingPriority = existing.displayPriority ?? 0;
+    const nextPriority = offer.displayPriority ?? 0;
+    if (nextPriority > existingPriority) {
+      seen.set(dedupeKey, offer);
+      continue;
+    }
+    if (nextPriority === existingPriority && offer?.productId && !existing?.productId) {
+      seen.set(dedupeKey, offer);
+    }
+  }
+
+  return [...seen.values()];
+}
+
   for (const key of keys) {
     const value = productData[key];
     if (value != null && String(value).trim() !== '') return String(value).trim();
@@ -274,17 +322,22 @@ export function mapProductForMarketplace(bank, product, loanTypeSlug, probabilit
 export function listMarketplaceOffers(banks, loanTypeSlug, probabilityMap = null) {
   const catalogProduct = getLoanProductBySlug(loanTypeSlug);
   const offers = [];
+  const seenProductIds = new Set();
 
   for (const bank of banks || []) {
     const products = bank?.bankProducts || bank?.bank_products || [];
     const matched = filterProductsForCategory(products, catalogProduct || loanTypeSlug);
     for (const product of matched) {
+      const productId = product?.id ? String(product.id) : null;
+      if (productId && seenProductIds.has(productId)) continue;
       const mapped = mapProductForMarketplace(bank, product, loanTypeSlug, probabilityMap);
-      if (mapped) offers.push(mapped);
+      if (!mapped) continue;
+      if (productId) seenProductIds.add(productId);
+      offers.push(mapped);
     }
   }
 
-  return offers.sort((a, b) => {
+  return dedupeMarketplaceOffers(offers).sort((a, b) => {
     const priorityDiff = (b.displayPriority ?? 0) - (a.displayPriority ?? 0);
     if (priorityDiff !== 0) return priorityDiff;
     return String(a.productName || '').localeCompare(String(b.productName || ''));
