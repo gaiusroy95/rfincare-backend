@@ -1,6 +1,6 @@
 import { getMarketplaceProductCategory } from '../constants/bankMarketplaceProductCategories';
 import { getLoanProductBySlug } from '../constants/loanProducts';
-import { pickProductForCategory } from './bankProductMatching';
+import { filterProductsForCategory, pickProductForCategory } from './bankProductMatching';
 import { getBankLogoAlt, getBankLogoUrl } from './bankBranding';
 
 export function parseProductData(product) {
@@ -95,26 +95,58 @@ export function getMarketplaceCompareKey(bank) {
   return String(bank?.id ?? '');
 }
 
-/**
- * Map API bank + products into marketplace / comparison card shape.
- */
-export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null) {
-  const products = bank?.bankProducts || bank?.bank_products || [];
-  const catalogProduct = getLoanProductBySlug(loanTypeSlug);
-  const primaryProduct = pickProductForCategory(products, catalogProduct || loanTypeSlug);
-  if (!primaryProduct) return null;
+function readBankNumber(bank, ...keys) {
+  for (const key of keys) {
+    const value = bank?.[key];
+    if (value != null && value !== '') return Number(value);
+  }
+  return null;
+}
 
-  const productData = parseProductData(primaryProduct);
+function formatInterestRateLabel(interestMin, interestMax) {
+  const min =
+    interestMin != null && interestMin !== '' && !Number.isNaN(Number(interestMin))
+      ? Number(interestMin)
+      : null;
+  const max =
+    interestMax != null && interestMax !== '' && !Number.isNaN(Number(interestMax))
+      ? Number(interestMax)
+      : null;
+  if (min != null && max != null && min !== max) return `${min} – ${max}`;
+  if (min != null) return String(min);
+  if (max != null) return String(max);
+  return 'On request';
+}
+
+function resolveProductCategoryLabel(productData, product) {
+  const slug =
+    productData.product_category_slug ||
+    productData.productCategorySlug ||
+    product?.loanType ||
+    product?.loan_type ||
+    '';
+  const category = getMarketplaceProductCategory(slug);
+  if (category?.label) return category.label;
+  if (product?.name) return product.name;
+  return slug ? slug.replace(/_/g, ' ') : 'Loan product';
+}
+
+/**
+ * Map one bank product into marketplace / comparison card shape.
+ */
+export function mapProductForMarketplace(bank, product, loanTypeSlug, probabilityMap = null) {
+  if (!bank || !product) return null;
+
+  const productData = parseProductData(product);
+  const catalogProduct = getLoanProductBySlug(loanTypeSlug);
   const activeProduct = catalogProduct;
 
   const interestMin = productData.interestRateMin ?? productData.interest_rate_min;
   const interestMax = productData.interestRateMax ?? productData.interest_rate_max;
-  const interestRate =
-    interestMin != null && interestMin !== ''
-      ? Number(interestMin)
-      : interestMax != null && interestMax !== ''
-        ? Number(interestMax)
-        : null;
+  const interestRateMin = interestMin != null && interestMin !== '' ? Number(interestMin) : null;
+  const interestRateMax = interestMax != null && interestMax !== '' ? Number(interestMax) : null;
+  const interestRate = interestRateMin ?? interestRateMax ?? null;
+  const interestRateLabel = formatInterestRateLabel(interestMin, interestMax);
 
   const maxLoan = productData.maxLoanAmount ?? productData.max_loan_amount ?? 2000000;
   const minLoan = productData.minLoanAmount ?? productData.min_loan_amount ?? null;
@@ -166,24 +198,30 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
     'collateralRequired',
   );
 
-  const productId = primaryProduct?.id;
-  const compareKey = productId ? String(productId) : String(bank?.id);
+  const productId = product?.id;
+  const compareKey = productId ? String(productId) : `${bank?.id}-${product?.name || 'product'}`;
+  const rating = readBankNumber(bank, 'rating');
+  const reviewsCount =
+    readBankNumber(bank, 'reviewsCount', 'reviews_count') ?? 0;
+  const productCategorySlug =
+    productData.product_category_slug ||
+    productData.productCategorySlug ||
+    activeProduct?.slug ||
+    '';
 
   return {
     id: bank?.id,
     productId,
     compareKey,
-    productName: primaryProduct?.name,
-    productCategorySlug:
-      productData.product_category_slug ||
-      productData.productCategorySlug ||
-      activeProduct?.slug ||
-      '',
+    productName: product?.name || resolveProductCategoryLabel(productData, product),
+    productCategorySlug,
+    productCategoryLabel: resolveProductCategoryLabel(productData, product),
     name: bank?.name,
     logo: getBankLogoUrl(bank),
     logoAlt: getBankLogoAlt(bank),
-    rating: bank?.rating || 4.5,
-    reviews: `${bank?.reviewsCount ?? bank?.reviews_count ?? 0} reviews`,
+    rating: rating ?? 4.5,
+    reviews: `${reviewsCount} reviews`,
+    reviewsCount,
     probability:
       probabilityMap?.get?.(bank?.id) ??
       probabilityMap?.[bank?.id] ??
@@ -193,8 +231,9 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
         ? 'Based on your eligibility profile'
         : 'Complete eligibility check to see your personalized match',
     interestRate,
-    interestRateMin: interestMin != null ? Number(interestMin) : interestRate,
-    interestRateMax: interestMax != null ? Number(interestMax) : interestRate,
+    interestRateLabel,
+    interestRateMin,
+    interestRateMax,
     processingFee: formatProcessingFee(productData),
     processingFeePercentage:
       productData.processingFeePercentage ?? productData.processing_fee_percentage ?? null,
@@ -208,13 +247,14 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
     minTenure: formatTenure(minTenure) || '—',
     maxTenure: formatTenure(maxTenure) || '20 years',
     disbursalTimeline: disbursalTimeline || 'Contact bank',
-    collateralRequired: collateralRequired || 'Contact bank',
+    collateralRequired: collateralRequired || 'As per bank schedule',
     features,
     eligibilityCriteria,
     policies,
     documentationRequired,
     loanType:
-      primaryProduct?.loanType ||
+      product?.loanType ||
+      product?.loan_type ||
       productData.loan_type ||
       productData.loanType ||
       activeProduct?.apiKey,
@@ -222,9 +262,44 @@ export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null)
     customersServed: bank?.customersServed || bank?.customers_served || '10,000+',
     partnershipDuration:
       bank?.partnershipDuration || bank?.partnership_duration || 'Partner since 2020',
+    displayPriority: readBankNumber(bank, 'displayPriority', 'display_priority') ?? 0,
     type: bank?.bankType || bank?.bank_type || 'private',
     description: `Trusted financial institution offering competitive loan products.`,
   };
+}
+
+/**
+ * Expand banks into one marketplace offer per active product (all products from all banks).
+ */
+export function listMarketplaceOffers(banks, loanTypeSlug, probabilityMap = null) {
+  const catalogProduct = getLoanProductBySlug(loanTypeSlug);
+  const offers = [];
+
+  for (const bank of banks || []) {
+    const products = bank?.bankProducts || bank?.bank_products || [];
+    const matched = filterProductsForCategory(products, catalogProduct || loanTypeSlug);
+    for (const product of matched) {
+      const mapped = mapProductForMarketplace(bank, product, loanTypeSlug, probabilityMap);
+      if (mapped) offers.push(mapped);
+    }
+  }
+
+  return offers.sort((a, b) => {
+    const priorityDiff = (b.displayPriority ?? 0) - (a.displayPriority ?? 0);
+    if (priorityDiff !== 0) return priorityDiff;
+    return String(a.productName || '').localeCompare(String(b.productName || ''));
+  });
+}
+
+/**
+ * Map API bank + products into marketplace / comparison card shape (first matching product).
+ */
+export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null) {
+  const products = bank?.bankProducts || bank?.bank_products || [];
+  const catalogProduct = getLoanProductBySlug(loanTypeSlug);
+  const primaryProduct = pickProductForCategory(products, catalogProduct || loanTypeSlug);
+  if (!primaryProduct) return null;
+  return mapProductForMarketplace(bank, primaryProduct, loanTypeSlug, probabilityMap);
 }
 
 export function applyComparisonOverrides(bank, overrides) {

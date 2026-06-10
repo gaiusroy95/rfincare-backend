@@ -19,7 +19,7 @@ const SortBar = ({ sortBy, onSortChange, resultCount, viewMode, onViewModeChange
         <div className="flex items-center space-x-2">
           <Icon name="Building2" size={20} className="text-primary" />
           <span className="text-sm md:text-base text-foreground">
-            <span className="font-bold">{resultCount}</span> banks match your profile
+            <span className="font-bold">{resultCount}</span> loan products match your profile
           </span>
         </div>
 

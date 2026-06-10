@@ -1,5 +1,6 @@
 import { apiClient } from '../lib/apiClient';
-import { getApiBaseUrl } from '../lib/runtimeConfig';
+
+export { openLearningResource, resolveLearningOpenUrl } from '../utils/learningResources';
 
 const toCamelCase = (obj) => {
   if (!obj || typeof obj !== 'object') return obj;
@@ -10,14 +11,6 @@ const toCamelCase = (obj) => {
     return acc;
   }, {});
 };
-
-export function resolveLearningOpenUrl(item) {
-  const raw = item?.openUrl || item?.videoUrl || item?.fileUrl;
-  if (!raw) return null;
-  if (raw.startsWith('http')) return raw;
-  const base = getApiBaseUrl().replace(/\/$/, '');
-  return `${base}${raw.startsWith('/') ? raw : `/${raw}`}`;
-}
 
 export const employeeLearningService = {
   async listForEmployee() {

@@ -93,10 +93,10 @@ const UpcomingAppointments = ({ appointments, onMessage }) => {
                   <Button
                     variant="outline"
                     size="xs"
-                    iconName="MessageSquare"
+                    iconName="LifeBuoy"
                     onClick={() => onMessage?.(appointment)}
                   >
-                    Message
+                    Get Help
                   </Button>
                   <Button variant="ghost" size="xs" iconName="MoreHorizontal" />
                 </div>

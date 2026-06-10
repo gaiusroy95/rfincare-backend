@@ -8,6 +8,7 @@ const BankCard = ({
   bank,
   onApply,
   onCompare,
+  onViewBank,
   isComparing,
   showComparisonFields = false,
   comparisonValues,
@@ -38,11 +39,17 @@ const BankCard = ({
             />
           </div>
           <div className="min-w-0">
-            <h3 className="text-base md:text-lg lg:text-xl font-bold text-foreground line-clamp-1">
+            <button
+              type="button"
+              onClick={() => onViewBank?.(bank)}
+              className="text-base md:text-lg lg:text-xl font-bold text-foreground line-clamp-1 hover:text-primary text-left transition-colors"
+            >
               {bank?.name}
-            </h3>
-            {bank?.productName && bank.productName !== bank?.name && (
-              <p className="text-xs text-primary line-clamp-1 mt-0.5">{bank.productName}</p>
+            </button>
+            {(bank?.productName || bank?.productCategoryLabel) && (
+              <p className="text-xs text-primary line-clamp-1 mt-0.5">
+                {bank?.productName || bank?.productCategoryLabel}
+              </p>
             )}
             <div className="flex items-center space-x-2 mt-1">
               <div className="flex items-center">
@@ -97,9 +104,12 @@ const BankCard = ({
             <span className="text-xs md:text-sm text-muted-foreground">Interest Rate</span>
             <div className="flex items-baseline space-x-1 mt-1">
               <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
-                {bank?.interestRate}%
+                {bank?.interestRateLabel ?? bank?.interestRate ?? 'On request'}
               </span>
-              <span className="text-xs md:text-sm text-muted-foreground">p.a.</span>
+              {(bank?.interestRateLabel ?? bank?.interestRate) &&
+                bank?.interestRateLabel !== 'On request' && (
+                  <span className="text-xs md:text-sm text-muted-foreground">% p.a.</span>
+                )}
             </div>
           </div>
           <div className="text-right">
@@ -178,17 +188,26 @@ const BankCard = ({
           <span className="whitespace-nowrap">{bank?.partnershipDuration}</span>
         </div>
       </div>
-      {/* Action Button */}
-      <Button
-        variant="default"
-        fullWidth
-        onClick={() => onApply(bank)}
-        iconName="ArrowRight"
-        iconPosition="right"
-        className="mt-auto"
-      >
-        Apply Now
-      </Button>
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-2 mt-auto">
+        <Button
+          variant="outline"
+          fullWidth
+          onClick={() => onViewBank?.(bank)}
+          iconName="Layers"
+        >
+          All bank products
+        </Button>
+        <Button
+          variant="default"
+          fullWidth
+          onClick={() => onApply(bank)}
+          iconName="ArrowRight"
+          iconPosition="right"
+        >
+          Apply Now
+        </Button>
+      </div>
     </div>
   );
 };

@@ -6,7 +6,17 @@ import { Checkbox } from '../../../components/ui/Checkbox';
 import Button from '../../../components/ui/Button';
 import { BANK_TYPE_OPTIONS } from '../../../constants/bankTypes';
 
+import { BANK_MARKETPLACE_PRODUCT_CATEGORIES } from '../../../constants/bankMarketplaceProductCategories';
+
 const FilterPanel = ({ filters, onFilterChange, onReset, isOpen, onToggle }) => {
+  const productTypeOptions = [
+    { value: 'all', label: 'All product types' },
+    ...BANK_MARKETPLACE_PRODUCT_CATEGORIES.map((cat) => ({
+      value: cat.slug,
+      label: cat.label,
+    })),
+  ];
+
   const interestRateOptions = [
     { value: 'all', label: 'All Rates' },
     { value: '0-8', label: 'Below 8%' },
@@ -74,6 +84,16 @@ const FilterPanel = ({ filters, onFilterChange, onReset, isOpen, onToggle }) => 
               value={filters?.search}
               onChange={(e) => onFilterChange('search', e?.target?.value)}
               className="w-full"
+            />
+          </div>
+
+          {/* Loan product type */}
+          <div>
+            <Select
+              label="Loan product type"
+              options={productTypeOptions}
+              value={filters?.productType || 'all'}
+              onChange={(value) => onFilterChange('productType', value)}
             />
           </div>
 

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { apiClient, setAccessToken } from '../lib/apiClient';
 
 const AuthContext = createContext(null)
@@ -113,33 +113,62 @@ export const AuthProvider = ({ children }) => {
   const signOut = async () => {
     try {
       await apiClient.post('/auth/logout')
+    } catch (error) {
+      console.error('Logout API error:', error)
+    } finally {
       setAccessToken(null)
       setUser(null)
       profileOperations?.clear()
-      return { error: null }
-    } catch (error) {
-      return { error: { message: 'Network error. Please try again.' } }
-    }
-  }
-
-  const refreshEmployeeAccess = async (accessOverride = null) => {
-    if (userProfile?.role !== 'employee' && user?.role !== 'employee') return
-    if (accessOverride) {
-      setEmployeeAccess(accessOverride)
-      return
-    }
-    try {
-      const res = await apiClient.get('/portal/employee/access')
-      setEmployeeAccess(res?.data?.access ?? null)
-    } catch {
       try {
-        const meRes = await apiClient.get('/auth/me')
-        setEmployeeAccess(meRes?.data?.employeeAccess ?? null)
+        localStorage.removeItem('authToken')
       } catch {
         /* ignore */
       }
     }
+    return { error: null }
   }
+
+  const refreshEmployeeAccess = useCallback(async (accessOverride = null) => {
+    if (userProfile?.role !== 'employee' && user?.role !== 'employee') return
+    if (accessOverride) {
+      setEmployeeAccess((prev) => {
+        try {
+          if (JSON.stringify(prev) === JSON.stringify(accessOverride)) return prev
+        } catch {
+          /* compare failed — apply update */
+        }
+        return accessOverride
+      })
+      return
+    }
+    try {
+      const res = await apiClient.get('/portal/employee/access')
+      const next = res?.data?.access ?? null
+      setEmployeeAccess((prev) => {
+        try {
+          if (JSON.stringify(prev) === JSON.stringify(next)) return prev
+        } catch {
+          /* ignore */
+        }
+        return next
+      })
+    } catch {
+      try {
+        const meRes = await apiClient.get('/auth/me')
+        const next = meRes?.data?.employeeAccess ?? null
+        setEmployeeAccess((prev) => {
+          try {
+            if (JSON.stringify(prev) === JSON.stringify(next)) return prev
+          } catch {
+            /* ignore */
+          }
+          return next
+        })
+      } catch {
+        /* ignore */
+      }
+    }
+  }, [userProfile?.role, user?.role])
 
   const updateProfile = async (updates) => {
     if (!user) return { error: { message: 'No user logged in' } }

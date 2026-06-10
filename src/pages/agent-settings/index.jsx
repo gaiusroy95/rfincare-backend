@@ -36,7 +36,7 @@ const Section = ({ title, description, icon, children }) => (
 
 const AgentSettingsPage = () => {
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
+  const { userProfile, signOut } = useAuth();
   const photoRef = useRef(null);
 
   const [data, setData] = useState(null);
@@ -185,9 +185,8 @@ const AgentSettingsPage = () => {
       await agentProfileService.confirmPasswordReset(resetOtp, resetPassword);
       setMessage('Password reset complete. Signing you out…');
       setTimeout(async () => {
-        await authService.signOut();
-        localStorage.removeItem('authToken');
-        navigate('/agent-login');
+        await signOut();
+        navigate('/agent-login', { replace: true });
       }, 1500);
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Password reset failed');
@@ -301,9 +300,9 @@ const AgentSettingsPage = () => {
     setError('');
     try {
       await agentProfileService.confirmDeactivate(deactivateOtp, 'DEACTIVATE');
-      await authService.signOut();
-      localStorage.removeItem('authToken');
+      await signOut();
       navigate('/agent-login', {
+        replace: true,
         state: { message: 'Your agent account has been deactivated.' },
       });
     } catch (err) {

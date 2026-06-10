@@ -3,7 +3,7 @@ import Image from '../../../components/AppImage';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const BankListItem = ({ bank, onApply, onCompare, isComparing }) => {
+const BankListItem = ({ bank, onApply, onCompare, onViewBank, isComparing }) => {
   const getProbabilityColor = (probability) => {
     if (probability >= 80) return 'text-success';
     if (probability >= 60) return 'text-warning';
@@ -23,11 +23,17 @@ const BankListItem = ({ bank, onApply, onCompare, isComparing }) => {
             />
           </div>
           <div className="min-w-0">
-            <h3 className="text-base md:text-lg font-bold text-foreground line-clamp-1 mb-1">
+            <button
+              type="button"
+              onClick={() => onViewBank?.(bank)}
+              className="text-base md:text-lg font-bold text-foreground line-clamp-1 mb-1 hover:text-primary text-left"
+            >
               {bank?.name}
-            </h3>
-            {bank?.productName && bank.productName !== bank?.name && (
-              <p className="text-xs text-primary line-clamp-1 mb-1">{bank.productName}</p>
+            </button>
+            {(bank?.productName || bank?.productCategoryLabel) && (
+              <p className="text-xs text-primary line-clamp-1 mb-1">
+                {bank?.productName || bank?.productCategoryLabel}
+              </p>
             )}
             <div className="flex items-center space-x-2 mb-2">
               <div className="flex items-center">
@@ -79,8 +85,13 @@ const BankListItem = ({ bank, onApply, onCompare, isComparing }) => {
           <div className="flex-1 bg-muted rounded-lg p-3 md:p-4">
             <span className="text-xs text-muted-foreground block mb-1">Interest Rate</span>
             <div className="flex items-baseline space-x-1">
-              <span className="text-xl md:text-2xl font-bold text-primary">{bank?.interestRate}%</span>
-              <span className="text-xs text-muted-foreground">p.a.</span>
+              <span className="text-xl md:text-2xl font-bold text-primary">
+                {bank?.interestRateLabel ?? bank?.interestRate ?? 'On request'}
+              </span>
+              {(bank?.interestRateLabel ?? bank?.interestRate) &&
+                bank?.interestRateLabel !== 'On request' && (
+                  <span className="text-xs text-muted-foreground">% p.a.</span>
+                )}
             </div>
           </div>
 
@@ -97,6 +108,15 @@ const BankListItem = ({ bank, onApply, onCompare, isComparing }) => {
 
         {/* Actions */}
         <div className="flex md:flex-col gap-2 md:gap-3 flex-shrink-0">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewBank?.(bank)}
+            iconName="Layers"
+            className="flex-1 md:flex-initial"
+          >
+            Products
+          </Button>
           <Button
             variant="default"
             size="sm"

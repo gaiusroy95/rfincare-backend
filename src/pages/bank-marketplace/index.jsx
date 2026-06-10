@@ -9,11 +9,15 @@ import BankCard from './components/BankCard';
 import BankListItem from './components/BankListItem';
 import FilterPanel from './components/FilterPanel';
 import SortBar from './components/SortBar';
+import BankProductsModal from './components/BankProductsModal';
 import BankComparisonPanel from '../../components/bank-comparison/BankComparisonPanel';
 import { MAX_BANK_COMPARE } from '../../constants/bankComparison';
 import { bankService } from '../../services/apiServices';
 import { useAuth } from '../../contexts/AuthContext';
-import { getMarketplaceCompareKey, mapBankForMarketplace } from '../../utils/bankMarketplace';
+import {
+  getMarketplaceCompareKey,
+  listMarketplaceOffers,
+} from '../../utils/bankMarketplace';
 import { getBankProbabilityMap, loadEligibilityResults, saveEligibilityResults } from '../../services/leadService';
 import { homepageService } from '../../services/homepageService';
 import MarketplaceEligibilityBanner from './components/MarketplaceEligibilityBanner';
@@ -48,12 +52,15 @@ const BankMarketplace = () => {
   const [compareList, setCompareList] = useState([]);
   const comparisonSectionRef = useRef(null);
   const [banks, setBanks] = useState([]);
+  const [allOffers, setAllOffers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [loadSlowHint, setLoadSlowHint] = useState(false);
+  const [selectedBankOffer, setSelectedBankOffer] = useState(null);
 
   const [filters, setFilters] = useState({
     search: '',
+    productType: 'all',
     interestRate: 'all',
     probability: 'all',
     loanAmount: 'all',
@@ -73,7 +80,7 @@ const BankMarketplace = () => {
       setLoadSlowHint(false);
       slowTimer = setTimeout(() => setLoadSlowHint(true), 4000);
       const data = await bankService?.getActiveBanks({
-        loanType: loanTypeSlug || undefined,
+        forceRefresh: true,
       });
       const list = Array.isArray(data) ? data : [];
 
@@ -90,13 +97,13 @@ const BankMarketplace = () => {
         }
       }
       const probabilityMap = getBankProbabilityMap(eligibility);
-      const transformedBanks = list
-        .map((bank) => mapBankForMarketplace(bank, loanTypeSlug, probabilityMap))
-        .filter(Boolean);
-      setBanks(transformedBanks);
+      const transformedOffers = listMarketplaceOffers(list, loanTypeSlug, probabilityMap);
+      setAllOffers(transformedOffers);
+      setBanks(transformedOffers);
     } catch (err) {
       setError(err?.message);
       setBanks([]);
+      setAllOffers([]);
       console.error('Failed to load banks:', err);
     } finally {
       if (slowTimer) clearTimeout(slowTimer);
@@ -111,6 +118,7 @@ const BankMarketplace = () => {
   const handleResetFilters = () => {
     setFilters({
       search: '',
+      productType: 'all',
       interestRate: 'all',
       probability: 'all',
       loanAmount: 'all',
@@ -119,6 +127,15 @@ const BankMarketplace = () => {
       features: []
     });
   };
+
+  const handleViewBank = (offer) => {
+    setSelectedBankOffer(offer);
+  };
+
+  const selectedBankProducts = useMemo(() => {
+    if (!selectedBankOffer?.id) return [];
+    return allOffers.filter((offer) => offer.id === selectedBankOffer.id);
+  }, [allOffers, selectedBankOffer]);
 
   const scrollToComparison = () => {
     comparisonSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -163,14 +180,26 @@ const BankMarketplace = () => {
     let result = [...banks];
 
     if (filters?.search) {
-      result = result?.filter((bank) =>
-      bank?.name?.toLowerCase()?.includes(filters?.search?.toLowerCase())
+      const q = filters.search.toLowerCase();
+      result = result?.filter(
+        (offer) =>
+          offer?.name?.toLowerCase()?.includes(q) ||
+          offer?.productName?.toLowerCase()?.includes(q) ||
+          offer?.productCategoryLabel?.toLowerCase()?.includes(q),
+      );
+    }
+
+    if (!isAllFilterValue(filters?.productType)) {
+      result = result.filter(
+        (offer) =>
+          offer?.productCategorySlug === filters.productType ||
+          offer?.loanType === filters.productType,
       );
     }
 
     if (!isAllFilterValue(filters?.interestRate)) {
-      result = result.filter((bank) =>
-        matchesNumericRange(filters.interestRate, bank?.interestRate)
+      result = result.filter((offer) =>
+        matchesNumericRange(filters.interestRate, offer?.interestRateMin ?? offer?.interestRate),
       );
     }
 
@@ -191,8 +220,8 @@ const BankMarketplace = () => {
         aVal = a?.probability;
         bVal = b?.probability;
       } else if (sortKey === 'interest') {
-        aVal = a?.interestRate;
-        bVal = b?.interestRate;
+        aVal = a?.interestRateMin ?? a?.interestRate;
+        bVal = b?.interestRateMin ?? b?.interestRate;
       } else if (sortKey === 'rating') {
         aVal = a?.rating;
         bVal = b?.rating;
@@ -248,8 +277,8 @@ const BankMarketplace = () => {
               </h1>
               <p className="text-sm md:text-base text-muted-foreground">
                 {activeProduct
-                  ? `Lenders offering ${activeProduct.label.toLowerCase()} products matched to your search`
-                  : 'Compare personalized loan offers from our trusted banking partners'}
+                  ? `All ${activeProduct.label.toLowerCase()} products from partner banks`
+                  : 'Compare every loan product from our trusted banking partners'}
               </p>
               {activeProduct && (
                 <div className="flex flex-wrap gap-2 mt-3">
@@ -359,7 +388,7 @@ const BankMarketplace = () => {
             <div className="bg-card rounded-lg border border-border p-8 md:p-12 text-center">
                 <Icon name="Search" size={48} className="text-muted mx-auto mb-4" />
                 <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">
-                  No banks match your filters
+                  No loan products match your filters
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground mb-6">
                   Try adjusting your filter criteria to see more options
@@ -376,19 +405,21 @@ const BankMarketplace = () => {
                 {filteredAndSortedBanks?.map((bank) =>
               viewMode === 'grid' ?
               <BankCard
-                key={bank?.id}
+                key={bank?.compareKey || bank?.productId || bank?.id}
                 bank={bank}
                 onApply={handleApply}
                 onCompare={handleCompareToggle}
+                onViewBank={handleViewBank}
                 isComparing={compareList?.includes(getMarketplaceCompareKey(bank))}
               /> :
 
 
               <BankListItem
-                key={bank?.id}
+                key={bank?.compareKey || bank?.productId || bank?.id}
                 bank={bank}
                 onApply={handleApply}
                 onCompare={handleCompareToggle}
+                onViewBank={handleViewBank}
                 isComparing={compareList?.includes(getMarketplaceCompareKey(bank))}
               />
 
@@ -419,6 +450,17 @@ const BankMarketplace = () => {
           </div>
         </div>
       </main>
+      <BankProductsModal
+        isOpen={Boolean(selectedBankOffer)}
+        bankName={selectedBankOffer?.name}
+        bankOffer={selectedBankOffer}
+        products={selectedBankProducts}
+        onClose={() => setSelectedBankOffer(null)}
+        onApply={(product) => {
+          setSelectedBankOffer(null);
+          handleApply(product);
+        }}
+      />
     </div>
   );
 

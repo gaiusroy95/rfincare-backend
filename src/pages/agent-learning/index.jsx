@@ -6,6 +6,7 @@ import TrainingResources from '../agent-dashboard/components/TrainingResources';
 import {
   agentLearningService,
   resolveLearningOpenUrl,
+  openLearningResource,
 } from '../../services/agentLearningService';
 
 const AgentLearningPage = () => {
@@ -42,8 +43,11 @@ const AgentLearningPage = () => {
   }, [load]);
 
   const handleOpen = async (resource) => {
-    const url = resource.openUrl;
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    try {
+      await openLearningResource(resource);
+    } catch (err) {
+      console.error('Failed to open learning resource:', err);
+    }
     if (!resource.legacy && resource.id) {
       const nextProgress = resource.progress > 0 ? Math.min(100, resource.progress + 25) : 50;
       try {

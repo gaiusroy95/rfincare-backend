@@ -63,7 +63,10 @@ async function fetchBankList(params, { forceRefresh = false } = {}) {
   }
 
   return fetchBanksCached(key, async () => {
-    const res = await apiClient.get('/banks', { params: listParams });
+    const res = await apiClient.get('/banks', {
+      params: listParams,
+      headers: { 'Cache-Control': 'no-cache', Pragma: 'no-cache' },
+    });
     return toCamelCase(res?.data);
   });
 }
@@ -80,7 +83,7 @@ export const bankService = {
     const params = { includeProducts: options.includeProducts !== false };
     if (options.loanType) params.loanType = options.loanType;
     if (options.includeProducts === false) params.includeProducts = false;
-    return fetchBankList(params);
+    return fetchBankList(params, { forceRefresh: options.forceRefresh !== false });
   },
   async getBankById(bankId) {
     const res = await apiClient.get(`/banks/${bankId}`);

@@ -6,26 +6,14 @@ import Button from '../../../components/ui/Button';
 import BankComparisonPanel from '../../../components/bank-comparison/BankComparisonPanel';
 import { bankService } from '../../../services/apiServices';
 import { buildBankOffers, formatLoanAmount } from '../../../utils/bankOffers';
-import { mapBankForMarketplace } from '../../../utils/bankMarketplace';
+import { listMarketplaceOffers } from '../../../utils/bankMarketplace';
 import { getBankProbabilityMap, loadEligibilityResults } from '../../../services/leadService';
 import { MAX_BANK_COMPARE } from '../../../constants/bankComparison';
 
 const BankOffersSection = ({ product }) => {
   const navigate = useNavigate();
-  const [banks, setBanks] = useState(() => {
-    try {
-      const key = `banks:${product.slug}`;
-      const raw = sessionStorage.getItem(key);
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (parsed?.at && Date.now() - parsed.at < 5 * 60 * 1000) return parsed.data;
-      }
-    } catch {
-      /* ignore */
-    }
-    return [];
-  });
-  const [loading, setLoading] = useState(() => banks.length === 0);
+  const [banks, setBanks] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [compareList, setCompareList] = useState([]);
   const comparisonSectionRef = useRef(null);
@@ -36,19 +24,14 @@ const BankOffersSection = ({ product }) => {
       try {
         setLoading(true);
         setError('');
-        const data = await bankService.getActiveBanks({ loanType: product.slug });
+        const data = await bankService.getActiveBanks({
+          loanType: product.slug,
+          forceRefresh: true,
+        });
         if (!cancelled) {
           const list = Array.isArray(data) ? data : [];
           setBanks(list);
           setCompareList([]);
-          try {
-            sessionStorage.setItem(
-              `banks:${product.slug}`,
-              JSON.stringify({ data: list, at: Date.now() }),
-            );
-          } catch {
-            /* ignore */
-          }
         }
       } catch {
         if (!cancelled) setError('Unable to load bank offers right now.');
@@ -65,10 +48,7 @@ const BankOffersSection = ({ product }) => {
   const probabilityMap = getBankProbabilityMap(eligibility);
 
   const marketplaceBanks = useMemo(
-    () =>
-      banks
-        .map((bank) => mapBankForMarketplace(bank, product.slug, probabilityMap))
-        .filter(Boolean),
+    () => listMarketplaceOffers(banks, product.slug, probabilityMap),
     [banks, product.slug, probabilityMap],
   );
 

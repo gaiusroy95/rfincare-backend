@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
@@ -22,6 +22,7 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
     requireMobileOtp: true,
     requireEmailOtp: true,
   });
+  const submittingRef = useRef(false);
 
   const normalizedPhone = () => phone.replace(/\D/g, '').slice(-10);
 
@@ -46,7 +47,9 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
       setError(validationError);
       return;
     }
+    if (submittingRef.current) return;
 
+    submittingRef.current = true;
     setLoading(true);
     try {
       const lead = await leadService.createLead({
@@ -75,6 +78,7 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Could not send OTP');
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };

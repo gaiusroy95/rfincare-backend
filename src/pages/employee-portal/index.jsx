@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import Header from '../../components/ui/Header';
@@ -17,6 +17,7 @@ import { employeeService } from '../../services/employeeService';
 import {
   employeeLearningService,
   resolveLearningOpenUrl,
+  openLearningResource,
 } from '../../services/employeeLearningService';
 import SessionTimeout from '../../components/SessionTimeout';
 import { useAuth } from '../../contexts/AuthContext';
@@ -33,7 +34,7 @@ import {
 
 const EmployeePortal = () => {
   const navigate = useNavigate();
-  const { signOut, employeeAccess: authEmployeeAccess, refreshEmployeeAccess } = useAuth();
+  const { signOut, employeeAccess: authEmployeeAccess } = useAuth();
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState(null);
   const [workspaceApplication, setWorkspaceApplication] = useState(null);
@@ -41,7 +42,12 @@ const EmployeePortal = () => {
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeTab, setActiveTab] = useState('applications');
-  const [loading, setLoading] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const loadInFlightRef = useRef(false);
+  const initialLoadDoneRef = useRef(false);
+  const authAccessRef = useRef(authEmployeeAccess);
+  authAccessRef.current = authEmployeeAccess;
   
   // Real data from Supabase
   const [pendingAgents, setPendingAgents] = useState([]);
@@ -58,22 +64,30 @@ const EmployeePortal = () => {
   });
   const [unreadMessageCount, setUnreadMessageCount] = useState(0);
   const [employeeAccess, setEmployeeAccess] = useState(null);
-  const loadDashboardData = useCallback(async () => {
-    setLoading(true);
+  const loadDashboardData = useCallback(async ({ background = false } = {}) => {
+    if (loadInFlightRef.current) return;
+    loadInFlightRef.current = true;
+
+    if (background) {
+      setIsRefreshing(true);
+    } else if (!initialLoadDoneRef.current) {
+      setInitialLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
+
     try {
       const { data: dashboard } = await employeeService.getEmployeeDashboard();
       setDashboardStats(dashboard?.stats || dashboard);
-      const access = dashboard?.access || authEmployeeAccess || null;
+      const access = dashboard?.access || authAccessRef.current || null;
       setEmployeeAccess(access);
-      if (dashboard?.access) {
-        refreshEmployeeAccess(dashboard.access);
-      }
 
-      const appList = dashboard?.applications?.length
-        ? dashboard.applications
-        : employeeCan(access, 'applications', 'read')
-          ? (await employeeService.getAssignedApplications())?.data || []
-          : [];
+      const appList =
+        dashboard?.applications != null
+          ? dashboard.applications
+          : employeeCan(access, 'applications', 'read')
+            ? (await employeeService.getAssignedApplications())?.data || []
+            : [];
       setAssignedApplications(appList);
       const appById = Object.fromEntries(appList.map((a) => [a.id, a]));
 
@@ -123,9 +137,12 @@ const EmployeePortal = () => {
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
     } finally {
-      setLoading(false);
+      loadInFlightRef.current = false;
+      initialLoadDoneRef.current = true;
+      setInitialLoading(false);
+      setIsRefreshing(false);
     }
-  }, [authEmployeeAccess, refreshEmployeeAccess]);
+  }, []);
 
   useEffect(() => {
     loadDashboardData();
@@ -137,7 +154,11 @@ const EmployeePortal = () => {
     }
   }, [authEmployeeAccess]);
 
-  usePortalPolling(loadDashboardData, 20000, !loading);
+  usePortalPolling(
+    () => loadDashboardData({ background: true }),
+    20000,
+    !initialLoading,
+  );
 
   const refreshUnreadMessages = useCallback(async () => {
     try {
@@ -209,8 +230,11 @@ const EmployeePortal = () => {
   };
 
   const handleLearningOpen = async (resource) => {
-    const url = resource.openUrl;
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    try {
+      await openLearningResource(resource);
+    } catch (err) {
+      console.error('Failed to open learning resource:', err);
+    }
     if (resource.id) {
       const next = resource.progress > 0 ? Math.min(100, resource.progress + 25) : 50;
       try {
@@ -364,9 +388,11 @@ const EmployeePortal = () => {
               )}
               <Button
                 variant="default"
-                onClick={() => loadDashboardData()}>
-                <Icon name="RefreshCw" size={16} className="mr-2" />
-                Refresh
+                onClick={() => loadDashboardData()}
+                disabled={isRefreshing}
+              >
+                <Icon name="RefreshCw" size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing…' : 'Refresh'}
               </Button>
             </div>
           </div>
@@ -457,7 +483,7 @@ const EmployeePortal = () => {
               </div>
             </div>
 
-            {loading ? (
+            {initialLoading ? (
               <div className="text-center py-12">
                 <Icon name="Loader" size={32} className="animate-spin mx-auto text-primary" />
                 <p className="text-muted-foreground mt-4">Loading applications...</p>
@@ -477,7 +503,9 @@ const EmployeePortal = () => {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex-1">
                         <div className="flex items-center space-x-3 mb-3">
-                          <h3 className="text-lg font-semibold text-foreground">{app?.customer?.fullName}</h3>
+                          <h3 className="text-lg font-semibold text-foreground">
+                            {app?.customer?.fullName || app?.customerName || app?.name || 'Customer'}
+                          </h3>
                           <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
                             {app?.applicationNumber}
                           </span>
@@ -541,7 +569,7 @@ const EmployeePortal = () => {
 
         {activeTab === 'agents' && (
           <div className="space-y-4">
-            {loading ? (
+            {initialLoading ? (
               <div className="text-center py-12">
                 <Icon name="Loader" size={32} className="animate-spin mx-auto text-primary" />
                 <p className="text-muted-foreground mt-4">Loading agents...</p>
@@ -597,7 +625,7 @@ const EmployeePortal = () => {
 
         {activeTab === 'documents' && (
           <div className="space-y-4">
-            {loading ? (
+            {initialLoading ? (
               <div className="text-center py-12">
                 <Icon name="Loader" size={32} className="animate-spin mx-auto text-primary" />
                 <p className="text-muted-foreground mt-4">Loading documents...</p>
@@ -712,6 +740,8 @@ const EmployeePortal = () => {
         }}
         applicationId={communicationContext.applicationId}
         clientLabel={communicationContext.clientLabel}
+        variant="employee"
+        initialMode="help"
       />
     </div>
   );

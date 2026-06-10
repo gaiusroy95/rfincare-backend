@@ -16,29 +16,19 @@ import TrainingResources from './components/TrainingResources';
 import QuickActions from './components/QuickActions';
 import RecentActivity from './components/RecentActivity';
 import SessionTimeout from '../../components/SessionTimeout';
-import { authService } from '../../services/authService';
 import { agentService } from '../../services/agentService';
 import {
   agentLearningService,
   resolveLearningOpenUrl,
+  openLearningResource,
 } from '../../services/agentLearningService';
 import { resolveAvatarUrl } from '../../services/agentProfileService';
 import { resolveUploadUrl } from '../../utils/documentUrls';
 import { useAuth } from '../../contexts/AuthContext';
 
-const signOut = async () => {
-  try {
-    await authService?.signOut();
-    localStorage.removeItem('authToken');
-    sessionStorage.clear();
-  } catch (error) {
-    console.error('Sign out error:', error);
-  }
-};
-
 const AgentDashboard = () => {
   const navigate = useNavigate();
-  const { userProfile } = useAuth();
+  const { userProfile, signOut } = useAuth();
   const [selectedView, setSelectedView] = useState('overview');
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -46,6 +36,7 @@ const AgentDashboard = () => {
   const [communicationContext, setCommunicationContext] = useState({
     applicationId: null,
     clientLabel: '',
+    mode: 'help',
   });
 
   const loadDashboard = useCallback(async () => {
@@ -132,10 +123,11 @@ const AgentDashboard = () => {
       }))
     : [];
 
-  const openCommunication = (item) => {
+  const openCommunication = (item, mode = 'help') => {
     setCommunicationContext({
       applicationId: item?.applicationId || item?.id || null,
       clientLabel: item?.clientName || item?.name || '',
+      mode,
     });
     setCommunicationOpen(true);
   };
@@ -156,8 +148,11 @@ const AgentDashboard = () => {
   const trainingResources = (dashboard?.learningResources || []).map(mapLearningResource);
 
   const handleLearningOpen = async (resource) => {
-    const url = resource.openUrl;
-    if (url) window.open(url, '_blank', 'noopener,noreferrer');
+    try {
+      await openLearningResource(resource);
+    } catch (err) {
+      console.error('Failed to open learning resource:', err);
+    }
     if (!resource.legacy && resource.id) {
       const nextProgress = resource.progress > 0 ? Math.min(100, resource.progress + 25) : 50;
       try {
@@ -225,14 +220,10 @@ const AgentDashboard = () => {
         navigate('/agent/customer-application');
         break;
       case 'upload-document':
-        if (clients[0]?.id) {
-          openCommunication({ applicationId: clients[0].id, clientName: clients[0].name });
-        } else {
-          openCommunication({});
-        }
+        openCommunication({}, 'upload');
         break;
       case 'message-employee':
-        openCommunication({});
+        openCommunication({}, 'help');
         break;
       case 'schedule-meeting':
         // Scroll to appointments section or open scheduling modal
@@ -276,7 +267,7 @@ const AgentDashboard = () => {
           <Button
             onClick={async () => {
               await signOut();
-              navigate('/agent-login');
+              navigate('/agent-login', { replace: true });
             }}
             variant="outline"
             className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50"
@@ -324,10 +315,10 @@ const AgentDashboard = () => {
               <Button
                 variant="outline"
                 size="sm"
-                iconName="MessageSquare"
-                onClick={() => openCommunication({})}
+                iconName="LifeBuoy"
+                onClick={() => openCommunication({}, 'help')}
               >
-                Messages
+                Get Help
               </Button>
               <Button variant="outline" size="sm" iconName="Bell">
                 Notifications
@@ -471,6 +462,8 @@ const AgentDashboard = () => {
         onClose={() => setCommunicationOpen(false)}
         applicationId={communicationContext.applicationId}
         clientLabel={communicationContext.clientLabel}
+        variant="agent"
+        initialMode={communicationContext.mode}
       />
     </div>
   );
