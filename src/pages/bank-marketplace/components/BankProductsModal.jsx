@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import Image from '../../../components/AppImage';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import { getMarketplaceCompareKey } from '../../../utils/bankMarketplace';
 
 const DetailRow = ({ label, value }) => {
   if (!value || value === '—') return null;
@@ -30,7 +31,25 @@ const ProductSection = ({ title, items }) => {
   );
 };
 
-const BankProductsModal = ({ bankName, bankOffer, products, isOpen, onClose, onApply }) => {
+const BankProductsModal = ({
+  bankName,
+  bankOffer,
+  products,
+  activeProductKey,
+  isOpen,
+  onClose,
+  onApply,
+}) => {
+  const activeRef = useRef(null);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const timer = window.setTimeout(() => {
+      activeRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+    return () => window.clearTimeout(timer);
+  }, [isOpen, activeProductKey]);
+
   if (!isOpen || !bankOffer) return null;
 
   const list = products?.length ? products : [bankOffer];
@@ -70,13 +89,24 @@ const BankProductsModal = ({ bankName, bankOffer, products, isOpen, onClose, onA
         </div>
 
         <div className="overflow-y-auto flex-1 p-4 md:p-6 space-y-6">
-          {list.map((product) => (
+          {list.map((product) => {
+            const productKey = getMarketplaceCompareKey(product);
+            const isActive = activeProductKey && productKey === activeProductKey;
+            return (
             <div
-              key={product.compareKey || product.productId}
-              className="rounded-lg border border-border p-4 md:p-5 bg-muted/20"
+              key={productKey || product.productId}
+              ref={isActive ? activeRef : null}
+              className={`rounded-lg border p-4 md:p-5 ${
+                isActive
+                  ? 'border-primary bg-primary/5 ring-1 ring-primary/20'
+                  : 'border-border bg-muted/20'
+              }`}
             >
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
                 <div>
+                  {isActive && (
+                    <p className="text-xs font-semibold text-primary mb-1">Selected from marketplace</p>
+                  )}
                   <h3 className="text-lg font-semibold text-foreground">
                     {product.productName || product.productCategoryLabel}
                   </h3>
@@ -131,7 +161,8 @@ const BankProductsModal = ({ bankName, bankOffer, products, isOpen, onClose, onA
                 <ProductSection title="Policies" items={product.policies} />
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
 
         <div className="p-4 md:p-6 border-t border-border shrink-0 flex justify-end gap-3">

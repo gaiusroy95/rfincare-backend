@@ -134,8 +134,16 @@ const BankMarketplace = () => {
 
   const selectedBankProducts = useMemo(() => {
     if (!selectedBankOffer?.id) return [];
-    return allOffers.filter((offer) => offer.id === selectedBankOffer.id);
+    const siblings = allOffers.filter((offer) => offer.id === selectedBankOffer.id);
+    const activeKey = getMarketplaceCompareKey(selectedBankOffer);
+    const active = siblings.find((offer) => getMarketplaceCompareKey(offer) === activeKey);
+    const rest = siblings.filter((offer) => getMarketplaceCompareKey(offer) !== activeKey);
+    return active ? [active, ...rest] : siblings;
   }, [allOffers, selectedBankOffer]);
+
+  const selectedProductKey = selectedBankOffer
+    ? getMarketplaceCompareKey(selectedBankOffer)
+    : null;
 
   const scrollToComparison = () => {
     comparisonSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -455,6 +463,7 @@ const BankMarketplace = () => {
         bankName={selectedBankOffer?.name}
         bankOffer={selectedBankOffer}
         products={selectedBankProducts}
+        activeProductKey={selectedProductKey}
         onClose={() => setSelectedBankOffer(null)}
         onApply={(product) => {
           setSelectedBankOffer(null);
