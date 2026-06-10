@@ -99,6 +99,7 @@ export function dedupeMarketplaceOffers(offers) {
   return [...seen.values()];
 }
 
+function readTextField(productData, ...keys) {
   for (const key of keys) {
     const value = productData[key];
     if (value != null && String(value).trim() !== '') return String(value).trim();
