@@ -3,6 +3,7 @@ import axios from 'axios';
 import { getApiBaseUrl } from './runtimeConfig';
 
 const API_BASE_URL = getApiBaseUrl();
+const API_TIMEOUT_MS = Number(import.meta.env?.VITE_API_TIMEOUT_MS || 90000);
 
 const ACCESS_TOKEN_STORAGE_KEY = 'rfincare_access_token';
 
@@ -42,6 +43,7 @@ try {
 export const apiClient = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // allow refresh cookie
+  timeout: API_TIMEOUT_MS,
 });
 
 export function setAccessToken(token) {

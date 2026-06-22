@@ -3,6 +3,7 @@ import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 import { leadService } from '../../../services/leadService';
+import { getApiErrorMessage } from '../../../lib/apiErrors';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -18,6 +19,7 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
   const [verified, setVerified] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [warning, setWarning] = useState('');
   const [otpSettings, setOtpSettings] = useState({
     requireMobileOtp: true,
     requireEmailOtp: true,
@@ -42,6 +44,7 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
 
   const handleCreateAndSendOtp = async () => {
     setError('');
+    setWarning('');
     const validationError = validateContact();
     if (validationError) {
       setError(validationError);
@@ -52,7 +55,7 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
     submittingRef.current = true;
     setLoading(true);
     try {
-      const lead = await leadService.createLead({
+      const res = await leadService.startVerification({
         fullName: fullName.trim(),
         email: email.trim(),
         phone: normalizedPhone(),
@@ -60,23 +63,21 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
         source: 'eligibility',
         consentAccepted: true,
       });
-      setLeadId(lead.id);
-      const otpRes = await leadService.requestOtp({
-        phone: normalizedPhone(),
-        email: email.trim(),
-        leadId: lead.id,
-      });
-      if (otpRes?.requireMobileOtp !== undefined || otpRes?.requireEmailOtp !== undefined) {
+      setLeadId(res?.lead?.id || res?.id || null);
+      if (res?.requireMobileOtp !== undefined || res?.requireEmailOtp !== undefined) {
         setOtpSettings({
-          requireMobileOtp: otpRes.requireMobileOtp !== false,
-          requireEmailOtp: otpRes.requireEmailOtp !== false,
+          requireMobileOtp: res.requireMobileOtp !== false,
+          requireEmailOtp: res.requireEmailOtp !== false,
         });
+      }
+      if (Array.isArray(res?.warnings) && res.warnings.length) {
+        setWarning(res.warnings.join(' '));
       }
       setOtpSent(true);
       setMobileOtp('');
       setEmailOtp('');
     } catch (err) {
-      setError(err?.response?.data?.error || err?.message || 'Could not send OTP');
+      setError(getApiErrorMessage(err, 'Could not send OTP'));
     } finally {
       submittingRef.current = false;
       setLoading(false);
@@ -112,7 +113,7 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
         phone: normalizedPhone(),
       });
     } catch (err) {
-      setError(err?.response?.data?.error || 'Invalid or expired OTP. Please try again.');
+      setError(getApiErrorMessage(err, 'Invalid or expired OTP. Please try again.'));
     } finally {
       setLoading(false);
     }
@@ -216,6 +217,11 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
           )}
         </div>
       )}
+      {warning && (
+        <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+          {warning}
+        </p>
+      )}
       {error && <p className="text-sm text-destructive">{error}</p>}
       <div className="flex flex-wrap gap-3">
         {!otpSent ? (
@@ -233,17 +239,21 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
               disabled={loading}
               onClick={async () => {
                 setError('');
+                setWarning('');
                 setLoading(true);
                 try {
-                  await leadService.requestOtp({
+                  const otpRes = await leadService.requestOtp({
                     phone: normalizedPhone(),
                     email: email.trim(),
                     leadId,
                   });
+                  if (Array.isArray(otpRes?.warnings) && otpRes.warnings.length) {
+                    setWarning(otpRes.warnings.join(' '));
+                  }
                   setMobileOtp('');
                   setEmailOtp('');
                 } catch (err) {
-                  setError(err?.response?.data?.error || 'Could not resend OTP');
+                  setError(getApiErrorMessage(err, 'Could not resend OTP'));
                 } finally {
                   setLoading(false);
                 }

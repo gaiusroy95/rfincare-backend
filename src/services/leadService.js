@@ -6,6 +6,12 @@ export const leadService = {
     return res.data;
   },
 
+  /** Create lead + send mobile/email OTP in one API call (eligibility gate). */
+  async startVerification(payload) {
+    const res = await apiClient.post('/leads/start-verification', payload);
+    return res.data;
+  },
+
   async getOtpSettings() {
     const res = await apiClient.get('/leads/otp-settings');
     return res.data;
