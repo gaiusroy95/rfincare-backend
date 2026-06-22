@@ -36,11 +36,12 @@ export const employeeService = {
       return { data: [], error: { message: 'Failed to load agent onboarding queue' } };
     }
   },
-  async approveAgentOnboarding(agentUserId, notes = '') {
+  async approveAgentOnboarding(agentUserId, { password = '', notes = '' } = {}) {
     try {
       await apiClient.post(`/portal/employee/milestone4/agent-onboarding/${agentUserId}/qc`, {
         decision: 'approved',
-        notes,
+        notes: notes || undefined,
+        temporaryPassword: password || undefined,
       });
       return { error: null };
     } catch (error) {

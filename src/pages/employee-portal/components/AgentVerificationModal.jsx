@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -18,6 +18,24 @@ const AgentVerificationModal = ({ agent, isOpen, onClose, onApprove, onReject })
   });
   const [showRejectForm, setShowRejectForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!agent) return;
+    setCredentials({
+      username: agent?.username || '',
+      password: '',
+    });
+    setVerificationChecks({
+      identityVerified: false,
+      bankDetailsVerified: false,
+      documentsComplete: false,
+      backgroundCheck: false,
+    });
+    setRejectionReason('');
+    setShowRejectForm(false);
+    setError('');
+  }, [agent?.userId, agent?.id, isOpen]);
 
   const handleCheckChange = (key) => {
     setVerificationChecks(prev => ({
@@ -30,16 +48,34 @@ const AgentVerificationModal = ({ agent, isOpen, onClose, onApprove, onReject })
 
   const handleApprove = async () => {
     if (!allChecksComplete) {
-      alert('Please complete all verification checks');
+      setError('Please complete all verification checks.');
       return;
     }
-    
+    if (!credentials?.password || credentials.password.length < 8) {
+      setError('Enter a temporary password of at least 8 characters.');
+      return;
+    }
+
+    const agentUserId = agent?.userId || agent?.user_id;
+    if (!agentUserId) {
+      setError('Agent user id is missing. Refresh the page and try again.');
+      return;
+    }
+
+    setError('');
     setLoading(true);
     try {
-      await onApprove(agent?.userId || agent?.id, credentials?.notes || credentials);
+      const result = await onApprove(agentUserId, {
+        password: credentials.password,
+        notes: '',
+      });
+      if (result?.error) {
+        setError(result.error.message || 'Approval failed.');
+        return;
+      }
       onClose();
-    } catch (error) {
-      console.error('Approval failed:', error);
+    } catch (err) {
+      setError(err?.message || 'Approval failed.');
     } finally {
       setLoading(false);
     }
@@ -47,16 +83,27 @@ const AgentVerificationModal = ({ agent, isOpen, onClose, onApprove, onReject })
 
   const handleReject = async () => {
     if (!rejectionReason?.trim()) {
-      alert('Please provide a rejection reason');
+      setError('Please provide a rejection reason.');
       return;
     }
-    
+
+    const agentUserId = agent?.userId || agent?.user_id;
+    if (!agentUserId) {
+      setError('Agent user id is missing. Refresh the page and try again.');
+      return;
+    }
+
+    setError('');
     setLoading(true);
     try {
-      await onReject(agent?.userId || agent?.id, rejectionReason);
+      const result = await onReject(agentUserId, rejectionReason.trim());
+      if (result?.error) {
+        setError(result.error.message || 'Rejection failed.');
+        return;
+      }
       onClose();
-    } catch (error) {
-      console.error('Rejection failed:', error);
+    } catch (err) {
+      setError(err?.message || 'Rejection failed.');
     } finally {
       setLoading(false);
     }
@@ -234,7 +281,13 @@ const AgentVerificationModal = ({ agent, isOpen, onClose, onApprove, onReject })
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 p-4 md:p-6 border-t border-border">
-          <div className="text-xs md:text-sm text-muted-foreground">
+          <div className="text-xs md:text-sm text-muted-foreground w-full sm:w-auto">
+            {error && (
+              <p className="text-destructive mb-2 flex items-start gap-1">
+                <Icon name="AlertCircle" size={16} className="shrink-0 mt-0.5" />
+                {error}
+              </p>
+            )}
             {!showRejectForm ? (
               allChecksComplete ? (
                 <span className="text-success flex items-center">

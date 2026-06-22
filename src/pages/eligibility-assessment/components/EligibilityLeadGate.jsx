@@ -72,6 +72,8 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
       }
       if (Array.isArray(res?.warnings) && res.warnings.length) {
         setWarning(res.warnings.join(' '));
+      } else if (res?.emailDelivered === false && res?.requireEmailOtp === false) {
+        setWarning('Email OTP could not be sent. Enter the code sent to your mobile to continue.');
       }
       setOtpSent(true);
       setMobileOtp('');
@@ -209,6 +211,9 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
             {otpSettings.requireMobileOtp && <>Mobile OTP sent to {normalizedPhone()}</>}
             {otpSettings.requireMobileOtp && otpSettings.requireEmailOtp && ' · '}
             {otpSettings.requireEmailOtp && <>Email OTP sent to {email.trim()}</>}
+            {otpSettings.requireMobileOtp && !otpSettings.requireEmailOtp && (
+              <> · Email delivery is unavailable — mobile OTP only.</>
+            )}
           </p>
           {import.meta.env?.DEV && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1">

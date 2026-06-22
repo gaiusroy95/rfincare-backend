@@ -190,12 +190,13 @@ const EmployeePortal = () => {
     setCommunicationOpen(true);
   };
 
-  const handleApproveAgent = async (agentUserId, notes) => {
-    const { error } = await employeeService?.approveAgentOnboarding(agentUserId, notes);
+  const handleApproveAgent = async (agentUserId, payload) => {
+    const { error } = await employeeService?.approveAgentOnboarding(agentUserId, payload);
     if (!error) {
       setSelectedAgent(null);
       loadDashboardData();
     }
+    return { error };
   };
 
   const handleRejectAgent = async (agentUserId, reason) => {
@@ -204,6 +205,7 @@ const EmployeePortal = () => {
       setSelectedAgent(null);
       loadDashboardData();
     }
+    return { error };
   };
 
   const openApplicationWorkspace = (app) => {
@@ -676,6 +678,14 @@ const EmployeePortal = () => {
                             Process application
                           </Button>
                         )}
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => navigate('/document-management-center')}
+                        >
+                          <Icon name="FolderOpen" size={14} className="mr-1" />
+                          Open in Documents
+                        </Button>
                       </div>
                     </div>
                   </div>
