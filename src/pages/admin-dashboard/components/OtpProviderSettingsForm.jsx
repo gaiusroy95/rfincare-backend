@@ -12,7 +12,8 @@ const SMS_OPTIONS = [
 
 const EMAIL_OPTIONS = [
   { value: 'console', label: 'Console (development — logs OTP)' },
-  { value: 'smtp', label: 'SMTP email' },
+  { value: 'msg91', label: 'MSG91 Email (mail.rfincare.com)' },
+  { value: 'smtp', label: 'SMTP email (Gmail / custom)' },
 ];
 
 const WHATSAPP_OPTIONS = [
@@ -27,6 +28,11 @@ const defaultProviderConfig = () => ({
   msg91OtpTemplateId: '',
   msg91FlowTemplateId: '',
   msg91WhatsappTemplateId: '',
+  msg91EmailDomain: '',
+  msg91EmailFromEmail: '',
+  msg91EmailFromName: 'Rfincare',
+  msg91EmailOtpTemplateId: '',
+  msg91EmailOtpVariable: 'OTP_CODE',
   otpMessageTemplate: 'Your Rfincare verification code is {{otp}}. Valid for 10 minutes.',
 });
 
@@ -45,6 +51,7 @@ const OtpProviderSettingsForm = () => {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testPhone, setTestPhone] = useState('');
+  const [testEmail, setTestEmail] = useState('');
   const [message, setMessage] = useState('');
 
   const load = async () => {
@@ -123,9 +130,32 @@ const OtpProviderSettingsForm = () => {
     }
   };
 
+  const handleTestEmail = async () => {
+    if (!testEmail?.trim()) {
+      setMessage('Enter an email address to send a test OTP.');
+      return;
+    }
+    setTesting(true);
+    setMessage('');
+    try {
+      const data = await cmsService.otpSettings.testEmail(testEmail.trim());
+      setMessage(
+        data?.devOtp
+          ? `Test email sent via MSG91. Dev OTP: ${data.devOtp}`
+          : 'Test email sent successfully via MSG91.',
+      );
+    } catch (err) {
+      setMessage(err?.response?.data?.error || err?.message || 'Test email failed');
+    } finally {
+      setTesting(false);
+    }
+  };
+
   const msg91Ready = infrastructure?.msg91?.configured;
+  const msg91EmailReady = infrastructure?.msg91?.emailConfigured;
   const usesMsg91 =
     form.smsProvider === 'msg91' || form.whatsappProvider === 'msg91';
+  const usesMsg91Email = form.emailProvider === 'msg91';
 
   if (loading) {
     return <p className="text-sm text-muted-foreground">Loading OTP settings…</p>;
@@ -152,6 +182,12 @@ const OtpProviderSettingsForm = () => {
               </span>
             </li>
             <li>
+              MSG91 Email:{' '}
+              <span className={msg91EmailReady ? 'text-success font-medium' : 'text-warning'}>
+                {msg91EmailReady ? 'Domain + template configured' : 'Set MSG91_EMAIL_* env vars'}
+              </span>
+            </li>
+            <li>
               SMTP:{' '}
               <span className={infrastructure.smtp?.configured ? 'text-success' : 'text-warning'}>
                 {infrastructure.smtp?.configured ? 'Configured' : 'Not set (console fallback)'}
@@ -172,6 +208,13 @@ const OtpProviderSettingsForm = () => {
             <p className="text-destructive text-xs pt-1">
               Add <code className="text-xs">MSG91_AUTH_KEY</code> on Render/hosting and redeploy the API,
               or switch SMS/WhatsApp to Console for testing.
+            </p>
+          )}
+          {usesMsg91Email && !msg91EmailReady && (
+            <p className="text-destructive text-xs pt-1">
+              Set <code className="text-xs">MSG91_EMAIL_DOMAIN</code>,{' '}
+              <code className="text-xs">MSG91_EMAIL_FROM_EMAIL</code>, and{' '}
+              <code className="text-xs">MSG91_EMAIL_OTP_TEMPLATE_ID</code> on Render, then redeploy.
             </p>
           )}
         </div>
@@ -224,6 +267,76 @@ const OtpProviderSettingsForm = () => {
           Require WhatsApp OTP
         </label>
       </div>
+
+      {form.emailProvider === 'msg91' && (
+        <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
+          <p className="text-sm font-semibold text-foreground">MSG91 email (Rfincare domain)</p>
+          <p className="text-xs text-muted-foreground">
+            Sends OTP from your verified domain via{' '}
+            <code>https://control.msg91.com/api/v5/email/send</code>. Env vars on server:{' '}
+            <code>MSG91_EMAIL_DOMAIN</code>, <code>MSG91_EMAIL_FROM_EMAIL</code>,{' '}
+            <code>MSG91_EMAIL_OTP_TEMPLATE_ID</code>. Template variable default:{' '}
+            <code>OTP_CODE</code>.
+          </p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <Input
+              label="Email domain"
+              value={form.providerConfig.msg91EmailDomain}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  providerConfig: { ...p.providerConfig, msg91EmailDomain: e.target.value },
+                }))
+              }
+              placeholder="mail.rfincare.com"
+            />
+            <Input
+              label="From email"
+              value={form.providerConfig.msg91EmailFromEmail}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  providerConfig: { ...p.providerConfig, msg91EmailFromEmail: e.target.value },
+                }))
+              }
+              placeholder="no-reply@mail.rfincare.com"
+            />
+            <Input
+              label="From name"
+              value={form.providerConfig.msg91EmailFromName}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  providerConfig: { ...p.providerConfig, msg91EmailFromName: e.target.value },
+                }))
+              }
+              placeholder="Rfincare"
+            />
+            <Input
+              label="Email OTP template ID"
+              value={form.providerConfig.msg91EmailOtpTemplateId}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  providerConfig: { ...p.providerConfig, msg91EmailOtpTemplateId: e.target.value },
+                }))
+              }
+              placeholder="otp_vari"
+            />
+            <Input
+              label="Template variable name"
+              value={form.providerConfig.msg91EmailOtpVariable}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  providerConfig: { ...p.providerConfig, msg91EmailOtpVariable: e.target.value },
+                }))
+              }
+              placeholder="OTP_CODE"
+            />
+          </div>
+        </div>
+      )}
 
       {(form.smsProvider === 'msg91' || form.whatsappProvider === 'msg91') && (
         <div className="border rounded-lg p-4 space-y-4 bg-muted/20">
@@ -306,6 +419,22 @@ const OtpProviderSettingsForm = () => {
           {testing ? 'Sending…' : 'Send test SMS'}
         </Button>
       </div>
+
+      {form.emailProvider === 'msg91' && (
+        <div className="border rounded-lg p-4 flex flex-col sm:flex-row gap-3 items-end">
+          <Input
+            label="Test email OTP (MSG91)"
+            type="email"
+            value={testEmail}
+            onChange={(e) => setTestEmail(e.target.value)}
+            placeholder="recipient@example.com"
+            className="flex-1"
+          />
+          <Button type="button" variant="outline" onClick={handleTestEmail} disabled={testing}>
+            {testing ? 'Sending…' : 'Send test email'}
+          </Button>
+        </div>
+      )}
 
       {message && (
         <p

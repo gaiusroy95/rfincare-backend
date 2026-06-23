@@ -41,6 +41,8 @@ export const cmsService = {
       apiClient.post('/cms/otp-settings/test', { phone, channel: 'sms' }).then((r) => r.data),
     testWhatsapp: (phone) =>
       apiClient.post('/cms/otp-settings/test', { phone, channel: 'whatsapp' }).then((r) => r.data),
+    testEmail: (email) =>
+      apiClient.post('/cms/otp-settings/test', { email, channel: 'email' }).then((r) => r.data),
   },
   oauthSettings: {
     get: () => apiClient.get('/cms/oauth-settings').then((r) => r.data),
