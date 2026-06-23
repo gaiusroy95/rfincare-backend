@@ -537,6 +537,7 @@ const AdminDashboard = () => {
       'update-matrix': () => navigate('/interest-matrix-management'),
       'view-reports': () => navigate('/reports-and-analytics'),
       'system-settings': () => navigate('/admin-dashboard?tab=system'),
+      'otp-settings': () => navigate('/admin-dashboard?tab=otp'),
     };
 
     const action = actionMap?.[actionId];
@@ -695,6 +696,18 @@ const AdminDashboard = () => {
                 {activeTab === 'homepage-cms' && <HomepageCmsTab />}
 
                 {activeTab === 'status-check' && <StatusCheckAdminTab />}
+
+                {activeTab === 'otp' && (
+                  <div className="space-y-6">
+                    <div>
+                      <h2 className="text-lg font-semibold text-foreground">OTP verification</h2>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Configure SMS (MSG91), email (MSG91 domain), and eligibility Step 1 OTP delivery.
+                      </p>
+                    </div>
+                    <OtpProviderSettingsForm />
+                  </div>
+                )}
 
                 {activeTab === 'leads' && <LeadsTab />}
 
