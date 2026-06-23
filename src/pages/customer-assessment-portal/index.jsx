@@ -473,6 +473,13 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
           if (!formData?.yearsEmployed && formData?.yearsEmployed !== 0) newErrors.yearsEmployed = 'Years employed is required';
           if (!formData?.annualIncome) newErrors.annualIncome = 'Annual income is required';
           if (!formData?.monthlyIncome) newErrors.monthlyIncome = 'Monthly income is required';
+          if (['salaried', 'business_owner', 'professional'].includes(formData?.employmentType)) {
+            if (!formData?.employerPhone) {
+              newErrors.employerPhone = 'Employer phone is required';
+            } else if (!/^[6-9]\d{9}$/.test(formData.employerPhone)) {
+              newErrors.employerPhone = 'Enter valid 10-digit mobile number';
+            }
+          }
         }
         if (formData?.employmentType === 'retired' && !formData?.retirementIncome) {
           newErrors.retirementIncome = 'Retirement income is required';
@@ -509,11 +516,12 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
             }
             if (!ca.annualIncome) newErrors.coApplicant_annualIncome = 'Annual income is required';
             if (!ca.monthlyIncome) newErrors.coApplicant_monthlyIncome = 'Monthly income is required';
-            if (
-              ['salaried', 'business_owner', 'professional'].includes(ca.employmentType) &&
-              !ca.employerPhone
-            ) {
-              newErrors.coApplicant_employerPhone = 'Employer phone is required';
+            if (['salaried', 'business_owner', 'professional'].includes(ca.employmentType)) {
+              if (!ca.employerPhone) {
+                newErrors.coApplicant_employerPhone = 'Employer phone is required';
+              } else if (!/^[6-9]\d{9}$/.test(ca.employerPhone)) {
+                newErrors.coApplicant_employerPhone = 'Enter valid 10-digit mobile number';
+              }
             }
           }
         }

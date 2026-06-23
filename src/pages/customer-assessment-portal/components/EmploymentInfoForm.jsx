@@ -117,10 +117,14 @@ const EmploymentInfoForm = ({ formData, errors, onChange, onCoApplicantChange })
             <Input
               label="Employer Phone Number"
               type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="9876543210"
               description="10-digit mobile number for employment verification"
               value={formData?.employerPhone}
-              onChange={(e) => onChange('employerPhone', e?.target?.value)}
+              onChange={(e) =>
+                onChange('employerPhone', e?.target?.value?.replace(/\D/g, '').slice(0, 10))
+              }
               error={errors?.employerPhone}
               required
               maxLength={10}

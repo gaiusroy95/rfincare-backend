@@ -112,10 +112,12 @@ const PersonalInfoForm = ({ formData, errors, onChange }) => {
         <Input
           label="Mobile Number"
           type="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
           placeholder="9876543210"
           description="10-digit Indian mobile number"
           value={formData?.phone}
-          onChange={(e) => onChange('phone', e?.target?.value)}
+          onChange={(e) => onChange('phone', e?.target?.value?.replace(/\D/g, '').slice(0, 10))}
           error={errors?.phone}
           required
           maxLength={10}

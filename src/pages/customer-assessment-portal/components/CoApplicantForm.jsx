@@ -85,10 +85,12 @@ const CoApplicantForm = ({ coApplicant, errors, onChange }) => {
         <Input
           label="Mobile number"
           type="tel"
+          inputMode="numeric"
+          pattern="[0-9]*"
           placeholder="9876543210"
           description="10-digit mobile number"
           value={data.phone}
-          onChange={(e) => onChange('phone', e?.target?.value)}
+          onChange={(e) => onChange('phone', e?.target?.value?.replace(/\D/g, '').slice(0, 10))}
           error={err('phone')}
           required
           maxLength={10}
@@ -212,9 +214,13 @@ const CoApplicantForm = ({ coApplicant, errors, onChange }) => {
             <Input
               label="Employer phone"
               type="tel"
+              inputMode="numeric"
+              pattern="[0-9]*"
               placeholder="9876543210"
               value={data.employerPhone}
-              onChange={(e) => onChange('employerPhone', e?.target?.value)}
+              onChange={(e) =>
+                onChange('employerPhone', e?.target?.value?.replace(/\D/g, '').slice(0, 10))
+              }
               error={err('employerPhone')}
               required
               maxLength={10}
