@@ -1,5 +1,25 @@
 import { getApiBaseUrl } from '../lib/runtimeConfig';
 
+/** Canonical Wikimedia logos for major partner banks. */
+const KNOWN_BANK_LOGO_URLS = {
+  'hdfc bank': 'https://upload.wikimedia.org/wikipedia/commons/2/28/HDFC_Bank_Logo.svg',
+  'icici bank': 'https://upload.wikimedia.org/wikipedia/commons/1/12/ICICI_Bank_Logo.svg',
+  'state bank of india': 'https://upload.wikimedia.org/wikipedia/commons/c/cc/SBI-logo.svg',
+  sbi: 'https://upload.wikimedia.org/wikipedia/commons/c/cc/SBI-logo.svg',
+};
+
+function normalizeBankNameKey(name) {
+  return String(name || '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, ' ');
+}
+
+export function getKnownBankLogoUrl(bank) {
+  const key = normalizeBankNameKey(bank?.name);
+  return KNOWN_BANK_LOGO_URLS[key] || null;
+}
+
 /** Resolve stored logo path or external URL for display. */
 export function resolveBankLogoUrl(raw) {
   if (!raw) return null;
@@ -29,7 +49,7 @@ function normalizeVersion(value) {
 }
 
 export function getBankLogoUrl(bank) {
-  const raw = bank?.logoUrl || bank?.logo_url || null;
+  const raw = bank?.logoUrl || bank?.logo_url || getKnownBankLogoUrl(bank) || null;
   const resolved = resolveBankLogoUrl(raw);
   const version = normalizeVersion(bank?.updatedAt || bank?.updated_at);
   return appendVersion(resolved, version);
