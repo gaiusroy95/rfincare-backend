@@ -8,7 +8,8 @@ import ReportsRouteShell from './components/layout/ReportsRouteShell';
 import PageLoader from './components/PageLoader';
 import { LoanProductsProvider } from './contexts/LoanProductsContext';
 import { SiteContactProvider } from './contexts/SiteContactContext';
-import { useGoogleAnalytics } from './hooks/useGoogleAnalytics';
+import { MarketingProvider } from './contexts/MarketingContext';
+import { useMarketingTags } from './hooks/useMarketingTags';
 
 const lazyPage = (factory) => lazy(factory);
 
@@ -65,8 +66,8 @@ function SuspenseRoute({ children }) {
   return <Suspense fallback={<PageLoader />}>{children}</Suspense>;
 }
 
-const GoogleAnalyticsTracker = () => {
-  useGoogleAnalytics();
+const MarketingTracker = () => {
+  useMarketingTags();
   return null;
 };
 
@@ -75,8 +76,9 @@ function Routes() {
     <BrowserRouter>
       <LoanProductsProvider>
         <SiteContactProvider>
-          <ErrorBoundary>
-            <GoogleAnalyticsTracker />
+          <MarketingProvider>
+            <ErrorBoundary>
+              <MarketingTracker />
             <ScrollToTop />
             <Suspense fallback={<PageLoader />}>
               <RouterRoutes>
@@ -230,6 +232,7 @@ function Routes() {
               </RouterRoutes>
             </Suspense>
           </ErrorBoundary>
+          </MarketingProvider>
         </SiteContactProvider>
       </LoanProductsProvider>
     </BrowserRouter>

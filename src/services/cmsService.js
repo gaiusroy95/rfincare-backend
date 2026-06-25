@@ -48,4 +48,10 @@ export const cmsService = {
     get: () => apiClient.get('/cms/oauth-settings').then((r) => r.data),
     update: (body) => apiClient.put('/cms/oauth-settings', body).then((r) => r.data),
   },
+  marketing: {
+    get: () => apiClient.get('/cms/marketing-settings').then((r) => r.data),
+    update: (body) => apiClient.put('/cms/marketing-settings', body).then((r) => r.data),
+    getAnalytics: (days = 30) =>
+      apiClient.get('/cms/marketing-analytics', { params: { days } }).then((r) => r.data),
+  },
 };

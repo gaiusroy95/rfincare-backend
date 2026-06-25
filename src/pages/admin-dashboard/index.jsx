@@ -33,6 +33,7 @@ import { pickCustomerPhotoDocument } from '../../utils/applicationFormDetails';
 import { getDocumentPreviewUrl } from '../../utils/documentUrls';
 import BankManagementTab from './components/BankManagementTab';
 import HomepageCmsTab from './components/HomepageCmsTab';
+import MarketingSeoTab from './components/MarketingSeoTab';
 import LeadsTab from './components/LeadsTab';
 import StatusCheckAdminTab from './components/StatusCheckAdminTab';
 import OtpProviderSettingsForm from './components/OtpProviderSettingsForm';
@@ -712,6 +713,8 @@ const AdminDashboard = () => {
                 {activeTab === 'document-requirements' && <DocumentRequirementsTab />}
 
                 {activeTab === 'homepage-cms' && <HomepageCmsTab />}
+
+                {activeTab === 'marketing-seo' && <MarketingSeoTab />}
 
                 {activeTab === 'status-check' && <StatusCheckAdminTab />}
 

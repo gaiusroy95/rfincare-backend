@@ -18,6 +18,7 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Document matrix', tab: 'document-requirements', icon: 'Files' },
   { label: 'Banks', tab: 'bank-management', icon: 'Building' },
   { label: 'Homepage CMS', tab: 'homepage-cms', icon: 'Layout' },
+  { label: 'Marketing & SEO', tab: 'marketing-seo', icon: 'TrendingUp' },
   { label: 'Settings', tab: 'settings', icon: 'UserCog' },
   { label: 'System', tab: 'system', icon: 'Settings' },
   { label: 'Activity', tab: 'activity', icon: 'Activity' },

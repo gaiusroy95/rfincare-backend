@@ -4,6 +4,7 @@ import { getLoanProductBySlug, normalizeLoanApiKey } from '../../constants/loanP
 import { CREDIT_SCORE_RANGE_OPTIONS } from '../../constants/creditScoreRanges';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
 import Header from '../../components/ui/Header';
+import SEO from '../../components/SEO';
 import Footer from '../homepage/components/Footer';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
@@ -206,6 +207,7 @@ const EligibilityAssessment = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Check Your Loan Eligibility" description="Verify your contact and check loan eligibility with Rfincare." />
       <Header />
       <main>
         <section className="bg-gradient-to-br from-primary via-secondary to-accent text-white py-16 md:py-20">

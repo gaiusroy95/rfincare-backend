@@ -4,6 +4,7 @@ import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 import { leadService } from '../../../services/leadService';
 import { getApiErrorMessage } from '../../../lib/apiErrors';
+import { trackEvent } from '../../../lib/marketingAnalytics';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -108,6 +109,7 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
         leadId,
       });
       setVerified(true);
+      trackEvent('lead', { event_label: 'eligibility_gate_verified', loan_type: loanType });
       onVerified?.({
         leadId: res?.lead?.id || leadId,
         fullName: fullName.trim(),

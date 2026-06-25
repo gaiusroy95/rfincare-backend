@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import Header from '../../components/ui/Header';
+import SEO from '../../components/SEO';
 import HeroSection from './components/HeroSection';
 import QuickEligibilityCheck from './components/QuickEligibilityCheck';
 import LoanTypesShowcase from './components/LoanTypesShowcase';
@@ -20,6 +21,7 @@ const Homepage = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO />
       <Header />
       
       <main>
