@@ -114,6 +114,11 @@ const PendingPartnerRegistrationsTab = () => {
                     Photo <ExternalLink className="w-3 h-3" />
                   </a>
                 )}
+                {app.panCardUrl && (
+                  <a href={app.panCardUrl} target="_blank" rel="noreferrer" className="text-sm text-primary inline-flex items-center gap-1">
+                    PAN card <ExternalLink className="w-3 h-3" />
+                  </a>
+                )}
                 {app.cancelledChequeUrl && (
                   <a href={app.cancelledChequeUrl} target="_blank" rel="noreferrer" className="text-sm text-primary inline-flex items-center gap-1">
                     Cancelled cheque <ExternalLink className="w-3 h-3" />

@@ -38,11 +38,6 @@ const FAQSection = () => {
       answer: t('faq.a6')
     },
     {
-      id: 7,
-      question: t('faq.q7'),
-      answer: t('faq.a7')
-    },
-    {
       id: 8,
       question: t('faq.q8'),
       answer: t('faq.a8')
