@@ -4,6 +4,7 @@ import LanguageDetector from 'i18next-browser-languagedetector';
 
 import { LANGUAGE_CODES } from './languages.js';
 import enTranslations from './locales/en.json';
+import { installAutoTranslate } from './autoTranslate.js';
 
 const LAZY_LOCALES = {
   hi: () => import('./locales/hi.json'),
@@ -54,5 +55,10 @@ i18n.on('languageChanged', (lang) => {
 });
 
 ensureLocale(i18n.language);
+
+// Translate the entire rendered DOM at runtime (covers hardcoded strings that
+// are not wired through t()). Hand-written keys in locale files still take
+// precedence because t() resolves before the DOM walker sees the output.
+installAutoTranslate(i18n);
 
 export default i18n;
