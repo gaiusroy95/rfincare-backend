@@ -16,6 +16,7 @@ import { getAdminTabFromSearch, ADMIN_NAV_ITEMS } from '../../constants/adminNav
 
 import FilterPanel from './components/FilterPanel';
 import PendingRegistrationsTab from './components/PendingRegistrationsTab';
+import PendingPartnerRegistrationsTab from './components/PendingPartnerRegistrationsTab';
 import CustomersTab from './components/CustomersTab';
 import AgentOnboardingModal from './components/AgentOnboardingModal';
 import EmployeeOnboardingModal from './components/EmployeeOnboardingModal';
@@ -50,7 +51,11 @@ const AdminDashboard = () => {
   const [searchParams] = useSearchParams();
   const { user, userProfile, loading: authLoading } = useAuth();
   const activeTab = getAdminTabFromSearch(searchParams);
-  const [registrationSubTab, setRegistrationSubTab] = useState('pending');
+  const [registrationSubTab, setRegistrationSubTab] = useState(() => {
+    const partner = searchParams.get('partner');
+    if (partner === 'pending') return 'partners';
+    return 'pending';
+  });
   const [activityLog, setActivityLog] = useState([]);
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
@@ -606,7 +611,18 @@ const AdminDashboard = () => {
                             : 'border-transparent text-muted-foreground'
                         }`}
                       >
-                        Pending registrations
+                        Customer registrations
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setRegistrationSubTab('partners')}
+                        className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                          registrationSubTab === 'partners'
+                            ? 'border-primary text-primary'
+                            : 'border-transparent text-muted-foreground'
+                        }`}
+                      >
+                        Partner applications
                       </button>
                       <button
                         type="button"
@@ -622,6 +638,8 @@ const AdminDashboard = () => {
                     </div>
                     {registrationSubTab === 'pending' ? (
                       <PendingRegistrationsTab />
+                    ) : registrationSubTab === 'partners' ? (
+                      <PendingPartnerRegistrationsTab />
                     ) : (
                       <CustomersTab />
                     )}
