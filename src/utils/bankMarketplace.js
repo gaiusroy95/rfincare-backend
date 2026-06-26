@@ -313,6 +313,7 @@ export function mapProductForMarketplace(bank, product, loanTypeSlug, probabilit
       bank?.partnershipDuration || bank?.partnership_duration || 'Partner since 2020',
     displayPriority: readBankNumber(bank, 'displayPriority', 'display_priority') ?? 0,
     type: bank?.bankType || bank?.bank_type || 'private',
+    applyUrl: bank?.applyUrl || bank?.apply_url || null,
     description: `Trusted financial institution offering competitive loan products.`,
   };
 }

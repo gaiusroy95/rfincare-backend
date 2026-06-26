@@ -14,7 +14,9 @@ import DocumentUploadModal from './components/DocumentUploadModal';
 import ApplicationDetailModal from './components/ApplicationDetailModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { customerJourneyService } from '../../services/customerJourneyService';
+import { bankService } from '../../services/apiServices';
 import { milestone4Service } from '../../services/milestone4Service';
+import BankApplyLinksCard from './components/BankApplyLinksCard';
 
 
 const CustomerDashboard = () => {
@@ -32,6 +34,7 @@ const CustomerDashboard = () => {
   const [applications, setApplications] = useState([]);
   const [documents, setDocuments] = useState([]);
   const [notifications, setNotifications] = useState([]);
+  const [applyBanks, setApplyBanks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -87,6 +90,14 @@ const CustomerDashboard = () => {
       }
       setDocuments(docsData || []);
       setNotifications(notifsData || []);
+
+      try {
+        const banks = await bankService.getActiveBanks({ includeProducts: false });
+        const list = Array.isArray(banks) ? banks : [];
+        setApplyBanks(list.filter((b) => b?.applyUrl));
+      } catch {
+        setApplyBanks([]);
+      }
     } finally {
       setLoading(false);
     }
@@ -266,6 +277,8 @@ const CustomerDashboard = () => {
               profile={profileData} 
               onEditProfile={() => navigate('/profile')} 
             />
+
+            <BankApplyLinksCard banks={applyBanks} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">

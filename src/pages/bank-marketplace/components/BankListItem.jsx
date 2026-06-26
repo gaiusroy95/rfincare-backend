@@ -137,6 +137,17 @@ const BankListItem = ({ bank, onApply, onCompare, onViewBank, isComparing }) => 
           >
             Compare
           </Button>
+          {bank?.applyUrl && (
+            <a
+              href={bank.applyUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex-1 md:flex-initial inline-flex items-center justify-center gap-1.5 text-xs font-semibold text-primary hover:underline whitespace-nowrap"
+            >
+              <Icon name="ExternalLink" size={14} />
+              Bank site
+            </a>
+          )}
         </div>
       </div>
     </div>

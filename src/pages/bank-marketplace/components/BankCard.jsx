@@ -208,6 +208,17 @@ const BankCard = ({
           Apply Now
         </Button>
       </div>
+      {bank?.applyUrl && (
+        <a
+          href={bank.applyUrl}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-2 inline-flex items-center justify-center gap-1.5 text-sm font-semibold text-primary hover:underline"
+        >
+          <Icon name="ExternalLink" size={15} />
+          Apply on {bank?.name || 'bank'} website
+        </a>
+      )}
     </div>
   );
 };

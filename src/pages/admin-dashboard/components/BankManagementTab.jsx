@@ -27,6 +27,7 @@ const BankManagementTab = () => {
     customersServed: '',
     partnershipDuration: '',
     certifications: [],
+    applyUrl: '',
     displayPriority: 0
   });
 
@@ -69,6 +70,7 @@ const BankManagementTab = () => {
         customersServed: bank?.customersServed || '',
         partnershipDuration: bank?.partnershipDuration || '',
         certifications: bank?.certifications || [],
+        applyUrl: bank?.applyUrl || '',
         displayPriority: bank?.displayPriority || 0
       });
     } else {
@@ -84,6 +86,7 @@ const BankManagementTab = () => {
         customersServed: '',
         partnershipDuration: '',
         certifications: [],
+        applyUrl: '',
         displayPriority: 0
       });
     }
@@ -384,6 +387,17 @@ const BankManagementTab = () => {
                   onChange={(e) => setFormData({ ...formData, partnershipDuration: e?.target?.value })}
                   placeholder="e.g., Partner since 2020"
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-foreground mb-2">Application URL (bank website)</label>
+                <Input
+                  type="url"
+                  value={formData?.applyUrl}
+                  onChange={(e) => setFormData({ ...formData, applyUrl: e?.target?.value })}
+                  placeholder="https://www.bank.com/apply"
+                />
+                <p className="text-xs text-muted-foreground mt-1">Customers are sent here to apply directly on the bank&apos;s website</p>
               </div>
 
               <div>

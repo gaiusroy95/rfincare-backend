@@ -65,6 +65,7 @@ const BankMarketplaceManagement = () => {
     customersServed: '',
     partnershipDuration: '',
     certifications: [],
+    applyUrl: '',
     displayPriority: 0,
   });
 
@@ -124,6 +125,7 @@ const BankMarketplaceManagement = () => {
         customersServed: bank?.customersServed,
         partnershipDuration: bank?.partnershipDuration,
         certifications: bank?.certifications || [],
+        applyUrl: bank?.applyUrl || '',
         displayPriority: bank?.displayPriority,
       });
       await loadProductForBank(bank.id);
@@ -142,6 +144,7 @@ const BankMarketplaceManagement = () => {
         customersServed: '',
         partnershipDuration: '',
         certifications: [],
+        applyUrl: '',
         displayPriority: 0,
       });
     }
@@ -499,6 +502,14 @@ const BankMarketplaceManagement = () => {
                   setFormData({ ...formData, partnershipDuration: e?.target?.value })
                 }
                 placeholder="e.g., Partner since 2018"
+              />
+              <Input
+                label="Application URL (bank website)"
+                type="url"
+                value={formData?.applyUrl}
+                onChange={(e) => setFormData({ ...formData, applyUrl: e?.target?.value })}
+                placeholder="https://www.bank.com/apply"
+                description="Customers are sent here to apply directly on the bank's website."
               />
 
               <BankProductEditor
