@@ -17,6 +17,7 @@ import { getAdminTabFromSearch, ADMIN_NAV_ITEMS } from '../../constants/adminNav
 import FilterPanel from './components/FilterPanel';
 import PendingRegistrationsTab from './components/PendingRegistrationsTab';
 import PendingPartnerRegistrationsTab from './components/PendingPartnerRegistrationsTab';
+import { partnerRegistrationService } from '../../services/partnerRegistrationService';
 import CustomersTab from './components/CustomersTab';
 import AgentOnboardingModal from './components/AgentOnboardingModal';
 import EmployeeOnboardingModal from './components/EmployeeOnboardingModal';
@@ -57,6 +58,21 @@ const AdminDashboard = () => {
     if (partner === 'pending') return 'partners';
     return 'pending';
   });
+  const [pendingPartnerCount, setPendingPartnerCount] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    const loadPartnerCount = async () => {
+      const { data } = await partnerRegistrationService.getPendingPartnerApplications();
+      if (active) setPendingPartnerCount(Array.isArray(data) ? data.length : 0);
+    };
+    loadPartnerCount();
+    const id = setInterval(loadPartnerCount, 60000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [registrationSubTab]);
   const [activityLog, setActivityLog] = useState([]);
   const [showAgentModal, setShowAgentModal] = useState(false);
   const [showEmployeeModal, setShowEmployeeModal] = useState(false);
@@ -617,13 +633,18 @@ const AdminDashboard = () => {
                       <button
                         type="button"
                         onClick={() => setRegistrationSubTab('partners')}
-                        className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+                        className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px inline-flex items-center gap-2 ${
                           registrationSubTab === 'partners'
                             ? 'border-primary text-primary'
                             : 'border-transparent text-muted-foreground'
                         }`}
                       >
                         Partner applications
+                        {pendingPartnerCount > 0 && (
+                          <span className="inline-flex items-center justify-center min-w-[20px] h-5 px-1.5 rounded-full bg-error text-white text-xs font-bold">
+                            {pendingPartnerCount}
+                          </span>
+                        )}
                       </button>
                       <button
                         type="button"
@@ -665,6 +686,33 @@ const AdminDashboard = () => {
                         </Button>
                       </div>
                     </div>
+                    {pendingPartnerCount > 0 && (
+                      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 bg-warning/10 border border-warning/40 rounded-lg p-4">
+                        <div className="flex items-center gap-3">
+                          <span className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-warning/20">
+                            <Icon name="UserPlus" size={20} className="text-warning" />
+                          </span>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              {pendingPartnerCount} new agent application{pendingPartnerCount > 1 ? 's' : ''} awaiting review
+                            </p>
+                            <p className="text-xs text-muted-foreground">
+                              Submitted from the agent app. Approve to create an agent account and send the FY code.
+                            </p>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => {
+                            setRegistrationSubTab('partners');
+                            navigate('/admin-dashboard?tab=registrations&partner=pending');
+                          }}
+                          iconName="ArrowRight"
+                          iconPosition="right"
+                        >
+                          Review applications
+                        </Button>
+                      </div>
+                    )}
                     <div className="grid gap-4">
                       {agentsData?.map((agent) => (
                         <AgentManagementCard
