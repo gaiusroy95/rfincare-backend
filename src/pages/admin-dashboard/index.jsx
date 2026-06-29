@@ -33,6 +33,7 @@ import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { pickCustomerPhotoDocument } from '../../utils/applicationFormDetails';
 import { getDocumentPreviewUrl } from '../../utils/documentUrls';
 import BankManagementTab from './components/BankManagementTab';
+import CreditCardsTab from './components/CreditCardsTab';
 import HomepageCmsTab from './components/HomepageCmsTab';
 import MarketingSeoTab from './components/MarketingSeoTab';
 import LeadsTab from './components/LeadsTab';
@@ -755,6 +756,8 @@ const AdminDashboard = () => {
                 )}
 
                 {activeTab === 'bank-management' && <BankManagementTab />}
+
+                {activeTab === 'credit-cards' && <CreditCardsTab />}
 
                 {activeTab === 'loan-products' && <LoanProductsTab />}
 

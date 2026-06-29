@@ -125,15 +125,17 @@ const PersonalInfoForm = ({ formData, errors, onChange }) => {
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
         <Input
-          label="Aadhaar Number"
+          label="Aadhaar (last 4 digits)"
           type="text"
-          placeholder="XXXX-XXXX-XXXX"
-          description="12-digit Aadhaar number"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          placeholder="1234"
+          description="Last 4 digits of your Aadhaar number only"
           value={formData?.aadhaar}
-          onChange={(e) => onChange('aadhaar', e?.target?.value)}
+          onChange={(e) => onChange('aadhaar', e?.target?.value?.replace(/\D/g, '').slice(0, 4))}
           error={errors?.aadhaar}
           required
-          maxLength={12}
+          maxLength={4}
         />
 
         <Input

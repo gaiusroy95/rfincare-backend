@@ -17,6 +17,7 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Loan products', tab: 'loan-products', icon: 'Package' },
   { label: 'Document matrix', tab: 'document-requirements', icon: 'Files' },
   { label: 'Banks', tab: 'bank-management', icon: 'Building' },
+  { label: 'Credit cards', tab: 'credit-cards', icon: 'CreditCard' },
   { label: 'Homepage CMS', tab: 'homepage-cms', icon: 'Layout' },
   { label: 'Marketing & SEO', tab: 'marketing-seo', icon: 'TrendingUp' },
   { label: 'Settings', tab: 'settings', icon: 'UserCog' },

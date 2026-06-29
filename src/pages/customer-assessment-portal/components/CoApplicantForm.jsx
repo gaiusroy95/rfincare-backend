@@ -119,14 +119,17 @@ const CoApplicantForm = ({ coApplicant, errors, onChange }) => {
       </div>
 
       <Input
-        label="Aadhaar number"
+        label="Aadhaar (last 4 digits)"
         type="text"
-        placeholder="12-digit Aadhaar"
+        inputMode="numeric"
+        pattern="[0-9]*"
+        placeholder="1234"
+        description="Last 4 digits of Aadhaar only"
         value={data.aadhaar}
-        onChange={(e) => onChange('aadhaar', e?.target?.value?.replace(/\D/g, '').slice(0, 12))}
+        onChange={(e) => onChange('aadhaar', e?.target?.value?.replace(/\D/g, '').slice(0, 4))}
         error={err('aadhaar')}
         required
-        maxLength={12}
+        maxLength={4}
       />
 
       <Select

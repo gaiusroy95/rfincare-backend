@@ -20,6 +20,8 @@ import BankPreferencesStep from './components/BankPreferencesStep';
 import { getLoanPriorities, serializeLoanPriorities } from '../../utils/loanPriorities';
 import Icon from '../../components/AppIcon';
 import { leadService, loadEligibilityResults } from '../../services/leadService';
+import { homepageService } from '../../services/homepageService';
+import { buildEligibilityInputFromAssessment } from '../../utils/assessmentEligibility';
 import {
   getAssessmentDocumentTypes,
   requiresCoApplicant,
@@ -223,6 +225,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
   const [lastSaved, setLastSaved] = useState(null);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [submissionConfirmation, setSubmissionConfirmation] = useState(null);
+  const [eligibilityResult, setEligibilityResult] = useState(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isPreparingAccount, setIsPreparingAccount] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState(null);
@@ -445,8 +448,8 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         else if (!/\S+@\S+\.\S+/?.test(formData?.email)) newErrors.email = 'Invalid email format';
         if (!formData?.phone) newErrors.phone = 'Phone number is required';
         else if (!/^[6-9]\d{9}$/?.test(formData?.phone)) newErrors.phone = 'Enter valid 10-digit mobile number';
-        if (!formData?.aadhaar) newErrors.aadhaar = 'Aadhaar number is required';
-        else if (!/^\d{12}$/?.test(formData?.aadhaar?.replace(/[-\s]/g, ''))) newErrors.aadhaar = 'Enter valid 12-digit Aadhaar number';
+        if (!formData?.aadhaar) newErrors.aadhaar = 'Aadhaar (last 4 digits) is required';
+        else if (!/^\d{4}$/?.test(formData?.aadhaar?.replace(/[-\s]/g, ''))) newErrors.aadhaar = 'Enter the last 4 digits of your Aadhaar';
         if (!formData?.pan) newErrors.pan = 'PAN number is required';
         else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/?.test(formData?.pan)) newErrors.pan = 'Enter valid PAN (e.g. ABCDE1234F)';
         break;
@@ -500,9 +503,9 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
           else if (!/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/.test(ca.pan)) {
             newErrors.coApplicant_pan = 'Enter valid PAN (e.g. ABCDE1234F)';
           }
-          if (!ca.aadhaar) newErrors.coApplicant_aadhaar = 'Co-applicant Aadhaar is required';
-          else if (!/^\d{12}$/.test(String(ca.aadhaar).replace(/[-\s]/g, ''))) {
-            newErrors.coApplicant_aadhaar = 'Enter valid 12-digit Aadhaar number';
+          if (!ca.aadhaar) newErrors.coApplicant_aadhaar = 'Co-applicant Aadhaar (last 4 digits) is required';
+          else if (!/^\d{4}$/.test(String(ca.aadhaar).replace(/[-\s]/g, ''))) {
+            newErrors.coApplicant_aadhaar = 'Enter the last 4 digits of co-applicant Aadhaar';
           }
           if (!ca.employmentType) {
             newErrors.coApplicant_employmentType = 'Co-applicant employment status is required';
@@ -619,6 +622,16 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
 
     setErrors(newErrors);
     return Object.keys(newErrors)?.length === 0;
+  };
+
+  const fetchEligibility = async (data = formData) => {
+    try {
+      const result = await homepageService.calculateEligibility(buildEligibilityInputFromAssessment(data));
+      setEligibilityResult(result);
+      return result;
+    } catch {
+      return null;
+    }
   };
 
   const buildApplicationPayload = (customerId, status = 'draft') => ({
@@ -844,6 +857,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
       setIsSubmitting(true);
       try {
         await ensureAuthAndDraftApplication();
+        await fetchEligibility();
         saveProgress(formData, 6);
         setCurrentStep(6);
         window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -973,6 +987,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
       }
 
       setSubmissionConfirmation(confirmation);
+      await fetchEligibility();
 
       localStorage.removeItem('loan_assessment_form_data');
       localStorage.removeItem('loan_assessment_step');
@@ -1055,6 +1070,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
             employmentType={formData?.employmentType}
             existingLoans={formData?.existingLoans}
             hasRunningLoanOrCard={formData?.hasRunningLoanOrCard}
+            eligibilityResult={eligibilityResult}
           />
         );
       case 7:
@@ -1065,6 +1081,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
             onChange={handleChange}
             onSignatureChange={handleSignatureChange}
             onOtpVerified={handleOtpVerified}
+            eligibilityResult={eligibilityResult}
           />
         );
       default:
@@ -1168,6 +1185,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
       {showSuccessModal && submissionConfirmation && (
         <ApplicationConfirmation
           confirmation={submissionConfirmation}
+          eligibilityResult={eligibilityResult}
           assistedByAgent={assistedByAgent}
           generatedCredentials={generatedCredentials}
           onContinue={handleSuccessRedirect}

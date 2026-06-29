@@ -4,6 +4,7 @@ import { Checkbox } from '../../../components/ui/Checkbox';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import { applicationAuthService } from '../../../services/applicationAuthService';
+import EligibilityResultSummary from './EligibilityResultSummary';
 
 const AUTH_METHODS = [
   { id: 'otp', label: 'OTP verification', icon: 'Smartphone', description: 'Verify with a code sent to your mobile' },
@@ -16,6 +17,7 @@ const ConsentSignatureForm = ({
   onChange,
   onSignatureChange,
   onOtpVerified,
+  eligibilityResult,
 }) => {
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
@@ -168,6 +170,7 @@ const ConsentSignatureForm = ({
 
   return (
     <div className="space-y-6 md:space-y-8">
+      <EligibilityResultSummary result={eligibilityResult} compact />
       <div className="p-4 md:p-6 bg-muted rounded-lg border border-border">
         <h3 className="text-base md:text-lg font-semibold text-foreground mb-3 flex items-center gap-2">
           <Icon name="ShieldCheck" size={20} className="text-primary" />

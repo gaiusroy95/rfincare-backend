@@ -48,6 +48,7 @@ const CustomerDashboard = lazyPage(() => import('./pages/customer-dashboard'));
 const AdminSecurityDashboard = lazyPage(() => import('./pages/admin-security-dashboard'));
 const ReportsAndAnalytics = lazyPage(() => import('./pages/reports-and-analytics'));
 const BankMarketplaceManagement = lazyPage(() => import('./pages/bank-marketplace-management'));
+const CreditCardsPage = lazyPage(() => import('./pages/credit-cards'));
 const ApprovalMatrixManagement = lazyPage(() => import('./pages/approval-matrix-management'));
 const InterestMatrixManagement = lazyPage(() => import('./pages/interest-matrix-management'));
 
@@ -104,6 +105,7 @@ function Routes() {
                 <Route path="/resume-application/:token" element={<SuspenseRoute><ResumeApplicationPage /></SuspenseRoute>} />
                 <Route path="/customer-assessment-portal" element={<SuspenseRoute><CustomerAssessmentPortal /></SuspenseRoute>} />
                 <Route path="/bank-marketplace" element={<SuspenseRoute><BankMarketplace /></SuspenseRoute>} />
+                <Route path="/credit-cards" element={<SuspenseRoute><CreditCardsPage /></SuspenseRoute>} />
 
                 <Route element={<AdminRouteShell />}>
                   <Route path="/admin-dashboard" element={<SuspenseRoute><AdminDashboard /></SuspenseRoute>} />

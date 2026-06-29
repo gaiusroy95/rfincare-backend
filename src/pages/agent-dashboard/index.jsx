@@ -13,7 +13,7 @@ import PerformanceChart from './components/PerformanceChart';
 import UpcomingAppointments from './components/UpcomingAppointments';
 import StaffCommunicationPanel from './components/StaffCommunicationPanel';
 import TrainingResources from './components/TrainingResources';
-import QuickActions from './components/QuickActions';
+import CreditCardsQuickApply from '../../components/credit-cards/CreditCardsQuickApply';
 import RecentActivity from './components/RecentActivity';
 import SessionTimeout from '../../components/SessionTimeout';
 import { agentService } from '../../services/agentService';
@@ -377,6 +377,8 @@ const AgentDashboard = () => {
         {selectedView === 'overview' &&
         <div className="space-y-6">
             <PerformanceMetrics metrics={performanceMetrics} />
+
+            <CreditCardsQuickApply />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2">

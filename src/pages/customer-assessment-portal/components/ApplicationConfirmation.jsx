@@ -1,6 +1,7 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
 import { getApiBaseUrl } from '../../../lib/runtimeConfig';
+import EligibilityResultSummary from './EligibilityResultSummary';
 
 const formatSubmittedAt = (value) => {
   if (!value) return new Date().toLocaleString('en-IN');
@@ -13,6 +14,7 @@ const formatSubmittedAt = (value) => {
 
 const ApplicationConfirmation = ({
   confirmation,
+  eligibilityResult,
   assistedByAgent,
   generatedCredentials,
   onContinue,
@@ -36,6 +38,8 @@ const ApplicationConfirmation = ({
               ? 'The customer application has been submitted and saved under your agent code.'
               : 'Your application has been received. Please save your Application ID for future reference.'}
           </p>
+
+          <EligibilityResultSummary result={eligibilityResult} />
 
           <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 md:p-5 mb-6 text-left space-y-3">
             <div className="flex items-start justify-between gap-3">

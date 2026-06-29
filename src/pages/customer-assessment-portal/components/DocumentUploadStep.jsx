@@ -10,6 +10,7 @@ import {
   requiresCoApplicant,
 } from '../../../constants/assessmentDocuments';
 import DocumentPreviewModal from './DocumentPreviewModal';
+import EligibilityResultSummary from './EligibilityResultSummary';
 
 const DocumentUploadCard = ({
   doc,
@@ -103,6 +104,7 @@ const DocumentUploadStep = ({
   employmentType,
   existingLoans = [],
   hasRunningLoanOrCard,
+  eligibilityResult,
 }) => {
   const fileRefs = useRef({});
   const localPreviewUrls = useRef({});
@@ -259,6 +261,7 @@ const DocumentUploadStep = ({
 
   return (
     <div className="space-y-6">
+      <EligibilityResultSummary result={eligibilityResult} compact />
       <div className="p-4 md:p-6 bg-primary/5 border border-primary/20 rounded-lg">
         <div className="flex items-start gap-3">
           <Icon name="Upload" size={22} className="text-primary flex-shrink-0 mt-0.5" />
