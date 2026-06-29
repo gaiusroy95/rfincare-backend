@@ -40,5 +40,14 @@ export const creditCardService = {
     return res.data;
   },
 
+  async uploadLogo(id, file) {
+    const form = new FormData();
+    form.append('logo', file);
+    const res = await apiClient.post(`/credit-cards/${id}/logo`, form, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+    return res.data;
+  },
+
   formatListField: linesToList,
 };

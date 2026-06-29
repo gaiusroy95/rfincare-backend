@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Icon from '../../../components/AppIcon';
+import CardLogoFields from '../../../components/admin/CardLogoFields';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
@@ -45,6 +46,7 @@ const CreditCardsTab = () => {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [editingId, setEditingId] = useState(null);
+  const [pendingLogoFile, setPendingLogoFile] = useState(null);
   const [form, setForm] = useState({ ...EMPTY_FORM });
 
   const bankOptions = useMemo(
@@ -77,11 +79,13 @@ const CreditCardsTab = () => {
 
   const resetForm = () => {
     setEditingId(null);
+    setPendingLogoFile(null);
     setForm({ ...EMPTY_FORM });
   };
 
   const startEdit = (card) => {
     setEditingId(card.id);
+    setPendingLogoFile(null);
     setForm({
       bankId: card.bankId || '',
       bankName: card.bankName || '',
@@ -141,8 +145,19 @@ const CreditCardsTab = () => {
     setError('');
     try {
       const payload = buildPayload();
+      if (pendingLogoFile && !editingId) {
+        payload.logoUrl = null;
+      }
+      let cardId = editingId;
       if (editingId) await creditCardService.update(editingId, payload);
-      else await creditCardService.create(payload);
+      else {
+        const created = await creditCardService.create(payload);
+        cardId = created?.id;
+      }
+      if (cardId && pendingLogoFile) {
+        await creditCardService.uploadLogo(cardId, pendingLogoFile);
+        setPendingLogoFile(null);
+      }
       resetForm();
       await load();
     } catch (err) {
@@ -186,7 +201,14 @@ const CreditCardsTab = () => {
           <Input label="Bank name" value={form.bankName} onChange={(e) => setForm((f) => ({ ...f, bankName: e.target.value }))} required />
           <Input label="Card name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
           <Input label="Description" value={form.description} onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))} />
-          <Input label="Logo URL" value={form.logoUrl} onChange={(e) => setForm((f) => ({ ...f, logoUrl: e.target.value }))} placeholder="https://..." />
+          <CardLogoFields
+            logoUrl={form.logoUrl}
+            cardId={editingId}
+            cardName={form.name}
+            onLogoUrlChange={(logoUrl) => setForm((f) => ({ ...f, logoUrl }))}
+            onPendingFile={setPendingLogoFile}
+            onError={setError}
+          />
           <Input label="Card network" value={form.cardNetwork} onChange={(e) => setForm((f) => ({ ...f, cardNetwork: e.target.value }))} placeholder="Visa / Mastercard / RuPay" />
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
