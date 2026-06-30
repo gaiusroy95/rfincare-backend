@@ -5,6 +5,7 @@ import Icon from '../../../components/AppIcon';
 import BrandLogo from '../../../components/ui/BrandLogo';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
 import { useSiteContact } from '../../../contexts/SiteContactContext';
+import { POLICY_PAGES, legalPagePath } from '../../../constants/legalPages';
 
 const normalizeAddress = (value) =>
   String(value || '')
@@ -78,8 +79,12 @@ const Footer = () => {
       { label: t('footer.privacyPolicy'), path: '/legal/privacy-policy' },
       { label: t('footer.termsOfService'), path: '/legal/terms-of-service' },
       { label: t('footer.cookiePolicy'), path: '/legal/cookie-policy' },
-      { label: t('footer.compliance'), path: '/legal/help-center' },
+      { label: t('footer.helpCenter'), path: '/legal/help-center' },
     ],
+    policies: POLICY_PAGES.map((page) => ({
+      label: page.title,
+      path: legalPagePath(page.slug),
+    })),
   };
 
   const socialLinks = [
@@ -210,6 +215,22 @@ const Footer = () => {
               links={footerLinks.legal}
               onNavigate={navigate}
             />
+          </div>
+
+          <div className="mt-8 pt-8 border-t border-border/60">
+            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
+              <span className="w-1 h-4 rounded-full bg-primary shrink-0" aria-hidden />
+              Policies & Disclosures
+            </h3>
+            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-2.5">
+              {footerLinks.policies?.map((link) => (
+                <li key={link.path}>
+                  <button type="button" onClick={() => navigate(link.path)} className={linkClass}>
+                    <span className="transition-transform group-hover:translate-x-0.5">{link.label}</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
           </div>
         </div>
 

@@ -5,6 +5,7 @@ import LegalContentEditor from '../../../components/cms/LegalContentEditor';
 import { cmsService } from '../../../services/cmsService';
 import { homepageService } from '../../../services/homepageService';
 import { prepareLegalHtml } from '../../../utils/legalContent';
+import { LEGAL_PAGE_SECTIONS } from '../../../constants/legalPages';
 import { getStoryPhotoUrl, formatStoryDate } from '../../../utils/storyMedia';
 import SiteContactSettingsForm from './SiteContactSettingsForm';
 
@@ -81,7 +82,9 @@ const HomepageCmsTab = () => {
     <div className="space-y-6">
       <div className="flex gap-2 flex-wrap">
         {['contact', 'news', 'videos', 'stories', 'trust', 'about', 'legal'].map((t) => (
-          <Button key={t} variant={tab === t ? 'default' : 'outline'} size="sm" onClick={() => setTab(t)}>{t}</Button>
+          <Button key={t} variant={tab === t ? 'default' : 'outline'} size="sm" onClick={() => setTab(t)}>
+            {t === 'legal' ? 'Legal & policies' : t}
+          </Button>
         ))}
       </div>
       {tab === 'contact' && <SiteContactSettingsForm />}
@@ -480,9 +483,17 @@ const HomepageCmsTab = () => {
       )}
       {tab === 'legal' && (
         <div className="space-y-4 max-w-3xl">
-          <select className="border rounded px-3 py-2" value={legalSlug} onChange={(e) => loadLegal(e.target.value)}>
-            {['privacy-policy','terms-of-service','help-center','financial-guides','careers','cookie-policy'].map((s) => (
-              <option key={s} value={s}>{s}</option>
+          <p className="text-sm text-muted-foreground">
+            Edit legal pages and regulatory policies shown on the website footer and mobile app.
+          </p>
+          <label className="block text-sm font-medium text-foreground">Page</label>
+          <select className="border rounded px-3 py-2 w-full max-w-lg" value={legalSlug} onChange={(e) => loadLegal(e.target.value)}>
+            {LEGAL_PAGE_SECTIONS.map((section) => (
+              <optgroup key={section.id} label={section.label}>
+                {section.pages.map((page) => (
+                  <option key={page.slug} value={page.slug}>{page.title}</option>
+                ))}
+              </optgroup>
             ))}
           </select>
           <Input label="Title" value={legalForm.title} onChange={(e) => setLegalForm({ ...legalForm, title: e.target.value })} />
