@@ -1,5 +1,9 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
-import { LOAN_PRODUCTS as STATIC_LOAN_PRODUCTS, setLoanProductRegistry } from '../constants/loanProducts';
+import {
+  LOAN_PRODUCTS as STATIC_LOAN_PRODUCTS,
+  setLoanProductRegistry,
+  ensureCreditCardProduct,
+} from '../constants/loanProducts';
 import { loanProductCatalogService } from '../services/loanProductCatalogService';
 
 const LoanProductsContext = createContext({
@@ -16,7 +20,8 @@ export function LoanProductsProvider({ children }) {
     setLoading(true);
     const { data, error } = await loanProductCatalogService.listPublic();
     if (!error && Array.isArray(data) && data.length) {
-      setProducts(data);
+      const withCreditCard = ensureCreditCardProduct(data);
+      setProducts(withCreditCard);
       setLoanProductRegistry(data);
     } else {
       setProducts(STATIC_LOAN_PRODUCTS);

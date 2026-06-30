@@ -73,6 +73,24 @@ export const LOAN_PRODUCTS = [
   },
 ];
 
+/**
+ * Credit Card is managed by the credit cards module (not the loan product catalog API),
+ * so it must always remain in the catalog even when the API overrides the registry.
+ */
+export const CREDIT_CARD_PRODUCT = LOAN_PRODUCTS.find((p) => p.slug === 'credit_card');
+
+/** Ensure the synthetic Credit Card product is present in any product list. */
+export function ensureCreditCardProduct(products) {
+  const list = Array.isArray(products) ? [...products] : [];
+  const hasCreditCard = list.some(
+    (p) => p?.slug === 'credit_card' || p?.apiKey === 'credit_card',
+  );
+  if (!hasCreditCard && CREDIT_CARD_PRODUCT) {
+    list.push(CREDIT_CARD_PRODUCT);
+  }
+  return list;
+}
+
 let registry = [...LOAN_PRODUCTS];
 let slugToProduct = buildMaps(registry).slugMap;
 let apiKeyToProduct = buildMaps(registry).apiMap;
@@ -89,7 +107,7 @@ export function setLoanProductRegistry(products) {
   if (!Array.isArray(products) || products.length === 0) {
     registry = [...LOAN_PRODUCTS];
   } else {
-    registry = products;
+    registry = ensureCreditCardProduct(products);
   }
   const maps = buildMaps(registry);
   slugToProduct = maps.slugMap;

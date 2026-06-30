@@ -6,6 +6,7 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { bankService } from '../../../services/apiServices';
 import { creditCardService } from '../../../services/creditCardService';
+import { resolveBankLogoUrl } from '../../../utils/bankBranding';
 
 const EMPTY_FORM = {
   bankId: '',
@@ -274,9 +275,22 @@ const CreditCardsTab = () => {
           {cards.map((card) => (
             <div key={card.id} className="bg-card border border-border rounded-xl p-4 flex flex-col gap-2">
               <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="font-semibold text-foreground">{card.name}</p>
-                  <p className="text-sm text-muted-foreground">{card.bankName}</p>
+                <div className="flex items-start gap-3 min-w-0">
+                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                    {resolveBankLogoUrl(card.logoUrl) ? (
+                      <img
+                        src={resolveBankLogoUrl(card.logoUrl)}
+                        alt={card.name}
+                        className="w-10 h-10 object-contain"
+                      />
+                    ) : (
+                      <Icon name="CreditCard" size={20} className="text-violet-700" />
+                    )}
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-semibold text-foreground">{card.name}</p>
+                    <p className="text-sm text-muted-foreground">{card.bankName}</p>
+                  </div>
                 </div>
                 <span className={`text-xs font-semibold px-2 py-1 rounded-full ${card.status === 'active' ? 'bg-success/10 text-success' : 'bg-muted text-muted-foreground'}`}>
                   {card.status}
