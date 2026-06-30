@@ -395,6 +395,7 @@ const BankMarketplace = () => {
               resultCount={filteredAndSortedBanks?.length}
               viewMode={viewMode}
               onViewModeChange={setViewMode}
+              hasEligibilityMatch={Boolean(loadEligibilityResults()?.banks?.length)}
             />
 
             <div ref={comparisonSectionRef}>

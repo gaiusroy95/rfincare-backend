@@ -2,7 +2,14 @@ import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Select from '../../../components/ui/Select';
 
-const SortBar = ({ sortBy, onSortChange, resultCount, viewMode, onViewModeChange }) => {
+const SortBar = ({
+  sortBy,
+  onSortChange,
+  resultCount,
+  viewMode,
+  onViewModeChange,
+  hasEligibilityMatch = false,
+}) => {
   const sortOptions = [
     { value: 'probability-desc', label: 'Highest Probability' },
     { value: 'probability-asc', label: 'Lowest Probability' },
@@ -14,14 +21,19 @@ const SortBar = ({ sortBy, onSortChange, resultCount, viewMode, onViewModeChange
 
   return (
     <div className="bg-card rounded-lg border border-border p-3 md:p-4 mb-4 md:mb-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 md:gap-4">
-        {/* Results Count */}
-        <div className="flex items-center space-x-2">
-          <Icon name="Building2" size={20} className="text-primary" />
-          <span className="text-sm md:text-base text-foreground">
-            <span className="font-bold">{resultCount}</span> loan products match your profile
-          </span>
-        </div>
+      <div
+        className={`flex flex-col sm:flex-row items-start sm:items-center gap-3 md:gap-4 ${
+          hasEligibilityMatch ? 'justify-between' : 'justify-end'
+        }`}
+      >
+        {hasEligibilityMatch ? (
+          <div className="flex items-center space-x-2">
+            <Icon name="Building2" size={20} className="text-primary" />
+            <span className="text-sm md:text-base text-foreground">
+              <span className="font-bold">{resultCount}</span> loan products match your profile
+            </span>
+          </div>
+        ) : null}
 
         {/* Sort and View Controls */}
         <div className="flex items-center space-x-3 md:space-x-4 w-full sm:w-auto">
