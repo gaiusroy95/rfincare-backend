@@ -18,6 +18,8 @@ import {
   getMarketplaceCompareKey,
   listMarketplaceOffers,
 } from '../../utils/bankMarketplace';
+import { listCreditCardMarketplaceOffers } from '../../utils/creditCardMarketplace';
+import { creditCardService } from '../../services/creditCardService';
 import { getBankProbabilityMap, loadEligibilityResults, saveEligibilityResults } from '../../services/leadService';
 import { homepageService } from '../../services/homepageService';
 import MarketplaceEligibilityBanner from './components/MarketplaceEligibilityBanner';
@@ -79,10 +81,14 @@ const BankMarketplace = () => {
       setLoading(true);
       setLoadSlowHint(false);
       slowTimer = setTimeout(() => setLoadSlowHint(true), 4000);
-      const data = await bankService?.getActiveBanks({
-        forceRefresh: true,
-      });
+      const [data, creditCards] = await Promise.all([
+        bankService?.getActiveBanks({
+          forceRefresh: true,
+        }),
+        creditCardService.listActive().catch(() => []),
+      ]);
       const list = Array.isArray(data) ? data : [];
+      const cardList = Array.isArray(creditCards) ? creditCards : [];
 
       let eligibility = loadEligibilityResults();
       if (!eligibility?.banks?.length && eligibility?.formData) {
@@ -97,7 +103,15 @@ const BankMarketplace = () => {
         }
       }
       const probabilityMap = getBankProbabilityMap(eligibility);
-      const transformedOffers = listMarketplaceOffers(list, loanTypeSlug, probabilityMap);
+      const bankOffers = listMarketplaceOffers(list, loanTypeSlug, probabilityMap);
+      const cardOffers = listCreditCardMarketplaceOffers(cardList, list);
+
+      const isCreditCardView = loanTypeSlug === 'credit_card';
+      const transformedOffers = isCreditCardView
+        ? cardOffers
+        : loanTypeSlug
+          ? bankOffers
+          : [...bankOffers, ...cardOffers];
       setAllOffers(transformedOffers);
       setBanks(transformedOffers);
     } catch (err) {
@@ -174,6 +188,12 @@ const BankMarketplace = () => {
   const handleClearCompare = () => setCompareList([]);
 
   const handleApply = (bank) => {
+    if (bank?.isCreditCard) {
+      if (bank?.applyUrl) {
+        window.open(bank.applyUrl, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
     const qs = activeProduct ? `?loanType=${activeProduct.slug}` : '';
     navigate(`/customer-assessment-portal${qs}`, {
       state: {
@@ -285,17 +305,25 @@ const BankMarketplace = () => {
               </h1>
               <p className="text-sm md:text-base text-muted-foreground">
                 {activeProduct
-                  ? `All ${activeProduct.label.toLowerCase()} products from partner banks`
-                  : 'Compare every loan product from our trusted banking partners'}
+                  ? activeProduct.apiKey === 'credit_card'
+                    ? 'Compare credit cards from partner banks — fees, rewards, and apply links'
+                    : `All ${activeProduct.label.toLowerCase()} products from partner banks`
+                  : 'Compare every loan product and credit card from our trusted banking partners'}
               </p>
               {activeProduct && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   <Button size="sm" variant="outline" onClick={() => navigate('/bank-marketplace')}>
                     Show all loan types
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => navigate(`/eligibility-assessment?loanType=${activeProduct.slug}`)}>
-                    Check eligibility
-                  </Button>
+                  {activeProduct.apiKey !== 'credit_card' ? (
+                    <Button size="sm" variant="outline" onClick={() => navigate(`/eligibility-assessment?loanType=${activeProduct.slug}`)}>
+                      Check eligibility
+                    </Button>
+                  ) : (
+                    <Button size="sm" variant="outline" onClick={() => navigate('/credit-cards')}>
+                      Full card comparison
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -396,7 +424,9 @@ const BankMarketplace = () => {
             <div className="bg-card rounded-lg border border-border p-8 md:p-12 text-center">
                 <Icon name="Search" size={48} className="text-muted mx-auto mb-4" />
                 <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">
-                  No loan products match your filters
+                  {activeProduct?.apiKey === 'credit_card'
+                    ? 'No credit cards match your filters'
+                    : 'No loan products match your filters'}
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground mb-6">
                   Try adjusting your filter criteria to see more options

@@ -26,6 +26,8 @@ const BankCard = ({
     return 'bg-error/10';
   };
 
+  const isCreditCard = Boolean(bank?.isCreditCard);
+
   return (
     <div className="feature-card group h-full flex flex-col">
       {/* Bank Header */}
@@ -80,6 +82,7 @@ const BankCard = ({
         </button>
       </div>
       {/* Probability Score */}
+      {!isCreditCard ? (
       <div className={`${getProbabilityBgColor(bank?.probability)} rounded-lg p-3 md:p-4 mb-4 md:mb-6`}>
         <div className="flex items-center justify-between mb-2">
           <span className="text-xs md:text-sm font-semibold text-foreground">Approval Probability</span>
@@ -97,23 +100,35 @@ const BankCard = ({
         </div>
         <p className="text-xs text-muted-foreground mt-2 line-clamp-2">{bank?.probabilityReason}</p>
       </div>
+      ) : (
+      <div className="bg-violet-500/10 rounded-lg p-3 md:p-4 mb-4 md:mb-6">
+        <p className="text-xs md:text-sm font-semibold text-foreground mb-1">Credit Card Offer</p>
+        <p className="text-xs text-muted-foreground line-clamp-2">
+          {bank?.description || 'Compare fees, rewards, and benefits — apply on the bank website.'}
+        </p>
+      </div>
+      )}
       {/* Rates & charges */}
       <div className="bg-muted rounded-lg p-3 md:p-4 mb-4 md:mb-6 space-y-3">
         <div className="flex items-baseline justify-between gap-4">
           <div>
-            <span className="text-xs md:text-sm text-muted-foreground">Interest Rate</span>
+            <span className="text-xs md:text-sm text-muted-foreground">
+              {isCreditCard ? 'Interest Rate' : 'Interest Rate'}
+            </span>
             <div className="flex items-baseline space-x-1 mt-1">
               <span className="text-2xl md:text-3xl lg:text-4xl font-bold text-primary">
                 {bank?.interestRateLabel ?? bank?.interestRate ?? 'On request'}
               </span>
               {(bank?.interestRateLabel ?? bank?.interestRate) &&
                 bank?.interestRateLabel !== 'On request' && (
-                  <span className="text-xs md:text-sm text-muted-foreground">% p.a.</span>
+                  <span className="text-xs md:text-sm text-muted-foreground">% p.m.</span>
                 )}
             </div>
           </div>
           <div className="text-right">
-            <span className="text-xs md:text-sm text-muted-foreground">Processing Fee</span>
+            <span className="text-xs md:text-sm text-muted-foreground">
+              {isCreditCard ? 'Joining Fee' : 'Processing Fee'}
+            </span>
             <div className="text-base md:text-lg font-semibold text-foreground mt-1 whitespace-nowrap">
               {bank?.processingFee}
             </div>
@@ -152,19 +167,19 @@ const BankCard = ({
         <div className="bg-muted rounded-lg p-2 md:p-3">
           <div className="flex items-center space-x-1 mb-1">
             <Icon name="IndianRupee" size={14} className="text-primary" />
-            <span className="text-xs text-muted-foreground">Max Amount</span>
+            <span className="text-xs text-muted-foreground">{isCreditCard ? 'Annual Fee' : 'Max Amount'}</span>
           </div>
           <span className="text-sm md:text-base font-semibold text-foreground whitespace-nowrap">
-            {bank?.maxAmount}
+            {isCreditCard ? (bank?.annualFeeLabel || bank?.maxAmount) : bank?.maxAmount}
           </span>
         </div>
         <div className="bg-muted rounded-lg p-2 md:p-3">
           <div className="flex items-center space-x-1 mb-1">
-            <Icon name="Calendar" size={14} className="text-primary" />
-            <span className="text-xs text-muted-foreground">Max Tenure</span>
+            <Icon name="CreditCard" size={14} className="text-primary" />
+            <span className="text-xs text-muted-foreground">{isCreditCard ? 'Network' : 'Max Tenure'}</span>
           </div>
           <span className="text-sm md:text-base font-semibold text-foreground whitespace-nowrap">
-            {bank?.maxTenure}
+            {isCreditCard ? bank?.cardNetwork : bank?.maxTenure}
           </span>
         </div>
       </div>
@@ -190,22 +205,24 @@ const BankCard = ({
       </div>
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-2 mt-auto">
-        <Button
-          variant="outline"
-          fullWidth
-          onClick={() => onViewBank?.(bank)}
-          iconName="Layers"
-        >
-          All bank products
-        </Button>
+        {!isCreditCard ? (
+          <Button
+            variant="outline"
+            fullWidth
+            onClick={() => onViewBank?.(bank)}
+            iconName="Layers"
+          >
+            All bank products
+          </Button>
+        ) : null}
         <Button
           variant="default"
           fullWidth
           onClick={() => onApply(bank)}
-          iconName="ArrowRight"
+          iconName={isCreditCard ? 'ExternalLink' : 'ArrowRight'}
           iconPosition="right"
         >
-          Apply Now
+          {isCreditCard ? 'Apply on Bank Site' : 'Apply Now'}
         </Button>
       </div>
       {bank?.applyUrl && (

@@ -7,12 +7,15 @@ import BankComparisonPanel from '../../../components/bank-comparison/BankCompari
 import { bankService } from '../../../services/apiServices';
 import { buildBankOffers, formatLoanAmount } from '../../../utils/bankOffers';
 import { listMarketplaceOffers } from '../../../utils/bankMarketplace';
+import { listCreditCardMarketplaceOffers } from '../../../utils/creditCardMarketplace';
+import { creditCardService } from '../../../services/creditCardService';
 import { getBankProbabilityMap, loadEligibilityResults } from '../../../services/leadService';
 import { MAX_BANK_COMPARE } from '../../../constants/bankComparison';
 
 const BankOffersSection = ({ product }) => {
   const navigate = useNavigate();
   const [banks, setBanks] = useState([]);
+  const [creditCards, setCreditCards] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [compareList, setCompareList] = useState([]);
@@ -24,13 +27,18 @@ const BankOffersSection = ({ product }) => {
       try {
         setLoading(true);
         setError('');
-        const data = await bankService.getActiveBanks({
-          loanType: product.slug,
-          forceRefresh: true,
-        });
+        const isCreditCardProduct = product.apiKey === 'credit_card';
+        const [data, cards] = await Promise.all([
+          bankService.getActiveBanks({
+            loanType: isCreditCardProduct ? undefined : product.slug,
+            forceRefresh: true,
+          }),
+          isCreditCardProduct ? creditCardService.listActive().catch(() => []) : Promise.resolve([]),
+        ]);
         if (!cancelled) {
           const list = Array.isArray(data) ? data : [];
           setBanks(list);
+          setCreditCards(Array.isArray(cards) ? cards : []);
           setCompareList([]);
         }
       } catch {
@@ -42,19 +50,42 @@ const BankOffersSection = ({ product }) => {
     return () => {
       cancelled = true;
     };
-  }, [product.slug]);
+  }, [product.slug, product.apiKey]);
 
   const eligibility = loadEligibilityResults();
   const probabilityMap = getBankProbabilityMap(eligibility);
 
-  const marketplaceBanks = useMemo(
-    () => listMarketplaceOffers(banks, product.slug, probabilityMap),
-    [banks, product.slug, probabilityMap],
+  const marketplaceBanks = useMemo(() => {
+    if (product.apiKey === 'credit_card') {
+      return listCreditCardMarketplaceOffers(creditCards, banks);
+    }
+    return listMarketplaceOffers(banks, product.slug, probabilityMap);
+  }, [banks, creditCards, product.slug, product.apiKey, probabilityMap]);
+
+  const offers = useMemo(() => {
+    if (product.apiKey === 'credit_card') {
+      return marketplaceBanks.map((card) => ({
+        bankId: card.creditCardId || card.productId,
+        productId: card.productId,
+        bankName: card.name,
+        productName: card.productName,
+        logoUrl: card.logo,
+        logoAlt: card.logoAlt,
+        interestLabel: card.interestRateLabel ? `${card.interestRateLabel}% p.m.` : 'On request',
+        maxAmount: card.annualFeeLabel,
+        maxTenure: card.cardNetwork,
+        features: card.features,
+        isFeatured: (card.displayPriority ?? 0) > 0,
+        applyUrl: card.applyUrl,
+        isCreditCard: true,
+      }));
+    }
+    return buildBankOffers(banks, product);
+  }, [banks, marketplaceBanks, product]);
+
+  const comparedBanks = marketplaceBanks.filter((b) =>
+    compareList.includes(product.apiKey === 'credit_card' ? b.creditCardId : b.id),
   );
-
-  const offers = useMemo(() => buildBankOffers(banks, product), [banks, product]);
-
-  const comparedBanks = marketplaceBanks.filter((b) => compareList.includes(b.id));
 
   const scrollToComparison = () => {
     comparisonSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -78,6 +109,13 @@ const BankOffersSection = ({ product }) => {
   };
 
   const handleApply = (bank) => {
+    if (bank?.applyUrl || bank?.isCreditCard) {
+      const url = bank.applyUrl || marketplaceBanks.find((c) => c.creditCardId === bank.id)?.applyUrl;
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+      return;
+    }
     navigate(`/customer-assessment-portal?loanType=${product.slug}`, {
       state: {
         selectedBank: bank,
@@ -125,7 +163,9 @@ const BankOffersSection = ({ product }) => {
           <BankComparisonPanel
             productLabel={product.label}
             banks={comparedBanks}
-            rawBanks={marketplaceBanks.filter((b) => compareList.includes(b.id))}
+            rawBanks={marketplaceBanks.filter((b) =>
+              compareList.includes(product.apiKey === 'credit_card' ? b.creditCardId : b.id),
+            )}
             onApply={handleApply}
             onRemoveBank={(id) => setCompareList((p) => p.filter((x) => x !== id))}
             onClearAll={() => setCompareList([])}
@@ -271,8 +311,13 @@ const BankOffersSection = ({ product }) => {
                       >
                         {isComparing ? 'In comparison' : compareFull ? 'Compare full' : 'Add to compare'}
                       </Button>
-                      <Button size="sm" className="flex-1" onClick={() => handleApply({ id: offer.bankId, name: offer.bankName })}>
-                        Apply
+                      <Button size="sm" className="flex-1" onClick={() => handleApply({
+                        id: offer.bankId,
+                        name: offer.bankName,
+                        applyUrl: offer.applyUrl,
+                        isCreditCard: offer.isCreditCard,
+                      })}>
+                        {offer.isCreditCard ? 'Apply on bank site' : 'Apply'}
                       </Button>
                     </div>
                   </div>

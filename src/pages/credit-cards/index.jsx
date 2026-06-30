@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { creditCardService } from '../../services/creditCardService';
+import { resolveCreditCardLogo } from '../../utils/creditCardMarketplace';
 
 function formatInr(value) {
   const n = Number(value);
@@ -152,9 +153,22 @@ const CreditCardsPage = () => {
                 className={`bg-card border rounded-xl p-5 flex flex-col gap-3 transition-all ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
               >
                 <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <p className="font-bold text-foreground">{card.name}</p>
-                    <p className="text-sm text-muted-foreground">{card.bankName}</p>
+                  <div className="flex items-start gap-3 min-w-0">
+                    <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
+                      {resolveCreditCardLogo(card) ? (
+                        <img
+                          src={resolveCreditCardLogo(card)}
+                          alt={card.name}
+                          className="w-12 h-12 object-contain"
+                        />
+                      ) : (
+                        <Icon name="CreditCard" size={24} className="text-violet-700" />
+                      )}
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-bold text-foreground">{card.name}</p>
+                      <p className="text-sm text-muted-foreground">{card.bankName}</p>
+                    </div>
                   </div>
                   <button
                     type="button"

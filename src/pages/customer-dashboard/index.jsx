@@ -35,6 +35,7 @@ const CustomerDashboard = () => {
   const [documents, setDocuments] = useState([]);
   const [notifications, setNotifications] = useState([]);
   const [applyBanks, setApplyBanks] = useState([]);
+  const [partnerBanks, setPartnerBanks] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -94,6 +95,7 @@ const CustomerDashboard = () => {
       try {
         const banks = await bankService.getActiveBanks({ includeProducts: false });
         const list = Array.isArray(banks) ? banks : [];
+        setPartnerBanks(list);
         setApplyBanks(list.filter((b) => b?.applyUrl));
       } catch {
         setApplyBanks([]);
@@ -278,7 +280,7 @@ const CustomerDashboard = () => {
               onEditProfile={() => navigate('/profile')} 
             />
 
-            <CreditCardsQuickApply banks={applyBanks} />
+            <CreditCardsQuickApply banks={partnerBanks} />
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">

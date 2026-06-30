@@ -1,9 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import CreditCardOfferTile from './CreditCardOfferTile';
 import { getBankLogoUrl } from '../../utils/bankBranding';
 import { creditCardService } from '../../services/creditCardService';
+import { resolveCreditCardLogo } from '../../utils/creditCardMarketplace';
 
 const QUICK_LOANS = [
   { loanType: 'personal_loan', label: 'Personal', icon: 'User' },
@@ -19,9 +21,27 @@ const CreditCardsQuickApply = ({ banks = [], comparePath = '/credit-cards' }) =>
 
   useEffect(() => {
     creditCardService.listActive().then((list) => {
-      setCards(Array.isArray(list) ? list.slice(0, 4) : []);
+      setCards(Array.isArray(list) ? list : []);
     }).catch(() => setCards([]));
   }, []);
+
+  const banksById = useMemo(() => {
+    const map = {};
+    for (const bank of banks || []) {
+      if (bank?.id) map[bank.id] = bank;
+    }
+    return map;
+  }, [banks]);
+
+  const featuredCards = cards.slice(0, 6);
+
+  const handleCardClick = (card) => {
+    if (card?.applyUrl) {
+      window.open(card.applyUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    navigate(comparePath);
+  };
 
   return (
     <div className="space-y-6">
@@ -41,38 +61,60 @@ const CreditCardsQuickApply = ({ banks = [], comparePath = '/credit-cards' }) =>
               <span className="text-sm font-semibold text-foreground">{item.label}</span>
             </button>
           ))}
+          <button
+            type="button"
+            onClick={() => navigate('/bank-marketplace?loanType=credit_card')}
+            className="bg-card border border-border rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary hover:shadow-md transition-all"
+          >
+            <div className="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center">
+              <Icon name="CreditCard" size={22} className="text-violet-700" />
+            </div>
+            <span className="text-sm font-semibold text-foreground">Credit Card</span>
+          </button>
         </div>
       </div>
 
       <div>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold text-foreground">Credit Cards</h2>
-          <button type="button" onClick={() => navigate(comparePath)} className="text-sm font-semibold text-primary">
-            Compare all
-          </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          {(cards.length ? cards : [{ id: 'browse', name: 'Browse cards', bankName: 'Compare & apply' }]).map((card) => (
+          <h2 className="text-xl font-bold text-foreground">Credit Card Offers</h2>
+          <div className="flex items-center gap-3">
             <button
-              key={card.id}
               type="button"
-              onClick={() => navigate(comparePath)}
-              className="bg-card border border-border rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary hover:shadow-md transition-all text-center"
+              onClick={() => navigate('/bank-marketplace?loanType=credit_card')}
+              className="text-sm font-semibold text-primary"
             >
-              <div className="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center">
-                <Icon name="CreditCard" size={22} className="text-violet-700" />
-              </div>
-              <span className="text-sm font-semibold text-foreground line-clamp-2">{card.name}</span>
-              <span className="text-xs text-muted-foreground line-clamp-1">{card.bankName}</span>
+              Marketplace
             </button>
-          ))}
+            <button type="button" onClick={() => navigate(comparePath)} className="text-sm font-semibold text-primary">
+              Compare all
+            </button>
+          </div>
         </div>
+        {featuredCards.length > 0 ? (
+          <div className="flex gap-4 overflow-x-auto pb-2 -mx-1 px-1">
+            {featuredCards.map((card) => (
+              <CreditCardOfferTile
+                key={card.id}
+                card={card}
+                banksById={banksById}
+                onClick={handleCardClick}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="bg-card border border-border rounded-xl p-6 text-center">
+            <p className="text-sm text-muted-foreground mb-3">No credit card offers published yet.</p>
+            <Button size="sm" variant="outline" onClick={() => navigate('/bank-marketplace?loanType=credit_card')}>
+              Browse marketplace
+            </Button>
+          </div>
+        )}
       </div>
 
       {applyBanks.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">Exclusive Offers</h2>
+            <h2 className="text-xl font-bold text-foreground">Exclusive Loan Offers</h2>
             <Button variant="link" size="sm" onClick={() => navigate('/bank-marketplace')}>
               All banks
             </Button>

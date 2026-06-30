@@ -60,6 +60,17 @@ export const LOAN_PRODUCTS = [
     features: ['Moratorium period', 'Tax benefits', 'Tuition & living costs', 'Study abroad'],
     color: '#0ea5e9',
   },
+  {
+    slug: 'credit_card',
+    apiKey: 'credit_card',
+    label: 'Credit Card',
+    shortLabel: 'Credit Card',
+    icon: 'CreditCard',
+    description: 'Compare rewards, fees, and benefits from partner banks.',
+    interestRange: 'Varies by card',
+    features: ['Rewards & cashback', 'Lounge access', 'Zero annual fee options', 'Instant apply links'],
+    color: '#7c3aed',
+  },
 ];
 
 let registry = [...LOAN_PRODUCTS];
