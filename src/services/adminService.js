@@ -77,8 +77,12 @@ export const adminService = {
   },
 
   async requestDeleteApplicationsOtp() {
-    const res = await apiClient.post('/loan-applications/bulk-delete/request-otp');
-    return res.data;
+    try {
+      const res = await apiClient.post('/loan-applications/bulk-delete/request-otp');
+      return res.data;
+    } catch (error) {
+      throw new Error(apiError(error, 'Failed to send OTP').message);
+    }
   },
 
   async confirmDeleteApplications(applicationIds, otp) {

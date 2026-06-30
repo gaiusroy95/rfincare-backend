@@ -101,7 +101,7 @@ export function buildAssessmentEntryState({
       monthlyIncome: quick.monthlyIncome != null ? String(quick.monthlyIncome) : merged.monthlyIncome,
       creditScoreRange: quick.creditScoreRange || merged.creditScoreRange,
       loanPurpose:
-        normalizeLoanApiKey(quick.loanType || loanTypeParam) || merged.loanPurpose,
+        normalizeLoanApiKey(loanTypeParam || quick.loanType) || merged.loanPurpose,
       employmentType: quick.employmentType || merged.employmentType,
     };
   } else if (loanTypeParam) {

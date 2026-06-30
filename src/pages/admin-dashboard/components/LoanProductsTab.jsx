@@ -221,8 +221,11 @@ const LoanProductsTab = () => {
         <div>
           <h2 className="text-xl font-bold text-foreground">Loan product catalog</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Map each product to a bank and category. Only banks with a product under a category
-            appear on that category&apos;s marketplace page.
+            Products with <span className="font-semibold text-emerald-700">no bank</span> appear as
+            tiles on the website &amp; app homepage. Products linked to a{' '}
+            <span className="font-semibold text-amber-700">bank</span> are listed as that lender&apos;s
+            offer in the marketplace and are <span className="font-semibold">not</span> shown on the
+            homepage. Each card below is tagged accordingly.
           </p>
         </div>
         <Button variant="outline" iconName="RefreshCw" onClick={load} disabled={loading}>
@@ -413,6 +416,18 @@ const LoanProductsTab = () => {
                     /products/{product.categorySlug || product.slug}
                   </p>
                   <p className="text-sm text-primary font-semibold mt-1">{product.interestRange}</p>
+                  <span
+                    className={`inline-flex items-center gap-1 mt-2 text-xs px-2 py-0.5 rounded-full font-medium ${
+                      product.bankId
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}
+                  >
+                    <Icon name={product.bankId ? 'Store' : 'Home'} size={12} />
+                    {product.bankId
+                      ? 'Marketplace offer · not on homepage'
+                      : 'Homepage product'}
+                  </span>
                 </div>
                 {!product.isActive && (
                   <span className="text-xs px-2 py-0.5 rounded bg-muted">Hidden</span>
