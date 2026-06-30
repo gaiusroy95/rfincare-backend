@@ -301,7 +301,7 @@ const LoanProductsTab = () => {
           />
           <Input
             label="URL slug"
-            description="Used in /products/your-slug (auto-generated from name if empty)"
+            description="Optional short name — combined with bank and category to form a unique URL"
             value={form.slug}
             onChange={(e) => setField('slug', e.target.value)}
             placeholder="hdfc_school_loan"
