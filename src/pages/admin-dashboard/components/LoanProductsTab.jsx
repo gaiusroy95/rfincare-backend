@@ -176,10 +176,6 @@ const LoanProductsTab = () => {
       setError('Product category is required');
       return;
     }
-    if (!form.bankId) {
-      setError('Bank name is required — select the lender for this product');
-      return;
-    }
     setSaving(true);
     setError('');
     const payload = buildPayload();
@@ -249,12 +245,11 @@ const LoanProductsTab = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Select
-            label="Bank name"
-            description="Lender offering this product (from Banks tab)"
+            label="Bank name (optional)"
+            description="Leave empty to show this product on the website & app homepage. Select a bank to list it as that lender's offer in the marketplace."
             options={bankOptions}
             value={form.bankId}
             onChange={(v) => setField('bankId', v)}
-            required
           />
           <Select
             label="Product category"
