@@ -67,6 +67,9 @@ const Footer = () => {
       { label: t('footer.aboutUs'), path: '/about-us' },
       { label: t('footer.howItWorks'), path: '/homepage#how-it-works' },
       { label: t('footer.bankPartners'), path: '/bank-marketplace' },
+      { label: 'Credit Cards', path: '/credit-cards' },
+      { label: 'Insurance Marketplace', path: '/insurance-marketplace' },
+      { label: 'Mutual Fund Marketplace', path: '/mutual-fund-marketplace' },
       { label: t('footer.careers'), path: '/legal/careers' },
     ],
     resources: [

@@ -34,6 +34,8 @@ import { pickCustomerPhotoDocument } from '../../utils/applicationFormDetails';
 import { getDocumentPreviewUrl } from '../../utils/documentUrls';
 import BankManagementTab from './components/BankManagementTab';
 import CreditCardsTab from './components/CreditCardsTab';
+import InsuranceTab from './components/InsuranceTab';
+import MutualFundsTab from './components/MutualFundsTab';
 import HomepageCmsTab from './components/HomepageCmsTab';
 import MarketingSeoTab from './components/MarketingSeoTab';
 import LeadsTab from './components/LeadsTab';
@@ -758,6 +760,8 @@ const AdminDashboard = () => {
                 {activeTab === 'bank-management' && <BankManagementTab />}
 
                 {activeTab === 'credit-cards' && <CreditCardsTab />}
+                {activeTab === 'insurance' && <InsuranceTab />}
+                {activeTab === 'mutual-funds' && <MutualFundsTab />}
 
                 {activeTab === 'loan-products' && <LoanProductsTab />}
 
