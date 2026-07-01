@@ -7,6 +7,7 @@ const AgentManagementCard = ({
   agent,
   onApprove,
   onReject,
+  onSuspend,
   onViewProfile,
   onEditDetails,
   onResetPassword,
@@ -125,6 +126,7 @@ const AgentManagementCard = ({
               iconName="Ban"
               iconPosition="left"
               fullWidth
+              onClick={() => onSuspend?.(agent?.id)}
             >
               Suspend
             </Button>

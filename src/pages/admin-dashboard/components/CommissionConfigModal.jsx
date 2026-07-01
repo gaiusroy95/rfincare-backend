@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { adminService } from '../../../services/adminService';
+import { resolveUploadUrl } from '../../../utils/documentUrls';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -225,7 +226,7 @@ const CommissionConfigModal = ({ agent, isOpen, onClose, onSave }) => {
                 {circulars.slice(0, 5).map((c) => (
                   <a
                     key={c.id}
-                    href={c.fileUrl}
+                    href={resolveUploadUrl(c.fileUrl || c.file_url)}
                     target="_blank"
                     rel="noreferrer"
                     className="block text-sm text-primary hover:underline"

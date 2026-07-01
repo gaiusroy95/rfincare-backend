@@ -235,6 +235,18 @@ export const adminService = {
     }
   },
 
+  async suspendAgent(agentId) {
+    try {
+      const res = await apiClient.patch(`/admin/agents/${agentId}`, {
+        account_status: 'suspended',
+        onboarding_status: 'suspended',
+      });
+      return { data: toCamelCase(res.data), error: null };
+    } catch (error) {
+      return { data: null, error: apiError(error, 'Failed to suspend agent') };
+    }
+  },
+
   async getAgentCommission(agentId) {
     try {
       const res = await apiClient.get(`/admin/agents/${agentId}/commission`);

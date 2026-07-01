@@ -16,6 +16,7 @@ const HomepageCmsTab = () => {
   const [stories, setStories] = useState([]);
   const [newsForm, setNewsForm] = useState({ title: '', excerpt: '', blogUrl: '', imageUrl: '', category: '', isPublished: true });
   const [videoForm, setVideoForm] = useState({ title: '', description: '', youtubeUrl: '', isPublished: true });
+  const [editingVideoId, setEditingVideoId] = useState(null);
   const [legalSlug, setLegalSlug] = useState('privacy-policy');
   const [legalForm, setLegalForm] = useState({ title: '', bodyHtml: '' });
   const [trustForm, setTrustForm] = useState({
@@ -107,15 +108,80 @@ const HomepageCmsTab = () => {
       {tab === 'videos' && (
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-3 border rounded-lg p-4">
-            <h3 className="font-semibold">Add YouTube video</h3>
+            <h3 className="font-semibold">{editingVideoId ? 'Edit YouTube video' : 'Add YouTube video'}</h3>
             <Input label="Title" value={videoForm.title} onChange={(e) => setVideoForm({ ...videoForm, title: e.target.value })} />
-            <Input label="YouTube URL" value={videoForm.youtubeUrl} onChange={(e) => setVideoForm({ ...videoForm, youtubeUrl: e.target.value })} />
+            <Input
+              label="YouTube URL"
+              value={videoForm.youtubeUrl}
+              onChange={(e) => setVideoForm({ ...videoForm, youtubeUrl: e.target.value })}
+              placeholder="https://www.youtube.com/watch?v=..."
+            />
+            <p className="text-xs text-muted-foreground">
+              Paste a direct YouTube link (youtube.com or youtu.be). Google search links are converted automatically.
+            </p>
             <Input label="Description" value={videoForm.description} onChange={(e) => setVideoForm({ ...videoForm, description: e.target.value })} />
-            <Button onClick={() => cmsService.videos.create(videoForm).then(load)}>Save</Button>
+            <div className="flex gap-2">
+              <Button
+                onClick={() => {
+                  const action = editingVideoId
+                    ? cmsService.videos.update(editingVideoId, videoForm)
+                    : cmsService.videos.create(videoForm);
+                  action
+                    .then(() => {
+                      setVideoForm({ title: '', description: '', youtubeUrl: '', isPublished: true });
+                      setEditingVideoId(null);
+                      return load();
+                    })
+                    .catch((err) => {
+                      const msg = err?.response?.data?.message || err?.message || 'Could not save video';
+                      window.alert(msg);
+                    });
+                }}
+              >
+                {editingVideoId ? 'Update video' : 'Save'}
+              </Button>
+              {editingVideoId && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setEditingVideoId(null);
+                    setVideoForm({ title: '', description: '', youtubeUrl: '', isPublished: true });
+                  }}
+                >
+                  Cancel edit
+                </Button>
+              )}
+            </div>
           </div>
           <ul className="space-y-2 max-h-96 overflow-auto">{videos.map((item) => (
-            <li key={item.id} className="border p-3 rounded flex justify-between"><span>{item.title}</span>
-            <Button size="sm" variant="outline" onClick={() => cmsService.videos.remove(item.id).then(load)}>Delete</Button></li>
+            <li key={item.id} className="border p-3 rounded space-y-2">
+              <div className="flex justify-between gap-2 items-start">
+                <span className="font-medium">{item.title}</span>
+                <div className="flex gap-2 flex-shrink-0">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditingVideoId(item.id);
+                      setVideoForm({
+                        title: item.title || '',
+                        description: item.description || '',
+                        youtubeUrl: item.youtubeUrl || item.youtubeurl || item.youtube_url || '',
+                        isPublished: item.isPublished ?? item.is_published ?? true,
+                      });
+                    }}
+                  >
+                    Edit
+                  </Button>
+                  <Button size="sm" variant="outline" onClick={() => cmsService.videos.remove(item.id).then(load)}>Delete</Button>
+                </div>
+              </div>
+              {(item.youtubeUrl || item.youtubeurl || item.youtube_url) && (
+                <p className="text-xs text-muted-foreground break-all">
+                  {item.youtubeUrl || item.youtubeurl || item.youtube_url}
+                </p>
+              )}
+            </li>
           ))}</ul>
         </div>
       )}

@@ -1,23 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import { homepageService } from '../../../services/homepageService';
-
-function youtubeId(url) {
-  const m = url?.match(/(?:youtu\.be\/|v=|\/embed\/|\/shorts\/)([\w-]{11})/);
-  return m ? m[1] : null;
-}
-
-function youtubeThumb(url) {
-  const id = youtubeId(url);
-  return id ? `https://img.youtube.com/vi/${id}/hqdefault.jpg` : null;
-}
-
-function youtubeEmbed(url) {
-  const id = youtubeId(url);
-  return id
-    ? `https://www.youtube.com/embed/${id}?autoplay=1&rel=0&modestbranding=1`
-    : null;
-}
+import {
+  resolveVideoYoutubeUrl,
+  youtubeEmbed,
+  youtubeThumbnail,
+} from '../../../utils/youtube';
 
 const VideosSection = () => {
   const [videos, setVideos] = useState([]);
@@ -50,7 +38,8 @@ const VideosSection = () => {
   }
   if (!videos.length) return null;
 
-  const activeEmbed = active ? youtubeEmbed(active.youtubeUrl) : null;
+  const activeUrl = active ? resolveVideoYoutubeUrl(active) : null;
+  const activeEmbed = activeUrl ? youtubeEmbed(activeUrl) : null;
 
   return (
     <section className="py-16 bg-muted">
@@ -60,7 +49,8 @@ const VideosSection = () => {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {videos.map((video) => {
-            const thumb = video.thumbnailUrl || youtubeThumb(video.youtubeUrl);
+            const videoUrl = resolveVideoYoutubeUrl(video);
+            const thumb = video.thumbnailUrl || video.thumbnailurl || youtubeThumbnail(videoUrl);
             return (
               <article key={video.id} className="bg-card rounded-xl border border-border overflow-hidden">
                 <button

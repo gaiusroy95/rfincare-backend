@@ -50,12 +50,15 @@ const DocumentRequirementsTab = () => {
 
   const loadData = async () => {
     setLoading(true);
-    const [{ data: reqs }, loadedBanks] = await Promise.all([
+    const [{ data: reqs, error: reqError }, loadedBanks] = await Promise.all([
       adminService.getDocumentRequirements(),
       bankService.getAllBanks().catch(() => []),
     ]);
     setRequirements(reqs || []);
     setBanks(Array.isArray(loadedBanks) ? loadedBanks : []);
+    if (reqError) {
+      setMessage(reqError.message);
+    }
     setLoading(false);
   };
 

@@ -16,6 +16,11 @@ const PRODUCTION_API_BASE = 'https://rfincare.onrender.com';
 export function inferApiBaseFromHost() {
   if (typeof window === 'undefined') return '';
   const host = window.location.hostname;
+  const origin = `${window.location.protocol}//${host}`;
+  // Full-stack API deploy (serves SPA + /uploads from the same host).
+  if (host === 'rfincare-backend.vercel.app') {
+    return origin;
+  }
   if (
     host === 'rfincare-frontend.vercel.app'
     || host.endsWith('.vercel.app')

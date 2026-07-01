@@ -498,6 +498,19 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleSuspendAgent = async (agentId) => {
+    if (!window.confirm('Suspend this agent? They will not be able to log in until reactivated.')) {
+      return;
+    }
+    const { error } = await adminService?.suspendAgent(agentId);
+    if (!error) {
+      await refreshCurrentTab();
+      alert('Agent suspended');
+    } else {
+      alert('Failed to suspend agent: ' + error?.message);
+    }
+  };
+
   const handleConfigureCommission = (agent) => {
     setSelectedAgent(agent);
     setShowCommissionModal(true);
@@ -723,6 +736,7 @@ const AdminDashboard = () => {
                           agent={agent}
                           onApprove={handleApproveAgent}
                           onReject={handleRejectAgent}
+                          onSuspend={handleSuspendAgent}
                           onViewProfile={handleConfigureCommission}
                           onEditDetails={(a) => openStaffManage('agent', a, 'details')}
                           onResetPassword={(a) => openStaffManage('agent', a, 'password')}
