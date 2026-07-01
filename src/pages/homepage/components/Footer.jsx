@@ -27,19 +27,19 @@ function getAdditionalFooterOffices(contact) {
 }
 
 const linkClass =
-  'group inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors text-left';
+  'group flex w-full items-start gap-1.5 text-sm text-muted-foreground hover:text-primary transition-colors text-left';
 
 const FooterColumn = ({ title, links, onNavigate }) => (
-  <div>
+  <div className="min-w-0">
     <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
       <span className="w-1 h-4 rounded-full bg-primary shrink-0" aria-hidden />
       {title}
     </h3>
     <ul className="space-y-2.5">
       {links?.map((link) => (
-        <li key={link?.label}>
+        <li key={link?.label} className="min-w-0">
           <button type="button" onClick={() => onNavigate(link?.path)} className={linkClass}>
-            <span className="transition-transform group-hover:translate-x-0.5">{link?.label}</span>
+            <span className="break-words transition-transform group-hover:translate-x-0.5">{link?.label}</span>
           </button>
         </li>
       ))}
@@ -216,22 +216,24 @@ const Footer = () => {
               onNavigate={navigate}
             />
           </div>
+        </div>
 
-          <div className="mt-8 pt-8 border-t border-border/60">
-            <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
-              <span className="w-1 h-4 rounded-full bg-primary shrink-0" aria-hidden />
-              Policies & Disclosures
-            </h3>
-            <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-6 gap-y-2.5">
-              {footerLinks.policies?.map((link) => (
-                <li key={link.path}>
-                  <button type="button" onClick={() => navigate(link.path)} className={linkClass}>
-                    <span className="transition-transform group-hover:translate-x-0.5">{link.label}</span>
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
+        <div className="mb-10 md:mb-12 pt-8 border-t border-border/60">
+          <h3 className="text-xs font-semibold uppercase tracking-wider text-foreground mb-4 flex items-center gap-2">
+            <span className="w-1 h-4 rounded-full bg-primary shrink-0" aria-hidden />
+            Policies & Disclosures
+          </h3>
+          <ul className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-x-6 gap-y-3">
+            {footerLinks.policies?.map((link) => (
+              <li key={link.path} className="min-w-0">
+                <button type="button" onClick={() => navigate(link.path)} className={linkClass}>
+                  <span className="break-words transition-transform group-hover:translate-x-0.5">
+                    {link.label}
+                  </span>
+                </button>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div className="rounded-xl border border-border/60 bg-background/50 px-4 py-5 md:px-6 md:py-6">
