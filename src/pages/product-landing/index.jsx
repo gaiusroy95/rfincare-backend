@@ -8,6 +8,7 @@ import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
 import NotFound from '../NotFound';
 import BankOffersSection from './components/BankOffersSection';
+import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 
 const ProductLanding = () => {
   const { loanType } = useParams();
@@ -96,7 +97,8 @@ const ProductLanding = () => {
                   variant="secondary"
                   className="w-full"
                   onClick={() =>
-                    navigate(`/customer-assessment-portal?${qs}`, {
+                    openAssessmentOrEligibilityFirst(navigate, {
+                      slug: product.slug,
                       state: { quickCheck: { loanType: product.apiKey } },
                     })
                   }

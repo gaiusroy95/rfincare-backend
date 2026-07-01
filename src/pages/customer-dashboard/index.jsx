@@ -17,6 +17,7 @@ import { customerJourneyService } from '../../services/customerJourneyService';
 import { bankService } from '../../services/apiServices';
 import { milestone4Service } from '../../services/milestone4Service';
 import CreditCardsQuickApply from '../../components/credit-cards/CreditCardsQuickApply';
+import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 
 
 const CustomerDashboard = () => {
@@ -309,7 +310,7 @@ const CustomerDashboard = () => {
                         <p className="text-muted-foreground mb-4">No applications yet</p>
                         <Button
                           variant="default"
-                          onClick={() => navigate('/customer-assessment-portal')}
+                          onClick={() => openAssessmentOrEligibilityFirst(navigate)}
                         >
                           Apply for Loan
                         </Button>
@@ -373,7 +374,7 @@ const CustomerDashboard = () => {
                     title: 'New application',
                     description: 'Start a fresh loan assessment',
                   }}
-                  onClick={() => navigate('/customer-assessment-portal')}
+                  onClick={() => openAssessmentOrEligibilityFirst(navigate)}
                 />
                 <SupportCard />
               </div>
@@ -390,7 +391,7 @@ const CustomerDashboard = () => {
                 variant="default"
                 iconName="Plus"
                 iconPosition="left"
-                onClick={() => navigate('/customer-assessment-portal')}
+                onClick={() => openAssessmentOrEligibilityFirst(navigate)}
               >
                 New Application
               </Button>
@@ -411,7 +412,7 @@ const CustomerDashboard = () => {
                   <Button
                     variant="default"
                     size="lg"
-                    onClick={() => navigate('/customer-assessment-portal')}
+                    onClick={() => openAssessmentOrEligibilityFirst(navigate)}
                   >
                     Apply for Loan
                   </Button>

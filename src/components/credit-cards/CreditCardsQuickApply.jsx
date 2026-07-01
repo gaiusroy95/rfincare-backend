@@ -6,6 +6,7 @@ import CreditCardOfferTile from './CreditCardOfferTile';
 import { getBankLogoUrl } from '../../utils/bankBranding';
 import { creditCardService } from '../../services/creditCardService';
 import { resolveCreditCardLogo } from '../../utils/creditCardMarketplace';
+import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 
 const QUICK_LOANS = [
   { loanType: 'personal_loan', label: 'Personal', icon: 'User' },
@@ -52,7 +53,7 @@ const CreditCardsQuickApply = ({ banks = [], comparePath = '/credit-cards' }) =>
             <button
               key={item.loanType}
               type="button"
-              onClick={() => navigate(`/customer-assessment-portal?loanType=${item.loanType}`)}
+              onClick={() => openAssessmentOrEligibilityFirst(navigate, { loanType: item.loanType })}
               className="bg-card border border-border rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary hover:shadow-md transition-all"
             >
               <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">

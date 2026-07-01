@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import { openAssessmentOrEligibilityFirst } from '../../../utils/eligibilityGate';
 
 const CTASection = () => {
   const navigate = useNavigate();
@@ -24,7 +25,7 @@ const CTASection = () => {
               className="bg-white text-primary hover:bg-white/90 shadow-lg text-base md:text-lg px-8 py-4"
               iconName="ArrowRight"
               iconPosition="right"
-              onClick={() => navigate('/customer-assessment-portal')}
+              onClick={() => openAssessmentOrEligibilityFirst(navigate)}
             >
               Start Your Application
             </Button>

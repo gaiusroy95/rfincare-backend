@@ -135,6 +135,7 @@ export function emptyProductForm(categorySlug = 'personal_loan') {
     documentationCharges: '',
     disbursalTimeline: '',
     collateralRequired: '',
+    applyUrl: '',
   };
 }
 
@@ -313,7 +314,7 @@ export function mapProductForMarketplace(bank, product, loanTypeSlug, probabilit
       bank?.partnershipDuration || bank?.partnership_duration || 'Partner since 2020',
     displayPriority: readBankNumber(bank, 'displayPriority', 'display_priority') ?? 0,
     type: bank?.bankType || bank?.bank_type || 'private',
-    applyUrl: bank?.applyUrl || bank?.apply_url || null,
+    applyUrl: productData.apply_url || productData.applyUrl || bank?.applyUrl || bank?.apply_url || null,
     description: `Trusted financial institution offering competitive loan products.`,
   };
 }
@@ -410,6 +411,7 @@ export function productDataFromForm(form) {
       .split('\n')
       .map((s) => s.trim())
       .filter(Boolean),
+    apply_url: form.applyUrl?.trim() || null,
   };
 }
 
@@ -456,6 +458,7 @@ export function formFromProduct(product, loanTypeDefault = 'personal_loan') {
     eligibilityCriteriaText: eligibility.join('\n'),
     policiesText: policies.join('\n'),
     documentationRequiredText: documentationRequired.join('\n'),
+    applyUrl: data.apply_url ?? data.applyUrl ?? '',
   };
 }
 

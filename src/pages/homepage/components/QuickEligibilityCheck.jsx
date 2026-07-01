@@ -7,6 +7,7 @@ import Select from '../../../components/ui/Select';
 import { getLoanProductBySlug } from '../../../constants/loanProducts';
 import { CREDIT_SCORE_RANGE_OPTIONS } from '../../../constants/creditScoreRanges';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
+import { openAssessmentOrEligibilityFirst } from '../../../utils/eligibilityGate';
 
 const QuickEligibilityCheck = () => {
   const navigate = useNavigate();
@@ -116,8 +117,8 @@ const QuickEligibilityCheck = () => {
                 iconPosition="left"
                 onClick={() => {
                   const product = formData.loanType ? getLoanProductBySlug(formData.loanType) : null;
-                  const qs = product ? `?loanType=${product.slug}` : '';
-                  navigate(`/customer-assessment-portal${qs}`, {
+                  openAssessmentOrEligibilityFirst(navigate, {
+                    loanType: product?.slug || formData.loanType,
                     state: {
                       quickCheck: {
                         ...formData,

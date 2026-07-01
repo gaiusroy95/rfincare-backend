@@ -44,6 +44,7 @@ import {
   buildAssessmentEntryState,
   stripUnsafeFormFields,
 } from '../../utils/assessmentFormData';
+import { hasCompletedEligibilityCheck } from '../../utils/eligibilityGate';
 import { calculateTotalMonthlyEmi, EMI_FORM_FIELDS } from '../../utils/calculateTotalMonthlyEmi';
 
 const SESSION_KEY = 'loan_assessment_session';
@@ -220,6 +221,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
   const draftHydrated = useRef(false);
   const shouldResume =
     searchParams.get('resume') === '1' || location.state?.resumeDraft === true;
+  const [gateReady, setGateReady] = useState(Boolean(assistedByAgent || shouldResume));
   const [currentStep, setCurrentStep] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [lastSaved, setLastSaved] = useState(null);
@@ -272,8 +274,25 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
       .catch(() => setAgentMeta(null));
   }, [assistedByAgent]);
 
-  // Fresh application by default; only restore draft when ?resume=1 or resumeDraft state
   useEffect(() => {
+    if (assistedByAgent || shouldResume) {
+      setGateReady(true);
+      return;
+    }
+    if (!hasCompletedEligibilityCheck()) {
+      const loanType = searchParams.get('loanType');
+      const qs = loanType ? `?loanType=${encodeURIComponent(loanType)}` : '';
+      navigate(`/eligibility-assessment${qs}`, {
+        replace: true,
+        state: location.state,
+      });
+      return;
+    }
+    setGateReady(true);
+  }, [assistedByAgent, shouldResume, searchParams, navigate, location.state]);
+
+  useEffect(() => {
+    if (!gateReady) return;
     const init = async () => {
       if (assistedByAgent) {
         clearAssessmentDraft();
@@ -346,7 +365,7 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
       }
     };
     init();
-  }, [shouldResume, applyEntryPrefill, assistedByAgent]);
+  }, [gateReady, shouldResume, applyEntryPrefill, assistedByAgent]);
 
   const saveProgress = useCallback(async (data, step) => {
     setIsSaving(true);
@@ -1088,6 +1107,15 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         return null;
     }
   };
+
+  if (!gateReady) {
+    return (
+      <div className="min-h-screen bg-background flex flex-col items-center justify-center gap-4">
+        <Header />
+        <p className="text-muted-foreground">Preparing your application…</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">

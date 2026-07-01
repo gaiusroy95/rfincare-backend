@@ -184,6 +184,14 @@ const BankProductEditor = ({
               placeholder={`e.g. ${bankName || 'Bank'} ${selectedCategory?.label || 'Loan'}`}
               disabled={disabled}
             />
+            <Input
+              label="Direct apply link (optional)"
+              description="Paste the bank's application URL here. Customers go straight to the bank site. Leave empty to use Apply now → eligibility check → Rfincare application form."
+              value={productForm.applyUrl}
+              onChange={(e) => updateField('applyUrl', e.target.value)}
+              placeholder="https://bank.example.com/apply"
+              disabled={disabled}
+            />
           </div>
 
           <div>

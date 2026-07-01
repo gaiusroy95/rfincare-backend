@@ -10,6 +10,7 @@ import { listMarketplaceOffers } from '../../../utils/bankMarketplace';
 import { listCreditCardMarketplaceOffers } from '../../../utils/creditCardMarketplace';
 import { creditCardService } from '../../../services/creditCardService';
 import { getBankProbabilityMap, loadEligibilityResults } from '../../../services/leadService';
+import { openMarketplaceApply } from '../../../utils/eligibilityGate';
 import { MAX_BANK_COMPARE } from '../../../constants/bankComparison';
 
 const BankOffersSection = ({ product }) => {
@@ -109,14 +110,17 @@ const BankOffersSection = ({ product }) => {
   };
 
   const handleApply = (bank) => {
-    if (bank?.applyUrl || bank?.isCreditCard) {
+    if (bank?.isCreditCard) {
       const url = bank.applyUrl || marketplaceBanks.find((c) => c.creditCardId === bank.id)?.applyUrl;
       if (url) {
         window.open(url, '_blank', 'noopener,noreferrer');
       }
       return;
     }
-    navigate(`/customer-assessment-portal?loanType=${product.slug}`, {
+    openMarketplaceApply(navigate, {
+      bank,
+      loanType: product.apiKey,
+      slug: product.slug,
       state: {
         selectedBank: bank,
         loanType: product.apiKey,

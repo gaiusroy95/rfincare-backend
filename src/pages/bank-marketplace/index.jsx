@@ -21,6 +21,7 @@ import {
 import { listCreditCardMarketplaceOffers } from '../../utils/creditCardMarketplace';
 import { creditCardService } from '../../services/creditCardService';
 import { getBankProbabilityMap, loadEligibilityResults, saveEligibilityResults } from '../../services/leadService';
+import { openMarketplaceApply } from '../../utils/eligibilityGate';
 import { homepageService } from '../../services/homepageService';
 import MarketplaceEligibilityBanner from './components/MarketplaceEligibilityBanner';
 
@@ -194,8 +195,14 @@ const BankMarketplace = () => {
       }
       return;
     }
-    const qs = activeProduct ? `?loanType=${activeProduct.slug}` : '';
-    navigate(`/customer-assessment-portal${qs}`, {
+    if (bank?.applyUrl) {
+      window.open(bank.applyUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    openMarketplaceApply(navigate, {
+      bank,
+      loanType: activeProduct?.apiKey,
+      slug: activeProduct?.slug,
       state: {
         selectedBank: bank,
         loanType: activeProduct?.apiKey,

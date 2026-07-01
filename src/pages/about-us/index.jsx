@@ -4,6 +4,7 @@ import Header from '../../components/ui/Header';
 import Footer from '../homepage/components/Footer';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 import { homepageService } from '../../services/homepageService';
 
 const AboutUs = () => {
@@ -129,7 +130,7 @@ const AboutUs = () => {
                 variant="default"
                 size="lg"
                 className="bg-white text-primary hover:bg-white/90"
-                onClick={() => navigate('/customer-assessment-portal')}
+                onClick={() => openAssessmentOrEligibilityFirst(navigate)}
               >
                 Check Eligibility
               </Button>

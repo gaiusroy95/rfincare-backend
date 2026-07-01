@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
+import { openAssessmentOrEligibilityFirst } from '../../../utils/eligibilityGate';
 
 const LoanTypesShowcase = () => {
   const navigate = useNavigate();
@@ -69,7 +70,7 @@ const LoanTypesShowcase = () => {
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => navigate(`/customer-assessment-portal?loanType=${loan.slug}`)}
+                  onClick={() => openAssessmentOrEligibilityFirst(navigate, { slug: loan.slug })}
                 >
                   Apply now
                 </Button>

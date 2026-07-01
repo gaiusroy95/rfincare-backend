@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { getBankLogoUrl } from '../../../utils/bankBranding';
+import { openAssessmentOrEligibilityFirst } from '../../../utils/eligibilityGate';
 
 const QUICK_APPLY = [
   { loanType: 'personal_loan', label: 'Personal', icon: 'User' },
@@ -24,7 +25,13 @@ const BankApplyLinksCard = ({ banks = [] }) => {
             <button
               key={item.loanType}
               type="button"
-              onClick={() => navigate(`/customer-assessment-portal?loanType=${item.loanType}`)}
+              onClick={() => {
+                if (item.loanType === 'credit_card') {
+                  navigate('/credit-cards');
+                  return;
+                }
+                openAssessmentOrEligibilityFirst(navigate, { loanType: item.loanType });
+              }}
               className="bg-card border border-border rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary hover:shadow-md transition-all"
             >
               <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center">

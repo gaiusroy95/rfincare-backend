@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Icon from '../../components/AppIcon';
@@ -72,7 +73,7 @@ const CustomerLogin = () => {
     } catch {
       /* sessionStorage optional */
     }
-    navigate('/customer-assessment-portal', {
+    openAssessmentOrEligibilityFirst(navigate, {
       state: { leadMeta },
     });
   };

@@ -7,6 +7,7 @@ import Button from '../../components/ui/Button';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
 import BankOffersSection from '../product-landing/components/BankOffersSection';
+import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 
 const ProductComparison = () => {
   const navigate = useNavigate();
@@ -243,7 +244,7 @@ const ProductComparison = () => {
                             size="sm"
                             variant="outline"
                             className="w-full"
-                            onClick={() => navigate(`/customer-assessment-portal?loanType=${product.slug}`)}
+                            onClick={() => openAssessmentOrEligibilityFirst(navigate, { slug: product.slug })}
                           >
                             Apply now
                           </Button>

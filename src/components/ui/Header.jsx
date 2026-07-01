@@ -71,7 +71,7 @@ const Header = ({ children }) => {
 
   const guestMoreNav = useMemo(
     () => [
-      { label: t('header.applyForLoan'), path: '/customer-assessment-portal', icon: 'FileText' },
+      { label: t('header.applyForLoan'), path: '/eligibility-assessment', icon: 'FileText' },
       { label: t('header.bankMarketplace'), path: '/bank-marketplace', icon: 'Building2' },
     ],
     [t],
@@ -80,7 +80,7 @@ const Header = ({ children }) => {
   const authenticatedNav = useMemo(
     () => [
       { label: t('header.home'), path: '/homepage', icon: 'Home', roles: ['customer', 'agent', 'admin', 'super_admin', 'employee'] },
-      { label: t('header.applyForLoan'), path: '/customer-assessment-portal', icon: 'FileText', roles: ['customer'] },
+      { label: t('header.applyForLoan'), path: '/eligibility-assessment', icon: 'FileText', roles: ['customer'] },
       { label: t('header.bankMarketplace'), path: '/bank-marketplace', icon: 'Building2', roles: ['customer'] },
       { label: t('header.myDashboard'), path: '/customer-dashboard', icon: 'LayoutDashboard', roles: ['customer'] },
       { label: t('header.agentDashboard'), path: '/agent-dashboard', icon: 'Users', roles: ['agent'] },

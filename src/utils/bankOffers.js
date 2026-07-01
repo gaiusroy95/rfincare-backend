@@ -52,6 +52,12 @@ export function buildBankOffers(banks, loanProduct) {
           : [],
         features: Array.isArray(data.features) ? data.features.slice(0, 4) : [],
         isFeatured: index === 0,
+        applyUrl:
+          data.apply_url ||
+          data.applyUrl ||
+          bank.applyUrl ||
+          bank.apply_url ||
+          null,
       });
     });
   }
