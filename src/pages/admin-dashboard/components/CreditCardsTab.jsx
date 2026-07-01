@@ -4,9 +4,11 @@ import CardLogoFields from '../../../components/admin/CardLogoFields';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import { Checkbox } from '../../../components/ui/Checkbox';
 import { bankService } from '../../../services/apiServices';
 import { creditCardService } from '../../../services/creditCardService';
 import { resolveBankLogoUrl } from '../../../utils/bankBranding';
+import { CREDIT_CARD_CATEGORIES } from '../../../constants/creditCardMarketplace';
 
 const EMPTY_FORM = {
   bankId: '',
@@ -15,11 +17,25 @@ const EMPTY_FORM = {
   description: '',
   logoUrl: '',
   cardNetwork: '',
+  categories: [],
   annualFee: '',
   joiningFee: '',
   interestRate: '',
   latePaymentFee: '',
   otherCharges: '',
+  rewardPoints: '',
+  loungeAccess: false,
+  loungeAccessDetails: '',
+  fuelSurchargeWaiver: false,
+  movieBenefits: false,
+  movieBenefitsDetails: '',
+  diningBenefits: false,
+  diningBenefitsDetails: '',
+  insuranceCover: false,
+  insuranceCoverDetails: '',
+  forexCharges: '',
+  emiConversion: false,
+  emiConversionDetails: '',
   featuresText: '',
   advantagesText: '',
   benefitsText: '',
@@ -94,11 +110,25 @@ const CreditCardsTab = () => {
       description: card.description || '',
       logoUrl: card.logoUrl || '',
       cardNetwork: card.cardNetwork || '',
+      categories: Array.isArray(card.categories) ? [...card.categories] : [],
       annualFee: card.annualFee != null ? String(card.annualFee) : '',
       joiningFee: card.joiningFee != null ? String(card.joiningFee) : '',
       interestRate: card.interestRate != null ? String(card.interestRate) : '',
       latePaymentFee: card.latePaymentFee || '',
       otherCharges: card.otherCharges || '',
+      rewardPoints: card.rewardPoints || '',
+      loungeAccess: Boolean(card.loungeAccess),
+      loungeAccessDetails: card.loungeAccessDetails || '',
+      fuelSurchargeWaiver: Boolean(card.fuelSurchargeWaiver),
+      movieBenefits: Boolean(card.movieBenefits),
+      movieBenefitsDetails: card.movieBenefitsDetails || '',
+      diningBenefits: Boolean(card.diningBenefits),
+      diningBenefitsDetails: card.diningBenefitsDetails || '',
+      insuranceCover: Boolean(card.insuranceCover),
+      insuranceCoverDetails: card.insuranceCoverDetails || '',
+      forexCharges: card.forexCharges || '',
+      emiConversion: Boolean(card.emiConversion),
+      emiConversionDetails: card.emiConversionDetails || '',
       featuresText: listToText(card.features),
       advantagesText: listToText(card.advantages),
       benefitsText: listToText(card.benefits),
@@ -117,6 +147,15 @@ const CreditCardsTab = () => {
     }));
   };
 
+  const toggleCategory = (slug) => {
+    setForm((prev) => {
+      const set = new Set(prev.categories || []);
+      if (set.has(slug)) set.delete(slug);
+      else set.add(slug);
+      return { ...prev, categories: [...set] };
+    });
+  };
+
   const buildPayload = () => ({
     bankId: form.bankId || null,
     bankName: form.bankName.trim(),
@@ -124,11 +163,25 @@ const CreditCardsTab = () => {
     description: form.description.trim() || null,
     logoUrl: form.logoUrl.trim() || null,
     cardNetwork: form.cardNetwork.trim() || null,
+    categories: form.categories || [],
     annualFee: form.annualFee !== '' ? Number(form.annualFee) : null,
     joiningFee: form.joiningFee !== '' ? Number(form.joiningFee) : null,
     interestRate: form.interestRate !== '' ? Number(form.interestRate) : null,
     latePaymentFee: form.latePaymentFee.trim() || null,
     otherCharges: form.otherCharges.trim() || null,
+    rewardPoints: form.rewardPoints.trim() || null,
+    loungeAccess: form.loungeAccess,
+    loungeAccessDetails: form.loungeAccessDetails.trim() || null,
+    fuelSurchargeWaiver: form.fuelSurchargeWaiver,
+    movieBenefits: form.movieBenefits,
+    movieBenefitsDetails: form.movieBenefitsDetails.trim() || null,
+    diningBenefits: form.diningBenefits,
+    diningBenefitsDetails: form.diningBenefitsDetails.trim() || null,
+    insuranceCover: form.insuranceCover,
+    insuranceCoverDetails: form.insuranceCoverDetails.trim() || null,
+    forexCharges: form.forexCharges.trim() || null,
+    emiConversion: form.emiConversion,
+    emiConversionDetails: form.emiConversionDetails.trim() || null,
     features: creditCardService.formatListField(form.featuresText),
     advantages: creditCardService.formatListField(form.advantagesText),
     benefits: creditCardService.formatListField(form.benefitsText),
@@ -184,7 +237,7 @@ const CreditCardsTab = () => {
       <div>
         <h2 className="text-xl font-bold text-foreground">Credit Cards</h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Add credit cards with features, charges, and bank apply links for customer and agent dashboards.
+          Manage credit card categories, comparison attributes, fees, and apply links for the marketplace.
         </p>
       </div>
 
@@ -195,7 +248,7 @@ const CreditCardsTab = () => {
       ) : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <div className="bg-card border border-border rounded-xl p-5 space-y-4">
+        <div className="bg-card border border-border rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
           <h3 className="font-semibold text-foreground">{editingId ? 'Edit credit card' : 'Add credit card'}</h3>
 
           <Select label="Bank" options={bankOptions} value={form.bankId} onChange={handleBankChange} />
@@ -212,10 +265,59 @@ const CreditCardsTab = () => {
           />
           <Input label="Card network" value={form.cardNetwork} onChange={(e) => setForm((f) => ({ ...f, cardNetwork: e.target.value }))} placeholder="Visa / Mastercard / RuPay" />
 
+          <div>
+            <p className="text-sm font-medium text-foreground mb-2">Marketplace categories</p>
+            <div className="flex flex-wrap gap-2">
+              {CREDIT_CARD_CATEGORIES.map((cat) => {
+                const selected = (form.categories || []).includes(cat.slug);
+                return (
+                  <button
+                    key={cat.slug}
+                    type="button"
+                    onClick={() => toggleCategory(cat.slug)}
+                    className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
+                      selected ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground hover:border-primary/40'
+                    }`}
+                  >
+                    {cat.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Input label="Annual fee (₹)" type="number" value={form.annualFee} onChange={(e) => setForm((f) => ({ ...f, annualFee: e.target.value }))} />
             <Input label="Joining fee (₹)" type="number" value={form.joiningFee} onChange={(e) => setForm((f) => ({ ...f, joiningFee: e.target.value }))} />
             <Input label="Interest rate (%)" type="number" value={form.interestRate} onChange={(e) => setForm((f) => ({ ...f, interestRate: e.target.value }))} />
+          </div>
+
+          <Input label="Reward points" value={form.rewardPoints} onChange={(e) => setForm((f) => ({ ...f, rewardPoints: e.target.value }))} placeholder="e.g. 4 points per ₹100 spent" />
+          <Input label="Forex charges" value={form.forexCharges} onChange={(e) => setForm((f) => ({ ...f, forexCharges: e.target.value }))} placeholder="e.g. 2.5% or Zero markup" />
+
+          <div className="space-y-3 border border-border rounded-lg p-3">
+            <p className="text-sm font-medium text-foreground">Comparison benefits</p>
+            <Checkbox label="Lounge access" checked={form.loungeAccess} onChange={(e) => setForm((f) => ({ ...f, loungeAccess: e?.target?.checked }))} />
+            {form.loungeAccess ? (
+              <Input label="Lounge details" value={form.loungeAccessDetails} onChange={(e) => setForm((f) => ({ ...f, loungeAccessDetails: e.target.value }))} placeholder="e.g. 4 domestic + 2 international per year" />
+            ) : null}
+            <Checkbox label="Fuel surcharge waiver" checked={form.fuelSurchargeWaiver} onChange={(e) => setForm((f) => ({ ...f, fuelSurchargeWaiver: e?.target?.checked }))} />
+            <Checkbox label="Movie benefits" checked={form.movieBenefits} onChange={(e) => setForm((f) => ({ ...f, movieBenefits: e?.target?.checked }))} />
+            {form.movieBenefits ? (
+              <Input label="Movie benefit details" value={form.movieBenefitsDetails} onChange={(e) => setForm((f) => ({ ...f, movieBenefitsDetails: e.target.value }))} />
+            ) : null}
+            <Checkbox label="Dining benefits" checked={form.diningBenefits} onChange={(e) => setForm((f) => ({ ...f, diningBenefits: e?.target?.checked }))} />
+            {form.diningBenefits ? (
+              <Input label="Dining benefit details" value={form.diningBenefitsDetails} onChange={(e) => setForm((f) => ({ ...f, diningBenefitsDetails: e.target.value }))} />
+            ) : null}
+            <Checkbox label="Insurance cover" checked={form.insuranceCover} onChange={(e) => setForm((f) => ({ ...f, insuranceCover: e?.target?.checked }))} />
+            {form.insuranceCover ? (
+              <Input label="Insurance details" value={form.insuranceCoverDetails} onChange={(e) => setForm((f) => ({ ...f, insuranceCoverDetails: e.target.value }))} />
+            ) : null}
+            <Checkbox label="EMI conversion" checked={form.emiConversion} onChange={(e) => setForm((f) => ({ ...f, emiConversion: e?.target?.checked }))} />
+            {form.emiConversion ? (
+              <Input label="EMI conversion details" value={form.emiConversionDetails} onChange={(e) => setForm((f) => ({ ...f, emiConversionDetails: e.target.value }))} />
+            ) : null}
           </div>
 
           <Input label="Late payment fee" value={form.latePaymentFee} onChange={(e) => setForm((f) => ({ ...f, latePaymentFee: e.target.value }))} />
@@ -268,7 +370,7 @@ const CreditCardsTab = () => {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="space-y-3 max-h-[85vh] overflow-y-auto">
           <h3 className="font-semibold text-foreground">Published cards ({cards.length})</h3>
           {loading ? <p className="text-sm text-muted-foreground">Loading…</p> : null}
           {!loading && cards.length === 0 ? <p className="text-sm text-muted-foreground">No credit cards yet.</p> : null}
@@ -278,11 +380,7 @@ const CreditCardsTab = () => {
                 <div className="flex items-start gap-3 min-w-0">
                   <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center overflow-hidden flex-shrink-0">
                     {resolveBankLogoUrl(card.logoUrl) ? (
-                      <img
-                        src={resolveBankLogoUrl(card.logoUrl)}
-                        alt={card.name}
-                        className="w-10 h-10 object-contain"
-                      />
+                      <img src={resolveBankLogoUrl(card.logoUrl)} alt={card.name} className="w-10 h-10 object-contain" />
                     ) : (
                       <Icon name="CreditCard" size={20} className="text-violet-700" />
                     )}
@@ -296,8 +394,18 @@ const CreditCardsTab = () => {
                   {card.status}
                 </span>
               </div>
+              {(card.categories || []).length > 0 ? (
+                <div className="flex flex-wrap gap-1">
+                  {card.categories.map((slug) => (
+                    <span key={slug} className="text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground">
+                      {CREDIT_CARD_CATEGORIES.find((c) => c.slug === slug)?.label || slug}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
               <p className="text-xs text-muted-foreground">
                 Annual fee: {formatInr(card.annualFee)} · Joining: {formatInr(card.joiningFee)}
+                {card.rewardPoints ? ` · ${card.rewardPoints}` : ''}
               </p>
               {card.applyUrl ? (
                 <a href={card.applyUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-primary inline-flex items-center gap-1">

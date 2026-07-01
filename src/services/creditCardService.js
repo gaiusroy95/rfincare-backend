@@ -1,4 +1,5 @@
 import { apiClient } from '../lib/apiClient';
+import { buildCreditCardQueryParams } from '../utils/creditCardFilters';
 
 function linesToList(text) {
   if (!text) return [];
@@ -10,13 +11,20 @@ function linesToList(text) {
 }
 
 export const creditCardService = {
-  async listActive() {
-    const res = await apiClient.get('/credit-cards');
+  async listActive(filters = {}) {
+    const params = buildCreditCardQueryParams(filters);
+    const res = await apiClient.get('/credit-cards', { params });
     return res.data;
   },
 
-  async listAll() {
-    const res = await apiClient.get('/credit-cards', { params: { includeInactive: 'true' } });
+  async listAll(filters = {}) {
+    const params = { includeInactive: 'true', ...buildCreditCardQueryParams(filters) };
+    const res = await apiClient.get('/credit-cards', { params });
+    return res.data;
+  },
+
+  async getTaxonomy() {
+    const res = await apiClient.get('/credit-cards/taxonomy');
     return res.data;
   },
 
