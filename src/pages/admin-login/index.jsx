@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { getWrongPortalMessage, resolveLoginRole } from '../../lib/portalLoginUtils';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Icon from '../../components/AppIcon';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const { signIn, user, userProfile, loading: authLoading } = useAuth();
+  const { signIn, signOut, user, userProfile, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -36,10 +37,10 @@ const AdminLogin = () => {
         return;
       }
 
-      // Check if user has admin role
-      const userRole = data?.user?.role || data?.profile?.role;
+      const userRole = resolveLoginRole(data);
       if (userRole !== 'super_admin' && userRole !== 'admin') {
-        setError('Access denied. Admin credentials required.');
+        await signOut();
+        setError(getWrongPortalMessage(userRole, 'admin'));
         setLoading(false);
         return;
       }

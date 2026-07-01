@@ -15,6 +15,7 @@ import StaffCommunicationPanel from './components/StaffCommunicationPanel';
 import TrainingResources from './components/TrainingResources';
 import CreditCardsQuickApply from '../../components/credit-cards/CreditCardsQuickApply';
 import RecentActivity from './components/RecentActivity';
+import QuickActions from './components/QuickActions';
 import SessionTimeout from '../../components/SessionTimeout';
 import { agentService } from '../../services/agentService';
 import {

@@ -4,20 +4,11 @@ import Header from '../../components/ui/Header';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Icon from '../../components/AppIcon';
-import { authService } from '../../services/authService';
+import PasswordChangeWithOtpForm from '../../components/security/PasswordChangeWithOtpForm';
 import { agentProfileService, resolveAvatarUrl } from '../../services/agentProfileService';
 import { useAuth } from '../../contexts/AuthContext';
 
 const OTP_LEN = 6;
-
-const validatePassword = (password) => {
-  if (password.length < 8) return 'Password must be at least 8 characters';
-  if (!/[A-Z]/.test(password)) return 'Include at least one uppercase letter';
-  if (!/[a-z]/.test(password)) return 'Include at least one lowercase letter';
-  if (!/[0-9]/.test(password)) return 'Include at least one number';
-  if (!/[!@#$%^&*(),.?":{}|<>]/.test(password)) return 'Include at least one special character';
-  return null;
-};
 
 const Section = ({ title, description, icon, children }) => (
   <section className="bg-card border border-border rounded-lg p-4 md:p-6 space-y-4">
@@ -52,15 +43,6 @@ const AgentSettingsPage = () => {
   const [bankForm, setBankForm] = useState({ accountNumber: '', bankName: '', ifscCode: '' });
   const [bankOtp, setBankOtp] = useState('');
   const [bankOtpSent, setBankOtpSent] = useState(false);
-
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-
-  const [resetOtp, setResetOtp] = useState('');
-  const [resetPassword, setResetPassword] = useState('');
-  const [resetConfirm, setResetConfirm] = useState('');
-  const [resetOtpSent, setResetOtpSent] = useState(false);
 
   const [deactivateOtp, setDeactivateOtp] = useState('');
   const [deactivateConfirm, setDeactivateConfirm] = useState('');
@@ -117,81 +99,6 @@ const AgentSettingsPage = () => {
     } finally {
       setBusy('');
       if (photoRef.current) photoRef.current.value = '';
-    }
-  };
-
-  const handleChangePassword = async (e) => {
-    e.preventDefault();
-    setMessage('');
-    setError('');
-    const v = validatePassword(newPassword);
-    if (v) {
-      setError(v);
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      setError('New passwords do not match');
-      return;
-    }
-    setBusy('password');
-    try {
-      const { error: changeError } = await authService.changePassword(currentPassword, newPassword);
-      if (changeError) throw new Error(changeError.message);
-      setMessage('Password changed successfully');
-      setCurrentPassword('');
-      setNewPassword('');
-      setConfirmPassword('');
-    } catch (err) {
-      setError(err?.message || 'Password change failed');
-    } finally {
-      setBusy('');
-    }
-  };
-
-  const handleRequestResetOtp = async () => {
-    setBusy('reset-otp');
-    setMessage('');
-    setError('');
-    try {
-      await agentProfileService.requestPasswordResetOtp();
-      setResetOtpSent(true);
-      setMessage('OTP sent to your registered email');
-    } catch (err) {
-      setError(err?.response?.data?.error || err?.message || 'Could not send OTP');
-    } finally {
-      setBusy('');
-    }
-  };
-
-  const handleResetPassword = async (e) => {
-    e.preventDefault();
-    setMessage('');
-    setError('');
-    const v = validatePassword(resetPassword);
-    if (v) {
-      setError(v);
-      return;
-    }
-    if (resetPassword !== resetConfirm) {
-      setError('Passwords do not match');
-      return;
-    }
-    if (resetOtp.length !== OTP_LEN) {
-      setError('Enter the 6-digit OTP');
-      return;
-    }
-    setBusy('reset');
-    try {
-      await agentProfileService.confirmPasswordReset(resetOtp, resetPassword);
-      setMessage('Password reset complete. Signing you out…');
-      setTimeout(async () => {
-        await signOut();
-        navigate('/agent-login', { replace: true });
-      }, 1500);
-    } catch (err) {
-      setError(err?.response?.data?.error || err?.message || 'Password reset failed');
-    } finally {
-      setBusy('');
     }
   };
 
@@ -482,80 +389,23 @@ const AgentSettingsPage = () => {
 
             <Section
               title="Change password"
-              description="Update your password using your current password."
+              description={`Enter your passwords, then verify with an OTP sent to ${data?.registeredEmail || 'your registered email'}.`}
               icon="Lock"
             >
-              <form onSubmit={handleChangePassword} className="space-y-3">
-                <Input
-                  label="Current password"
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                />
-                <Input
-                  label="New password"
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                />
-                <Input
-                  label="Confirm new password"
-                  type="password"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required
-                />
-                <Button type="submit" loading={busy === 'password'} iconName="Key">
-                  Update password
-                </Button>
-              </form>
-            </Section>
-
-            <Section
-              title="Reset password (OTP)"
-              description={`A one-time code will be sent to ${data?.registeredEmail || 'your registered email'}.`}
-              icon="RefreshCw"
-            >
-              <form onSubmit={handleResetPassword} className="space-y-3">
-                <Button
-                  type="button"
-                  variant="outline"
-                  loading={busy === 'reset-otp'}
-                  onClick={handleRequestResetOtp}
-                >
-                  Send OTP to email
-                </Button>
-                {resetOtpSent && (
-                  <>
-                    <Input
-                      label="Email OTP"
-                      value={resetOtp}
-                      onChange={(e) => setResetOtp(e.target.value.replace(/\D/g, '').slice(0, OTP_LEN))}
-                      placeholder="6-digit code"
-                      maxLength={OTP_LEN}
-                    />
-                    <Input
-                      label="New password"
-                      type="password"
-                      value={resetPassword}
-                      onChange={(e) => setResetPassword(e.target.value)}
-                      required
-                    />
-                    <Input
-                      label="Confirm new password"
-                      type="password"
-                      value={resetConfirm}
-                      onChange={(e) => setResetConfirm(e.target.value)}
-                      required
-                    />
-                    <Button type="submit" loading={busy === 'reset'} iconName="Key">
-                      Reset password with OTP
-                    </Button>
-                  </>
-                )}
-              </form>
+              <PasswordChangeWithOtpForm
+                otpLabel="Email OTP"
+                onRequestOtp={() => agentProfileService.requestPasswordResetOtp()}
+                onConfirm={({ currentPassword, newPassword, otp }) =>
+                  agentProfileService.confirmPasswordReset(otp, newPassword, currentPassword)
+                }
+                onSuccess={() => {
+                  setMessage('Password changed. Signing you out…');
+                  setTimeout(async () => {
+                    await signOut();
+                    navigate('/agent-login', { replace: true });
+                  }, 1500);
+                }}
+              />
             </Section>
 
             <section className="bg-card border-2 border-destructive/40 rounded-lg p-4 md:p-6 space-y-4">

@@ -6,6 +6,7 @@ import {
   applyRuntimeToApiClient,
   inferApiBaseFromHost,
   loadRuntimeConfig,
+  normalizeApiBaseUrl,
 } from './lib/runtimeConfig';
 import { apiClient } from './lib/apiClient';
 import './styles/tailwind.css';
@@ -23,8 +24,9 @@ function renderApp() {
 }
 
 async function bootstrap() {
-  const earlyBase =
-    import.meta.env?.VITE_API_BASE_URL?.replace(/\/$/, '') || inferApiBaseFromHost();
+  const earlyBase = normalizeApiBaseUrl(
+    import.meta.env?.VITE_API_BASE_URL?.replace(/\/$/, '') || inferApiBaseFromHost(),
+  );
   if (earlyBase) {
     apiClient.defaults.baseURL = earlyBase;
     renderApp();

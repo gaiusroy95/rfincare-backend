@@ -62,6 +62,10 @@ export function setAccessToken(token) {
 }
 
 apiClient.interceptors.request.use((config) => {
+  const base = getApiBaseUrl();
+  if (base) {
+    config.baseURL = base;
+  }
   if (accessToken) {
     config.headers = config.headers || {};
     config.headers.Authorization = `Bearer ${accessToken}`;

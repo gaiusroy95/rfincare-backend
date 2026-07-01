@@ -11,13 +11,12 @@ import DocumentViewer from './components/DocumentViewer';
 import PerformanceMetrics from './components/PerformanceMetrics';
 import ActivityLog from './components/ActivityLog';
 import TrainingResources from './components/TrainingResources';
+import LearningResourceModal from '../../components/learning/LearningResourceModal';
 import AgentVerificationModal from './components/AgentVerificationModal';
 import ApplicationWorkspaceModal from './components/ApplicationWorkspaceModal';
 import { employeeService } from '../../services/employeeService';
 import {
   employeeLearningService,
-  resolveLearningOpenUrl,
-  openLearningResource,
 } from '../../services/employeeLearningService';
 import SessionTimeout from '../../components/SessionTimeout';
 import { useAuth } from '../../contexts/AuthContext';
@@ -57,6 +56,7 @@ const EmployeePortal = () => {
   const [activityLog, setActivityLog] = useState([]);
 
   const [trainingResources, setTrainingResources] = useState([]);
+  const [activeLearningResource, setActiveLearningResource] = useState(null);
   const [communicationOpen, setCommunicationOpen] = useState(false);
   const [communicationContext, setCommunicationContext] = useState({
     applicationId: null,
@@ -123,15 +123,9 @@ const EmployeePortal = () => {
         : await employeeLearningService.listForEmployee();
       setTrainingResources(
         (Array.isArray(learning) ? learning : []).map((item) => ({
-          id: item.id,
-          title: item.title,
-          description: item.description,
+          ...item,
           category: item.category || item.categoryLabel || 'Document Verification',
           duration: item.duration || item.durationLabel || '—',
-          completions: item.completions ?? '0',
-          isNew: item.isNew,
-          progress: item.progress ?? 0,
-          openUrl: resolveLearningOpenUrl(item),
         })),
       );
     } catch (error) {
@@ -232,11 +226,7 @@ const EmployeePortal = () => {
   };
 
   const handleLearningOpen = async (resource) => {
-    try {
-      await openLearningResource(resource);
-    } catch (err) {
-      console.error('Failed to open learning resource:', err);
-    }
+    setActiveLearningResource(resource);
     if (resource.id) {
       const next = resource.progress > 0 ? Math.min(100, resource.progress + 25) : 50;
       try {
@@ -251,7 +241,7 @@ const EmployeePortal = () => {
   };
 
   const handleLearningStart = async (resource) => {
-    await handleLearningOpen(resource);
+    setActiveLearningResource(resource);
     if (resource.id && (resource.progress || 0) < 100) {
       try {
         await employeeLearningService.updateProgress(resource.id, 100);
@@ -712,6 +702,14 @@ const EmployeePortal = () => {
           />
         )}
       </main>
+
+      {activeLearningResource && (
+        <LearningResourceModal
+          resource={activeLearningResource}
+          portal="employee"
+          onClose={() => setActiveLearningResource(null)}
+        />
+      )}
 
       {selectedDocument && (
         <DocumentViewer

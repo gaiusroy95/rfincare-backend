@@ -43,10 +43,11 @@ export const adminProfileService = {
     return res.data;
   },
 
-  async confirmPasswordReset(otp, newPassword) {
+  async confirmPasswordReset(otp, newPassword, currentPassword) {
     const res = await apiClient.post('/portal/admin/profile/password-reset/confirm', {
       otp,
       newPassword,
+      currentPassword,
     });
     return res.data;
   },

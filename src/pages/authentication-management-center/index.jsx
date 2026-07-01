@@ -450,7 +450,8 @@ export default function AuthenticationManagementCenter() {
       {/* Password Change Modal */}
       {showPasswordChange && (
         <PasswordChangeModal
-          onClose={() => setShowPasswordChange(false)}
+          role={selectedRole}
+          onCancel={() => setShowPasswordChange(false)}
           onSuccess={handlePasswordChangeSuccess}
         />
       )}

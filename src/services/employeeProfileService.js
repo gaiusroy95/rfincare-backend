@@ -38,10 +38,11 @@ export const employeeProfileService = {
     return res.data;
   },
 
-  async confirmPasswordReset(otp, newPassword) {
+  async confirmPasswordReset(otp, newPassword, currentPassword) {
     const res = await apiClient.post('/portal/employee/profile/password-reset/confirm', {
       otp,
       newPassword,
+      currentPassword,
     });
     return res.data;
   },

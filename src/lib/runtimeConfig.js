@@ -13,6 +13,22 @@ export function getRuntimeEnv(key) {
 
 const PRODUCTION_API_BASE = 'https://rfincare.onrender.com';
 
+/** Vercel full-stack deploy serves the SPA but rejects POST on /public/* — use Render API instead. */
+export function normalizeApiBaseUrl(url) {
+  const trimmed = String(url || '').trim().replace(/\/$/, '');
+  if (!trimmed) return '';
+  try {
+    const { hostname, protocol } = new URL(trimmed);
+    if (hostname === 'rfincare-backend.vercel.app') {
+      return PRODUCTION_API_BASE;
+    }
+    if (!protocol.startsWith('http')) return '';
+    return trimmed;
+  } catch {
+    return trimmed;
+  }
+}
+
 export function inferApiBaseFromHost() {
   if (typeof window === 'undefined') return '';
   const host = window.location.hostname;
@@ -33,11 +49,14 @@ export function inferApiBaseFromHost() {
 }
 
 export function getApiBaseUrl() {
-  return getRuntimeEnv('VITE_API_BASE_URL') || inferApiBaseFromHost() || '';
+  const raw = getRuntimeEnv('VITE_API_BASE_URL') || inferApiBaseFromHost() || '';
+  return normalizeApiBaseUrl(raw);
 }
 
 function applyInferredDefaults() {
-  const inferred = buildTime.VITE_API_BASE_URL?.replace(/\/$/, '') || inferApiBaseFromHost();
+  const inferred = normalizeApiBaseUrl(
+    buildTime.VITE_API_BASE_URL?.replace(/\/$/, '') || inferApiBaseFromHost(),
+  );
   if (inferred) {
     runtime = { ...buildTime, VITE_API_BASE_URL: inferred };
     loaded = true;
@@ -58,8 +77,11 @@ async function fetchRemoteOverrides() {
     if (!contentType.includes('application/json')) return;
     const data = await res.json();
     runtime = { ...runtime, ...(data?.vite || {}) };
+    runtime.VITE_API_BASE_URL = normalizeApiBaseUrl(
+      runtime.VITE_API_BASE_URL || inferredBase || '',
+    );
     if (!runtime.VITE_API_BASE_URL && inferredBase) {
-      runtime.VITE_API_BASE_URL = inferredBase;
+      runtime.VITE_API_BASE_URL = normalizeApiBaseUrl(inferredBase);
     }
     loaded = true;
   } catch {
@@ -77,7 +99,7 @@ export async function loadRuntimeConfig() {
   const buildBase = buildTime.VITE_API_BASE_URL?.replace(/\/$/, '') || '';
   const inferredBase = inferApiBaseFromHost();
   if (buildBase || inferredBase) {
-    runtime.VITE_API_BASE_URL = buildBase || inferredBase;
+    runtime.VITE_API_BASE_URL = normalizeApiBaseUrl(buildBase || inferredBase);
     loaded = true;
     fetchRemoteOverrides();
     return runtime;

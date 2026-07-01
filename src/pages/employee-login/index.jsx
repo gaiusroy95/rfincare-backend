@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { getWrongPortalMessage, resolveLoginRole } from '../../lib/portalLoginUtils';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Icon from '../../components/AppIcon';
 
 const EmployeeLogin = () => {
   const navigate = useNavigate();
-  const { signIn, user, userProfile, loading: authLoading } = useAuth();
+  const { signIn, signOut, user, userProfile, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,9 +36,10 @@ const EmployeeLogin = () => {
         return;
       }
 
-      // Check if user has employee role
-      if (data?.profile?.role !== 'employee') {
-        setError('Access denied. Employee credentials required.');
+      const role = resolveLoginRole(data);
+      if (role !== 'employee') {
+        await signOut();
+        setError(getWrongPortalMessage(role, 'employee'));
         setLoading(false);
         return;
       }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import { getWrongPortalMessage, resolveLoginRole } from '../../lib/portalLoginUtils';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -10,7 +11,7 @@ import OAuthProviderButtons from '../customer-registration-portal/components/OAu
 const CustomerLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, user, userProfile, loading: authLoading } = useAuth();
+  const { signIn, signOut, user, userProfile, loading: authLoading } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -46,9 +47,10 @@ const CustomerLogin = () => {
         return;
       }
 
-      // Check if user has customer role
-      if (data?.profile?.role !== 'customer') {
-        setError('Access denied. Customer credentials required.');
+      const role = resolveLoginRole(data);
+      if (role !== 'customer') {
+        await signOut();
+        setError(getWrongPortalMessage(role, 'customer'));
         setLoading(false);
         return;
       }
