@@ -34,15 +34,30 @@ const AdminSettingsTab = () => {
   const [busy, setBusy] = useState('');
 
   const [verifierEmails, setVerifierEmails] = useState(['', '', '']);
+  const [marketplaceVisibility, setMarketplaceVisibility] = useState({
+    bankMarketplace: true,
+    creditCardMarketplace: true,
+    insuranceMarketplace: true,
+    mutualFundMarketplace: true,
+  });
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
       const profile = await adminProfileService.getProfile();
+      const visibility = await adminProfileService.getMarketplaceVisibility().catch(() => null);
       setData(profile);
       const existing = profile?.verificationEmails?.map((v) => v.email) || [];
       setVerifierEmails([existing[0] || '', existing[1] || '', existing[2] || '']);
+      if (visibility) {
+        setMarketplaceVisibility({
+          bankMarketplace: visibility.bankMarketplace !== false,
+          creditCardMarketplace: visibility.creditCardMarketplace !== false,
+          insuranceMarketplace: visibility.insuranceMarketplace !== false,
+          mutualFundMarketplace: visibility.mutualFundMarketplace !== false,
+        });
+      }
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Failed to load profile');
     } finally {
@@ -97,6 +112,27 @@ const AdminSettingsTab = () => {
       await load();
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Could not save verifier emails');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const handleSaveMarketplaceVisibility = async (e) => {
+    e.preventDefault();
+    setMessage('');
+    setError('');
+    setBusy('marketplace-visibility');
+    try {
+      const updated = await adminProfileService.updateMarketplaceVisibility(marketplaceVisibility);
+      setMarketplaceVisibility({
+        bankMarketplace: updated.bankMarketplace !== false,
+        creditCardMarketplace: updated.creditCardMarketplace !== false,
+        insuranceMarketplace: updated.insuranceMarketplace !== false,
+        mutualFundMarketplace: updated.mutualFundMarketplace !== false,
+      });
+      setMessage('Marketplace visibility updated');
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Could not update marketplace visibility');
     } finally {
       setBusy('');
     }
@@ -215,6 +251,35 @@ const AdminSettingsTab = () => {
             )}
           </ul>
         )}
+      </Section>
+
+      <Section
+        title="Marketplace visibility"
+        description="Hide or show marketplaces across website navigation for customers and guests."
+        icon="EyeOff"
+      >
+        <form onSubmit={handleSaveMarketplaceVisibility} className="space-y-3">
+          {[
+            { key: 'bankMarketplace', label: 'Bank Marketplace' },
+            { key: 'creditCardMarketplace', label: 'Credit Card Marketplace' },
+            { key: 'insuranceMarketplace', label: 'Insurance Marketplace' },
+            { key: 'mutualFundMarketplace', label: 'Mutual Fund Marketplace' },
+          ].map((item) => (
+            <label key={item.key} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border">
+              <span className="text-sm font-medium text-foreground">{item.label}</span>
+              <input
+                type="checkbox"
+                checked={Boolean(marketplaceVisibility[item.key])}
+                onChange={(e) =>
+                  setMarketplaceVisibility((prev) => ({ ...prev, [item.key]: e.target.checked }))
+                }
+              />
+            </label>
+          ))}
+          <Button type="submit" loading={busy === 'marketplace-visibility'} iconName="Save">
+            Save marketplace visibility
+          </Button>
+        </form>
       </Section>
 
       <Section

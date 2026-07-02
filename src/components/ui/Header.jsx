@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
 import { employeeCanReachRoute } from '../../utils/employeeAccess';
+import { adminProfileService } from '../../services/adminProfileService';
 import Icon from '../AppIcon';
 import Button from './Button';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -39,6 +40,12 @@ const Header = ({ children }) => {
   const { user, userProfile, employeeAccess } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [marketplaceVisibility, setMarketplaceVisibility] = useState({
+    bankMarketplace: true,
+    creditCardMarketplace: true,
+    insuranceMarketplace: true,
+    mutualFundMarketplace: true,
+  });
 
   const isGuest = !user;
   const currentRole = userProfile?.role || 'customer';
@@ -61,14 +68,41 @@ const Header = ({ children }) => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
+  useEffect(() => {
+    let active = true;
+    adminProfileService
+      .getPublicMarketplaceVisibility()
+      .then((data) => {
+        if (!active || !data) return;
+        setMarketplaceVisibility({
+          bankMarketplace: data.bankMarketplace !== false,
+          creditCardMarketplace: data.creditCardMarketplace !== false,
+          insuranceMarketplace: data.insuranceMarketplace !== false,
+          mutualFundMarketplace: data.mutualFundMarketplace !== false,
+        });
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const marketplaceNav = useMemo(
     () => [
-      { label: t('header.bankMarketplace'), path: '/bank-marketplace', icon: 'Building2' },
-      { label: t('header.creditCardMarketplace', 'Credit Card Marketplace'), path: '/credit-cards', icon: 'CreditCard' },
-      { label: t('header.insuranceMarketplace', 'Insurance Marketplace'), path: '/insurance-marketplace', icon: 'Shield' },
-      { label: t('header.mutualFundMarketplace', 'Mutual Fund Marketplace'), path: '/mutual-fund-marketplace', icon: 'TrendingUp' },
-    ],
-    [t],
+      marketplaceVisibility.bankMarketplace
+        ? { label: t('header.bankMarketplace'), path: '/bank-marketplace', icon: 'Building2' }
+        : null,
+      marketplaceVisibility.creditCardMarketplace
+        ? { label: t('header.creditCardMarketplace', 'Credit Card Marketplace'), path: '/credit-cards', icon: 'CreditCard' }
+        : null,
+      marketplaceVisibility.insuranceMarketplace
+        ? { label: t('header.insuranceMarketplace', 'Insurance Marketplace'), path: '/insurance-marketplace', icon: 'Shield' }
+        : null,
+      marketplaceVisibility.mutualFundMarketplace
+        ? { label: t('header.mutualFundMarketplace', 'Mutual Fund Marketplace'), path: '/mutual-fund-marketplace', icon: 'TrendingUp' }
+        : null,
+    ].filter(Boolean),
+    [t, marketplaceVisibility],
   );
 
   const guestPrimaryNav = useMemo(

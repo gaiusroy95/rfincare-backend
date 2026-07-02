@@ -51,4 +51,19 @@ export const adminProfileService = {
     });
     return res.data;
   },
+
+  async getMarketplaceVisibility() {
+    const res = await apiClient.get('/cms/marketplace-visibility');
+    return toCamelCase(res.data);
+  },
+
+  async updateMarketplaceVisibility(payload) {
+    const res = await apiClient.put('/cms/marketplace-visibility', payload);
+    return toCamelCase(res.data);
+  },
+
+  async getPublicMarketplaceVisibility() {
+    const res = await apiClient.get('/public/marketplace-visibility');
+    return toCamelCase(res.data);
+  },
 };
