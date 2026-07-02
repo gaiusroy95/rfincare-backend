@@ -9,7 +9,10 @@ const QUICK_APPLY = [
   { loanType: 'personal_loan', label: 'Personal', icon: 'User' },
   { loanType: 'home_loan', label: 'Home', icon: 'Home' },
   { loanType: 'business_loan', label: 'Business', icon: 'Store' },
-  { loanType: 'credit_card', label: 'Credit Card', icon: 'CreditCard' },
+  { loanType: 'auto_loan', label: 'Vehicle', icon: 'Car' },
+  { loanType: 'credit_card', label: 'Credit Card', icon: 'CreditCard', path: '/bank-marketplace?loanType=credit_card' },
+  { loanType: 'insurance', label: 'Insurance', icon: 'Shield', path: '/insurance-marketplace' },
+  { loanType: 'mutual_funds', label: 'Mutual Funds', icon: 'TrendingUp', path: '/mutual-fund-marketplace' },
 ];
 
 const BankApplyLinksCard = ({ banks = [] }) => {
@@ -26,6 +29,10 @@ const BankApplyLinksCard = ({ banks = [] }) => {
               key={item.loanType}
               type="button"
               onClick={() => {
+                if (item.path) {
+                  navigate(item.path);
+                  return;
+                }
                 if (item.loanType === 'credit_card') {
                   navigate('/credit-cards');
                   return;

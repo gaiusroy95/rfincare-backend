@@ -5,16 +5,15 @@ import Button from '../../components/ui/Button';
 import Header from '../../components/ui/Header';
 import CreditCardCategoryBar from '../../components/credit-cards/CreditCardCategoryBar';
 import CreditCardFilterPanel from '../../components/credit-cards/CreditCardFilterPanel';
+import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
 import { creditCardService } from '../../services/creditCardService';
 import { resolveCreditCardLogo } from '../../utils/creditCardMarketplace';
 import {
-  COMPARE_TABLE_ROWS,
   DEFAULT_CREDIT_CARD_FILTERS,
   getCategoryLabel,
 } from '../../constants/creditCardMarketplace';
 import {
   countActiveFilters,
-  formatCompareCell,
   formatCardFee,
   resetCreditCardFilters,
 } from '../../utils/creditCardFilters';
@@ -68,11 +67,6 @@ const CreditCardsPage = () => {
     return counts;
   }, [cards]);
 
-  const compareCards = useMemo(
-    () => cards.filter((c) => selected.includes(c.id)),
-    [cards, selected],
-  );
-
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
@@ -87,9 +81,15 @@ const CreditCardsPage = () => {
 
   const toggleSelect = (id) => {
     setSelected((prev) => {
-      if (prev.includes(id)) return prev.filter((x) => x !== id);
+      if (prev.includes(id)) {
+        const next = prev.filter((x) => x !== id);
+        if (next.length < 2) setShowCompare(false);
+        return next;
+      }
       if (prev.length >= MAX_COMPARE) return prev;
-      return [...prev, id];
+      const next = [...prev, id];
+      if (next.length >= 2) setShowCompare(true);
+      return next;
     });
   };
 
@@ -137,106 +137,24 @@ const CreditCardsPage = () => {
           </div>
 
           <div className="lg:col-span-3 space-y-6">
-            {selected.length > 0 && (
-              <div className="flex flex-wrap items-center gap-3 p-4 bg-primary/5 border border-primary/20 rounded-xl">
-                <span className="text-sm font-medium text-foreground">{selected.length} selected for compare</span>
-                <Button size="sm" onClick={() => setShowCompare(true)} disabled={selected.length < 2}>
-                  Compare selected
-                </Button>
-                <Button size="sm" variant="ghost" onClick={() => { setSelected([]); setShowCompare(false); }}>
-                  Clear
-                </Button>
-              </div>
-            )}
-
-            {showCompare && compareCards.length >= 2 ? (
-              <div className="overflow-x-auto border border-border rounded-xl bg-card">
-                <table className="min-w-full text-sm">
-                  <thead>
-                    <tr className="border-b border-border bg-muted/40">
-                      <th className="text-left p-4 font-semibold sticky left-0 bg-muted/40 z-10">Compare</th>
-                      {compareCards.map((card) => (
-                        <th key={card.id} className="text-left p-4 font-semibold min-w-[200px]">
-                          <div>{card.name}</div>
-                          <div className="text-xs font-normal text-muted-foreground">{card.bankName}</div>
-                          {(card.categories || []).length > 0 ? (
-                            <div className="flex flex-wrap gap-1 mt-2">
-                              {card.categories.map((slug) => (
-                                <span key={slug} className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/10 text-primary">
-                                  {getCategoryLabel(slug)}
-                                </span>
-                              ))}
-                            </div>
-                          ) : null}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {COMPARE_TABLE_ROWS.map((row) => (
-                      <tr key={row.key} className="border-b border-border">
-                        <td className="p-4 font-medium text-muted-foreground sticky left-0 bg-card z-10">{row.label}</td>
-                        {compareCards.map((card) => (
-                          <td key={card.id} className="p-4 align-top">{formatCompareCell(card, row)}</td>
-                        ))}
-                      </tr>
-                    ))}
-                    {['features', 'advantages', 'benefits'].map((field) => (
-                      <tr key={field} className="border-b border-border">
-                        <td className="p-4 font-medium text-muted-foreground capitalize sticky left-0 bg-card z-10">{field}</td>
-                        {compareCards.map((card) => (
-                          <td key={card.id} className="p-4 align-top">
-                            <ul className="list-disc pl-4 space-y-1">
-                              {(card[field] || []).map((item) => (
-                                <li key={item}>{item}</li>
-                              ))}
-                            </ul>
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                    <tr>
-                      <td className="p-4 font-medium text-muted-foreground sticky left-0 bg-card z-10">Apply</td>
-                      {compareCards.map((card) => (
-                        <td key={card.id} className="p-4">
-                          {card.applyUrl ? (
-                            <a
-                              href={card.applyUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex items-center gap-1.5 px-4 py-2 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90"
-                            >
-                              Apply on bank site
-                              <Icon name="ExternalLink" size={14} />
-                            </a>
-                          ) : (
-                            <span className="text-muted-foreground">—</span>
-                          )}
-                        </td>
-                      ))}
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            ) : null}
-
             {loading ? (
               <div className="text-center py-16 text-muted-foreground">Loading credit cards…</div>
-            ) : cards.length === 0 ? (
-              <div className="text-center py-16 space-y-4">
-                <Icon name="Search" size={40} className="mx-auto text-muted-foreground" />
-                <p className="text-muted-foreground">No credit cards match your filters.</p>
-                <Button variant="outline" onClick={handleResetFilters}>Reset filters</Button>
-              </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {cards.map((card) => {
-                  const isSelected = selected.includes(card.id);
+              <MarketplaceCompareBoard
+                type="credit_card"
+                products={cards}
+                selectedIds={selected}
+                onToggleSelect={toggleSelect}
+                onClearSelection={() => { setSelected([]); setShowCompare(false); }}
+                showCompare={showCompare}
+                title="Credit card comparison"
+                emptyMessage="No credit cards match your filters."
+                renderGridCard={(card, isSelected) => {
                   const lifetimeFree = Number(card.annualFee) === 0;
                   return (
                     <div
                       key={card.id}
-                      className={`bg-card border rounded-xl p-5 flex flex-col gap-3 transition-all ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
+                      className={`bg-card border rounded-xl p-5 flex flex-col gap-3 ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-start gap-3 min-w-0">
@@ -248,64 +166,25 @@ const CreditCardsPage = () => {
                             )}
                           </div>
                           <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <p className="font-bold text-foreground">{card.name}</p>
-                              {lifetimeFree ? (
-                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-success/10 text-success">LIFETIME FREE</span>
-                              ) : null}
-                            </div>
+                            <p className="font-bold">{card.name}</p>
                             <p className="text-sm text-muted-foreground">{card.bankName}</p>
+                            {lifetimeFree ? <span className="text-[10px] font-bold text-success">LIFETIME FREE</span> : null}
                           </div>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => toggleSelect(card.id)}
-                          className={`text-xs font-semibold px-2.5 py-1 rounded-full border flex-shrink-0 ${isSelected ? 'bg-primary text-primary-foreground border-primary' : 'border-border text-muted-foreground'}`}
-                        >
+                        <button type="button" onClick={() => toggleSelect(card.id)} className={`text-xs font-semibold px-2.5 py-1 rounded-full border ${isSelected ? 'bg-primary text-primary-foreground border-primary' : 'border-border'}`}>
                           {isSelected ? 'Selected' : 'Compare'}
                         </button>
                       </div>
-
-                      {(card.categories || []).length > 0 ? (
-                        <div className="flex flex-wrap gap-1">
-                          {card.categories.map((slug) => (
-                            <span key={slug} className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium">
-                              {getCategoryLabel(slug)}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      {card.description ? <p className="text-sm text-muted-foreground line-clamp-2">{card.description}</p> : null}
-
-                      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                        <span>Annual: {formatCardFee(card.annualFee)}</span>
-                        <span>Joining: {formatCardFee(card.joiningFee)}</span>
-                        {card.rewardPoints ? <span className="col-span-2">Rewards: {card.rewardPoints}</span> : null}
-                        {card.loungeAccess ? <span>Lounge access</span> : null}
-                        {card.fuelSurchargeWaiver ? <span>Fuel waiver</span> : null}
-                        {card.emiConversion ? <span>EMI conversion</span> : null}
-                      </div>
-
-                      {(card.features || []).slice(0, 2).map((f) => (
-                        <p key={f} className="text-xs text-foreground">• {f}</p>
-                      ))}
-
+                      <div className="text-xs text-muted-foreground">Annual: {formatCardFee(card.annualFee)} · Joining: {formatCardFee(card.joiningFee)}</div>
                       {card.applyUrl ? (
-                        <a
-                          href={card.applyUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:opacity-90"
-                        >
-                          Apply
-                          <Icon name="ExternalLink" size={14} />
+                        <a href={card.applyUrl} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2.5 bg-orange-500 text-white rounded-lg text-sm font-semibold">
+                          Apply <Icon name="ExternalLink" size={14} />
                         </a>
                       ) : null}
                     </div>
                   );
-                })}
-              </div>
+                }}
+              />
             )}
           </div>
         </div>

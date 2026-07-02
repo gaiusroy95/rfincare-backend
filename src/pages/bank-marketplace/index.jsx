@@ -53,7 +53,7 @@ const BankMarketplace = () => {
   const loanTypeSlug = searchParams.get('loanType');
   const activeProduct = getLoanProductBySlug(loanTypeSlug);
   const { user } = useAuth();
-  const [viewMode, setViewMode] = useState('grid');
+  const [viewMode, setViewMode] = useState('list');
   const [sortBy, setSortBy] = useState('probability-desc');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [compareList, setCompareList] = useState([]);
@@ -210,6 +210,8 @@ const BankMarketplace = () => {
   };
 
   const handleClearCompare = () => setCompareList([]);
+
+  const toggleFilters = () => setIsFilterOpen((prev) => !prev);
 
   const handleApply = (bank) => {
     if (bank?.isCreditCard) {
@@ -417,31 +419,86 @@ const BankMarketplace = () => {
           </div>
         </div>
 
+        {/* Desktop Floating Filter Rail */}
+        <div className="hidden lg:block fixed left-5 top-1/2 -translate-y-1/2 z-30">
+          <div className="rounded-2xl border border-border bg-card/95 backdrop-blur shadow-xl p-2">
+            <button
+              type="button"
+              onClick={toggleFilters}
+              className={`w-12 h-12 rounded-xl flex items-center justify-center transition-colors ${
+                isFilterOpen
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-muted text-muted-foreground hover:bg-primary/10 hover:text-primary'
+              }`}
+              aria-label={isFilterOpen ? 'Hide filters' : 'Show filters'}
+              title={isFilterOpen ? 'Hide filters' : 'Show filters'}
+            >
+              <Icon name={isFilterOpen ? 'PanelLeftClose' : 'SlidersHorizontal'} size={20} />
+            </button>
+          </div>
+        </div>
+
+        {/* Desktop Sidebar Filter Drawer */}
+        <div className={`hidden lg:block fixed top-24 left-24 z-30 w-[340px] transition-all duration-300 ${isFilterOpen ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0 pointer-events-none'}`}>
+          <div className="max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl shadow-2xl">
+            {isCreditCardView ? (
+              <CreditCardFilterPanel
+                filters={creditCardFilters}
+                onFilterChange={handleCreditCardFilterChange}
+                onReset={handleResetFilters}
+                isOpen
+                onToggle={toggleFilters}
+                resultCount={filteredAndSortedBanks?.length}
+              />
+            ) : (
+              <FilterPanel
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onReset={handleResetFilters}
+                isOpen
+                onToggle={toggleFilters}
+                showMobileToggle={false}
+                panelClassName="shadow-2xl rounded-2xl"
+              />
+            )}
+          </div>
+        </div>
+
+        {isFilterOpen ? (
+          <button
+            type="button"
+            className="hidden lg:block fixed inset-0 bg-black/20 z-20"
+            onClick={toggleFilters}
+            aria-label="Close filters"
+          />
+        ) : null}
+
         {/* Main Content */}
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
-          {/* Filter Sidebar */}
-          <div className="lg:col-span-1">
+        <div className="space-y-4 md:space-y-6">
+          {/* Mobile Filters */}
+          <div className="lg:hidden">
             {isCreditCardView ? (
               <CreditCardFilterPanel
                 filters={creditCardFilters}
                 onFilterChange={handleCreditCardFilterChange}
                 onReset={handleResetFilters}
                 isOpen={isFilterOpen}
-                onToggle={() => setIsFilterOpen(!isFilterOpen)}
+                onToggle={toggleFilters}
                 resultCount={filteredAndSortedBanks?.length}
               />
             ) : (
-            <FilterPanel
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onReset={handleResetFilters}
-              isOpen={isFilterOpen}
-              onToggle={() => setIsFilterOpen(!isFilterOpen)} />
+              <FilterPanel
+                filters={filters}
+                onFilterChange={handleFilterChange}
+                onReset={handleResetFilters}
+                isOpen={isFilterOpen}
+                onToggle={toggleFilters}
+              />
             )}
           </div>
 
           {/* Bank Listings */}
-          <div className="lg:col-span-3">
+          <div>
             <SortBar
               sortBy={sortBy}
               onSortChange={setSortBy}
@@ -492,7 +549,7 @@ const BankMarketplace = () => {
             ) : (
 
             <div className={
-            viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6' : 'space-y-4 md:space-y-6'
+            viewMode === 'grid' ? 'grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6' : 'space-y-4 md:space-y-5'
             }>
                 {filteredAndSortedBanks?.map((bank) =>
               viewMode === 'grid' ?

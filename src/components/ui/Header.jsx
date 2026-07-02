@@ -16,6 +16,9 @@ const PUBLIC_GUEST_PATHS = new Set([
   '/product-comparison',
   '/eligibility-assessment',
   '/bank-marketplace',
+  '/credit-cards',
+  '/insurance-marketplace',
+  '/mutual-fund-marketplace',
   '/customer-assessment-portal',
   '/login-page',
   '/customer-login',
@@ -58,23 +61,43 @@ const Header = ({ children }) => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
 
+  const marketplaceNav = useMemo(
+    () => [
+      { label: t('header.bankMarketplace'), path: '/bank-marketplace', icon: 'Building2' },
+      { label: t('header.creditCardMarketplace', 'Credit Card Marketplace'), path: '/credit-cards', icon: 'CreditCard' },
+      { label: t('header.insuranceMarketplace', 'Insurance Marketplace'), path: '/insurance-marketplace', icon: 'Shield' },
+      { label: t('header.mutualFundMarketplace', 'Mutual Fund Marketplace'), path: '/mutual-fund-marketplace', icon: 'TrendingUp' },
+    ],
+    [t],
+  );
+
   const guestPrimaryNav = useMemo(
     () => [
       { label: t('header.home'), path: '/homepage', icon: 'Home' },
+      { label: t('header.applyForLoan'), path: '/eligibility-assessment', icon: 'FileText' },
+      ...marketplaceNav,
+    ],
+    [t, marketplaceNav],
+  );
+
+  const guestMoreNav = useMemo(
+    () => [
       { label: 'About Us', path: '/about-us', icon: 'Info' },
       { label: 'Product Comparison', path: '/product-comparison', icon: 'GitCompare' },
       { label: 'Check Eligibility', path: '/eligibility-assessment', icon: 'CheckCircle' },
       { label: 'Contact Us', path: '/contact-us', icon: 'Phone' },
     ],
-    [t],
+    [],
   );
 
-  const guestMoreNav = useMemo(
+  const customerNav = useMemo(
     () => [
+      { label: t('header.home'), path: '/homepage', icon: 'Home' },
       { label: t('header.applyForLoan'), path: '/eligibility-assessment', icon: 'FileText' },
-      { label: t('header.bankMarketplace'), path: '/bank-marketplace', icon: 'Building2' },
+      ...marketplaceNav,
+      { label: t('header.myDashboard'), path: '/customer-dashboard', icon: 'LayoutDashboard' },
     ],
-    [t],
+    [t, marketplaceNav],
   );
 
   const authenticatedNav = useMemo(
@@ -82,6 +105,9 @@ const Header = ({ children }) => {
       { label: t('header.home'), path: '/homepage', icon: 'Home', roles: ['customer', 'agent', 'admin', 'super_admin', 'employee'] },
       { label: t('header.applyForLoan'), path: '/eligibility-assessment', icon: 'FileText', roles: ['customer'] },
       { label: t('header.bankMarketplace'), path: '/bank-marketplace', icon: 'Building2', roles: ['customer'] },
+      { label: t('header.creditCardMarketplace', 'Credit Card Marketplace'), path: '/credit-cards', icon: 'CreditCard', roles: ['customer'] },
+      { label: t('header.insuranceMarketplace', 'Insurance Marketplace'), path: '/insurance-marketplace', icon: 'Shield', roles: ['customer'] },
+      { label: t('header.mutualFundMarketplace', 'Mutual Fund Marketplace'), path: '/mutual-fund-marketplace', icon: 'TrendingUp', roles: ['customer'] },
       { label: t('header.myDashboard'), path: '/customer-dashboard', icon: 'LayoutDashboard', roles: ['customer'] },
       { label: t('header.agentDashboard'), path: '/agent-dashboard', icon: 'Users', roles: ['agent'] },
       { label: t('header.adminDashboard'), path: '/admin-dashboard', icon: 'Shield', roles: ['admin', 'super_admin'] },
@@ -99,9 +125,14 @@ const Header = ({ children }) => {
     }
     return true;
   });
-  const visibleNavItems = showGuestNav ? guestPrimaryNav : authItems.slice(0, 5);
-  const moreNavItems = showGuestNav ? guestMoreNav : authItems.slice(5);
-  const mobileItems = showGuestNav ? [...guestPrimaryNav, ...guestMoreNav] : authItems;
+
+  const visibleNavItems = showGuestNav
+    ? guestPrimaryNav
+    : currentRole === 'customer'
+      ? customerNav
+      : authItems.slice(0, 5);
+  const moreNavItems = showGuestNav ? guestMoreNav : currentRole === 'customer' ? [] : authItems.slice(5);
+  const mobileItems = showGuestNav ? [...guestPrimaryNav, ...guestMoreNav] : currentRole === 'customer' ? customerNav : authItems;
 
   const isActive = (path) => location?.pathname === path;
 

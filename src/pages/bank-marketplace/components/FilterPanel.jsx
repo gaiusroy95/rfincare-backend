@@ -8,7 +8,15 @@ import { BANK_TYPE_OPTIONS } from '../../../constants/bankTypes';
 
 import { BANK_MARKETPLACE_PRODUCT_CATEGORIES } from '../../../constants/bankMarketplaceProductCategories';
 
-const FilterPanel = ({ filters, onFilterChange, onReset, isOpen, onToggle }) => {
+const FilterPanel = ({
+  filters,
+  onFilterChange,
+  onReset,
+  isOpen,
+  onToggle,
+  showMobileToggle = true,
+  panelClassName = '',
+}) => {
   const productTypeOptions = [
     { value: 'all', label: 'All product types' },
     ...BANK_MARKETPLACE_PRODUCT_CATEGORIES.map((cat) => ({
@@ -51,19 +59,21 @@ const FilterPanel = ({ filters, onFilterChange, onReset, isOpen, onToggle }) => 
   return (
     <>
       {/* Mobile Filter Toggle */}
-      <div className="lg:hidden mb-4">
-        <Button
-          variant="outline"
-          fullWidth
-          onClick={onToggle}
-          iconName={isOpen ? 'X' : 'Filter'}
-          iconPosition="left"
-        >
-          {isOpen ? 'Close Filters' : 'Show Filters'}
-        </Button>
-      </div>
+      {showMobileToggle ? (
+        <div className="lg:hidden mb-4">
+          <Button
+            variant="outline"
+            fullWidth
+            onClick={onToggle}
+            iconName={isOpen ? 'X' : 'Filter'}
+            iconPosition="left"
+          >
+            {isOpen ? 'Close Filters' : 'Show Filters'}
+          </Button>
+        </div>
+      ) : null}
       {/* Filter Panel */}
-      <div className={`bg-card rounded-lg border border-border p-4 md:p-6 ${isOpen ? 'block' : 'hidden lg:block'}`}>
+      <div className={`bg-card rounded-lg border border-border p-4 md:p-6 ${isOpen || !showMobileToggle ? 'block' : 'hidden lg:block'} ${panelClassName}`}>
         <div className="flex items-center justify-between mb-4 md:mb-6">
           <h3 className="text-base md:text-lg font-bold text-foreground flex items-center space-x-2">
             <Icon name="Filter" size={20} />

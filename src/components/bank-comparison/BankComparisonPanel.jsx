@@ -1,7 +1,7 @@
 import React from 'react';
 import Icon from '../AppIcon';
 import Button from '../ui/Button';
-import BankComparisonTable from './BankComparisonTable';
+import MarketplaceSideBySideCompare from '../marketplace/compare/MarketplaceSideBySideCompare';
 import { MAX_BANK_COMPARE } from '../../constants/bankComparison';
 import { getMarketplaceCompareKey } from '../../utils/bankMarketplace';
 
@@ -77,10 +77,13 @@ const BankComparisonPanel = ({
 
       <div className="p-4 md:p-6">
         {canCompare ? (
-          <BankComparisonTable
-            banks={banks}
-            rawBanks={rawBanks}
+          <MarketplaceSideBySideCompare
+            type="loan"
+            products={banks}
+            onRemove={onRemoveBank}
+            onClear={onClearAll}
             onApply={onApply}
+            title={productLabel ? `${productLabel} — compare loans` : 'Compare loan products'}
           />
         ) : (
           <div className="flex flex-col items-center justify-center py-8 text-center text-muted-foreground">

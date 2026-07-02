@@ -15,6 +15,33 @@ const QUICK_LOANS = [
   { loanType: 'auto_loan', label: 'Vehicle', icon: 'Car' },
 ];
 
+const QUICK_MARKETPLACES = [
+  {
+    key: 'credit_card',
+    label: 'Credit Card',
+    icon: 'CreditCard',
+    path: '/bank-marketplace?loanType=credit_card',
+    iconWrapClass: 'bg-violet-100',
+    iconClass: 'text-violet-700',
+  },
+  {
+    key: 'insurance',
+    label: 'Insurance',
+    icon: 'Shield',
+    path: '/insurance-marketplace',
+    iconWrapClass: 'bg-blue-100',
+    iconClass: 'text-blue-700',
+  },
+  {
+    key: 'mutual_funds',
+    label: 'Mutual Funds',
+    icon: 'TrendingUp',
+    path: '/mutual-fund-marketplace',
+    iconWrapClass: 'bg-emerald-100',
+    iconClass: 'text-emerald-700',
+  },
+];
+
 const CreditCardsQuickApply = ({ banks = [], comparePath = '/credit-cards' }) => {
   const navigate = useNavigate();
   const [cards, setCards] = useState([]);
@@ -62,16 +89,19 @@ const CreditCardsQuickApply = ({ banks = [], comparePath = '/credit-cards' }) =>
               <span className="text-sm font-semibold text-foreground">{item.label}</span>
             </button>
           ))}
-          <button
-            type="button"
-            onClick={() => navigate('/bank-marketplace?loanType=credit_card')}
-            className="bg-card border border-border rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary hover:shadow-md transition-all"
-          >
-            <div className="w-11 h-11 rounded-xl bg-violet-100 flex items-center justify-center">
-              <Icon name="CreditCard" size={22} className="text-violet-700" />
-            </div>
-            <span className="text-sm font-semibold text-foreground">Credit Card</span>
-          </button>
+          {QUICK_MARKETPLACES.map((item) => (
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => navigate(item.path)}
+              className="bg-card border border-border rounded-xl p-4 flex flex-col items-center gap-2 hover:border-primary hover:shadow-md transition-all"
+            >
+              <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${item.iconWrapClass}`}>
+                <Icon name={item.icon} size={22} className={item.iconClass} />
+              </div>
+              <span className="text-sm font-semibold text-foreground text-center">{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
