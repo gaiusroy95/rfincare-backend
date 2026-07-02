@@ -28,11 +28,21 @@ export function buildFooterLoanProducts(loanProducts = [], visibility = {}) {
 
 /** Calculator & tool links for the footer RESOURCES column */
 export const FOOTER_CALCULATOR_LINKS = [
+  { label: 'All Financial Calculators', path: '/resources/calculators' },
   { label: 'Loan EMI Calculator', path: '/resources/loan-emi-calculator' },
   { label: 'Loan Eligibility Calculator', path: '/eligibility-assessment' },
+  { label: 'SIP Calculator', path: '/resources/calculators/sip' },
+  { label: 'Income Tax Calculator', path: '/resources/calculators/income-tax' },
+  { label: 'Retirement Corpus Planner', path: '/resources/calculators/retirement-corpus' },
   { label: 'Post Office Calculator', path: '/post-office-marketplace?calculator=1' },
   { label: 'Mutual Fund Calculator', path: '/mutual-fund-marketplace?calculator=1' },
   { label: 'Investment Calculator', path: '/investment-marketplace?calculator=1' },
+];
+
+export const FOOTER_PLANNING_HUB_LINKS = [
+  { label: 'Retirement Planning', path: '/retirement-planning' },
+  { label: 'Tax Saving Products', path: '/tax-saving' },
+  { label: 'Wealth Management', path: '/wealth-management' },
 ];
 
 export const FOOTER_RESOURCE_LINKS = [

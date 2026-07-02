@@ -25,6 +25,10 @@ const PUBLIC_GUEST_PATHS = new Set([
   '/post-office-marketplace',
   '/government-schemes-marketplace',
   '/investment-marketplace',
+  '/retirement-planning',
+  '/tax-saving',
+  '/wealth-management',
+  '/resources/calculators',
   '/customer-assessment-portal',
   '/login-page',
   '/customer-login',
@@ -35,6 +39,7 @@ function isPublicGuestRoute(pathname) {
   if (!pathname) return true;
   if (pathname.startsWith('/legal/')) return true;
   if (pathname.startsWith('/products/')) return true;
+  if (pathname.startsWith('/resources/calculators')) return true;
   return PUBLIC_GUEST_PATHS.has(pathname);
 }
 
@@ -109,6 +114,10 @@ const Header = ({ children }) => {
 
   const guestMoreNav = useMemo(
     () => [
+      { label: 'Retirement Planning', path: '/retirement-planning', icon: 'Sunset' },
+      { label: 'Tax Saving', path: '/tax-saving', icon: 'Receipt' },
+      { label: 'Wealth Management', path: '/wealth-management', icon: 'Gem' },
+      { label: 'Financial Calculators', path: '/resources/calculators', icon: 'Calculator' },
       { label: 'About Us', path: '/about-us', icon: 'Info' },
       { label: t('header.productComparison', 'Compare Products'), path: '/product-comparison', icon: 'GitCompare' },
       { label: 'Check Eligibility', path: '/eligibility-assessment', icon: 'CheckCircle' },

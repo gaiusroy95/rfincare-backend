@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
@@ -10,10 +10,12 @@ import QuickActionCard from './components/QuickActionCard';
 import ProfileSummaryCard from './components/ProfileSummaryCard';
 
 import SupportCard from './components/SupportCard';
+import UnifiedFinancialOverview from './components/UnifiedFinancialOverview';
 import DocumentUploadModal from './components/DocumentUploadModal';
 import ApplicationDetailModal from './components/ApplicationDetailModal';
 import { useAuth } from '../../contexts/AuthContext';
 import { customerJourneyService } from '../../services/customerJourneyService';
+import { customerFinancialService } from '../../services/customerFinancialService';
 import { bankService } from '../../services/apiServices';
 import { milestone4Service } from '../../services/milestone4Service';
 import CreditCardsQuickApply from '../../components/credit-cards/CreditCardsQuickApply';
@@ -22,8 +24,9 @@ import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { user, userProfile, signOut } = useAuth();
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [showAllNotifications, setShowAllNotifications] = useState(false);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [selectedApplicationId, setSelectedApplicationId] = useState(null);
@@ -38,6 +41,31 @@ const CustomerDashboard = () => {
   const [applyBanks, setApplyBanks] = useState([]);
   const [partnerBanks, setPartnerBanks] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [financialSnapshot, setFinancialSnapshot] = useState(null);
+  const [snapshotLoading, setSnapshotLoading] = useState(false);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && tab !== activeTab) setActiveTab(tab);
+  }, [searchParams]);
+
+  const loadFinancialSnapshot = async () => {
+    setSnapshotLoading(true);
+    try {
+      const data = await customerFinancialService.getFinancialSnapshot();
+      setFinancialSnapshot(data);
+    } catch {
+      setFinancialSnapshot(null);
+    } finally {
+      setSnapshotLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (user?.id && (activeTab === 'portfolio' || activeTab === 'overview')) {
+      loadFinancialSnapshot();
+    }
+  }, [user?.id, activeTab]);
 
   useEffect(() => {
     if (!user?.id) return undefined;
@@ -173,10 +201,20 @@ const CustomerDashboard = () => {
 
   const tabs = [
     { id: 'overview', label: 'Overview', icon: 'LayoutDashboard' },
+    { id: 'portfolio', label: 'My Portfolio', icon: 'PieChart' },
     { id: 'applications', label: 'Applications', icon: 'FileText' },
     { id: 'documents', label: 'Documents', icon: 'FolderOpen' },
-    { id: 'notifications', label: 'Notifications', icon: 'Bell', badge: unreadNotifications?.length }
+    { id: 'notifications', label: 'Notifications', icon: 'Bell', badge: unreadNotifications?.length },
   ];
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (tabId === 'overview') {
+      setSearchParams({});
+    } else {
+      setSearchParams({ tab: tabId });
+    }
+  };
 
   if (loading) {
     return (
@@ -202,7 +240,7 @@ const CustomerDashboard = () => {
             </div>
             <div>
               <h2 className="text-lg font-semibold text-foreground">Customer Dashboard</h2>
-              <p className="text-sm text-gray-600">Track your loan applications and manage documents</p>
+              <p className="text-sm text-gray-600">Track loans, investments, insurance and your financial health</p>
             </div>
           </div>
           <Button
@@ -255,7 +293,7 @@ const CustomerDashboard = () => {
             {tabs?.map((tab) => (
               <button
                 key={tab?.id}
-                onClick={() => setActiveTab(tab?.id)}
+                onClick={() => handleTabChange(tab?.id)}
                 className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
                   activeTab === tab?.id
                     ? 'border-primary text-primary font-semibold' :'border-transparent text-muted-foreground hover:text-foreground'
@@ -280,6 +318,30 @@ const CustomerDashboard = () => {
               profile={profileData} 
               onEditProfile={() => navigate('/profile')} 
             />
+
+            {financialSnapshot?.summary && (
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold text-primary">{financialSnapshot.summary.financialHealthScore ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">Health Score</p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold">{financialSnapshot.summary.activeLoans ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">Active Loans</p>
+                </div>
+                <div className="bg-card border border-border rounded-xl p-4 text-center">
+                  <p className="text-2xl font-bold">{financialSnapshot.summary.insurancePolicies ?? 0}</p>
+                  <p className="text-xs text-muted-foreground">Policies</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleTabChange('portfolio')}
+                  className="bg-primary/10 border border-primary/30 rounded-xl p-4 text-center hover:bg-primary/15 transition-colors"
+                >
+                  <p className="text-sm font-bold text-primary">View full portfolio →</p>
+                </button>
+              </div>
+            )}
 
             <CreditCardsQuickApply banks={partnerBanks} />
 
@@ -380,6 +442,14 @@ const CustomerDashboard = () => {
               </div>
             </div>
           </div>
+        )}
+
+        {activeTab === 'portfolio' && (
+          <UnifiedFinancialOverview
+            snapshot={financialSnapshot}
+            loading={snapshotLoading}
+            onRefresh={loadFinancialSnapshot}
+          />
         )}
 
         {/* Applications Tab */}

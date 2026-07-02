@@ -10,6 +10,7 @@ import { useMarketplaceVisibility } from '../../contexts/MarketplaceVisibilityCo
 import { buildProductCatalogChips, filterMarketplaceShowcase } from '../../utils/showcaseProducts';
 import BankOffersSection from '../product-landing/components/BankOffersSection';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
+import { ADVANCED_COMPARE_DIMENSIONS, COMPARE_BUNDLES } from '../../constants/advancedCompareDimensions';
 
 const MARKETPLACE_COMPARE_LINKS = [
   { slug: 'insurance', label: 'Insurance plans', path: '/insurance-marketplace', icon: 'Shield', visibilityKey: 'insuranceMarketplace' },
@@ -212,6 +213,40 @@ const ProductComparison = () => {
                     </div>
                     <Icon name="ArrowRight" size={16} className="ml-auto text-muted-foreground flex-shrink-0" />
                   </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {!activeProduct && (
+          <section className="py-10 bg-muted/40 border-b border-border">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-xl md:text-2xl font-bold mb-2 text-center">Advanced comparison engine</h2>
+              <p className="text-sm text-muted-foreground text-center mb-8 max-w-3xl mx-auto">
+                Filter and compare products by return rate, fees, eligibility, tenure, tax benefits, ratings, TAT and more.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-10">
+                {COMPARE_BUNDLES.map((bundle) => (
+                  <Link
+                    key={bundle.id}
+                    to={bundle.path}
+                    className="rounded-xl border border-border bg-card p-5 hover:border-primary/40 hover:shadow-md transition-all"
+                  >
+                    <h3 className="font-bold text-foreground">{bundle.title}</h3>
+                    <p className="text-sm text-muted-foreground mt-2">{bundle.description}</p>
+                  </Link>
+                ))}
+              </div>
+              <div className="flex flex-wrap justify-center gap-2">
+                {ADVANCED_COMPARE_DIMENSIONS.map((dim) => (
+                  <span
+                    key={dim.id}
+                    className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-card border border-border text-xs font-medium text-muted-foreground"
+                  >
+                    <Icon name="Filter" size={12} />
+                    {dim.label}
+                  </span>
                 ))}
               </div>
             </div>

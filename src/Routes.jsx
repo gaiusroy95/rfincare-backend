@@ -21,6 +21,11 @@ const ProductComparison = lazyPage(() => import('./pages/product-comparison'));
 const ProductLanding = lazyPage(() => import('./pages/product-landing'));
 const EligibilityAssessment = lazyPage(() => import('./pages/eligibility-assessment'));
 const LoanEmiCalculator = lazyPage(() => import('./pages/loan-emi-calculator'));
+const FinancialCalculatorsHub = lazyPage(() => import('./pages/financial-calculators'));
+const CalculatorDetailPage = lazyPage(() => import('./pages/financial-calculators/CalculatorDetailPage'));
+const RetirementPlanningPage = lazyPage(() => import('./pages/retirement-planning'));
+const TaxSavingPage = lazyPage(() => import('./pages/tax-saving'));
+const WealthManagementPage = lazyPage(() => import('./pages/wealth-management'));
 const LegalPage = lazyPage(() => import('./pages/legal-page'));
 const ShareYourStory = lazyPage(() => import('./pages/share-your-story'));
 const OAuthCallback = lazyPage(() => import('./pages/oauth-callback'));
@@ -99,6 +104,11 @@ function Routes() {
                 <Route path="/product-comparison" element={<SuspenseRoute><ProductComparison /></SuspenseRoute>} />
                 <Route path="/eligibility-assessment" element={<SuspenseRoute><EligibilityAssessment /></SuspenseRoute>} />
                 <Route path="/resources/loan-emi-calculator" element={<SuspenseRoute><LoanEmiCalculator /></SuspenseRoute>} />
+                <Route path="/resources/calculators" element={<SuspenseRoute><FinancialCalculatorsHub /></SuspenseRoute>} />
+                <Route path="/resources/calculators/:slug" element={<SuspenseRoute><CalculatorDetailPage /></SuspenseRoute>} />
+                <Route path="/retirement-planning" element={<SuspenseRoute><RetirementPlanningPage /></SuspenseRoute>} />
+                <Route path="/tax-saving" element={<SuspenseRoute><TaxSavingPage /></SuspenseRoute>} />
+                <Route path="/wealth-management" element={<SuspenseRoute><WealthManagementPage /></SuspenseRoute>} />
                 <Route path="/legal/:slug" element={<SuspenseRoute><LegalPage /></SuspenseRoute>} />
                 <Route path="/share-your-story" element={<SuspenseRoute><ShareYourStory /></SuspenseRoute>} />
                 <Route path="/oauth/callback" element={<SuspenseRoute><OAuthCallback /></SuspenseRoute>} />
