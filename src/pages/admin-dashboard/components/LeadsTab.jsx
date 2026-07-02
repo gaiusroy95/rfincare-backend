@@ -4,6 +4,13 @@ import { adminService } from '../../../services/adminService';
 import Button from '../../../components/ui/Button';
 import { copyTextToClipboard } from '../../../utils/copyToClipboard';
 
+const formatProductType = (value) =>
+  value
+    ? String(value)
+      .replace(/_/g, ' ')
+      .replace(/\b\w/g, (char) => char.toUpperCase())
+    : '—';
+
 const LeadsTab = () => {
   const [leads, setLeads] = useState([]);
   const [employees, setEmployees] = useState([]);
@@ -15,6 +22,7 @@ const LeadsTab = () => {
   const [actionMsg, setActionMsg] = useState('');
   const [lastResumeUrl, setLastResumeUrl] = useState('');
   const [resumeBusyId, setResumeBusyId] = useState(null);
+  const [exporting, setExporting] = useState(false);
 
   const loadAssignees = useCallback(async () => {
     setAssigneesLoading(true);
@@ -53,6 +61,27 @@ const LeadsTab = () => {
   const handleRefresh = () => {
     load();
     loadAssignees();
+  };
+
+  const handleDownloadCsv = async () => {
+    setExporting(true);
+    setActionMsg('');
+    try {
+      const blob = await leadService.downloadLeadsCsv();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `rfincare-product-leads-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setActionMsg('CSV downloaded successfully.');
+    } catch (err) {
+      setActionMsg(err?.response?.data?.error || err?.message || 'Could not download CSV');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const handleAssign = async (leadId, assignedTo) => {
@@ -162,9 +191,19 @@ const LeadsTab = () => {
             </p>
           )}
         </div>
-        <Button variant="outline" onClick={handleRefresh}>
-          Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            iconName="Download"
+            loading={exporting}
+            onClick={handleDownloadCsv}
+          >
+            Download CSV
+          </Button>
+          <Button variant="outline" onClick={handleRefresh}>
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {error && (
@@ -209,7 +248,7 @@ const LeadsTab = () => {
             <tr>
               <th className="text-left p-3">Name</th>
               <th className="text-left p-3">Contact</th>
-              <th className="text-left p-3">Loan type</th>
+              <th className="text-left p-3">Product type</th>
               <th className="text-left p-3">Status</th>
               <th className="text-left p-3">Score</th>
               <th className="text-left p-3">Assign</th>
@@ -231,7 +270,7 @@ const LeadsTab = () => {
                     <div>{lead.email}</div>
                     <div className="text-muted-foreground">{lead.phone}</div>
                   </td>
-                  <td className="p-3">{lead.loanType || '—'}</td>
+                  <td className="p-3">{formatProductType(lead.loanType)}</td>
                   <td className="p-3">
                     <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
                       {lead.status}

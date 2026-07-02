@@ -185,7 +185,7 @@ const MarketplaceSideBySideCompare = ({
                           rel="noopener noreferrer"
                           className="inline-flex items-center justify-center gap-1.5 w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
                         >
-                          {config.getCtaLabel(product)}
+                          {config.getCtaLabel(product, context)}
                           <Icon name="ExternalLink" size={14} />
                         </a>
                       ) : onApply ? (
@@ -193,7 +193,7 @@ const MarketplaceSideBySideCompare = ({
                           className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold"
                           onClick={() => onApply(product)}
                         >
-                          {config.getCtaLabel(product)}
+                          {config.getCtaLabel(product, context)}
                         </Button>
                       ) : (
                         <span className="text-xs text-muted-foreground">Link unavailable</span>

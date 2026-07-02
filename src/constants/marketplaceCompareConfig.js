@@ -65,8 +65,16 @@ const INSURANCE_CONFIG = {
   getPriceLabel: (p) => (p?.premiumUnit === 'monthly' ? '/month' : '/year'),
   getOriginalPrice: () => null,
   getSavingsText: (p) => (p?.taxBenefit80d ? '80D tax benefit' : p?.taxBenefit80c ? '80C tax benefit' : null),
-  getCtaUrl: (p, ctx) => getServiceUrl(p, ctx?.service || 'new_policy'),
-  getCtaLabel: () => 'View Plan',
+  getCtaUrl: (p, ctx) => (
+    p?.purchaseEnabled && (ctx?.service || 'new_policy') === 'new_policy'
+      ? null
+      : getServiceUrl(p, ctx?.service || 'new_policy')
+  ),
+  getCtaLabel: (p, ctx) => (
+    p?.purchaseEnabled && (ctx?.service || 'new_policy') === 'new_policy'
+      ? 'Buy on Rfincare'
+      : 'View Plan'
+  ),
 };
 
 const MUTUAL_FUND_CONFIG = {

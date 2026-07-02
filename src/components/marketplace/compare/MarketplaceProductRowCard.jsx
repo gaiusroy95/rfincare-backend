@@ -87,7 +87,7 @@ const MarketplaceProductRowCard = ({
                 rel="noopener noreferrer"
                 className="inline-flex items-center justify-center gap-1.5 w-full lg:w-auto min-w-[140px] py-3 px-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
               >
-                {config.getCtaLabel(product)}
+                {config.getCtaLabel(product, context)}
                 <Icon name="ChevronRight" size={16} />
               </a>
             ) : onApply ? (
@@ -96,7 +96,7 @@ const MarketplaceProductRowCard = ({
                 onClick={() => onApply(product)}
                 className="inline-flex items-center justify-center gap-1.5 w-full lg:w-auto min-w-[140px] py-3 px-5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-md"
               >
-                {config.getCtaLabel(product)}
+                {config.getCtaLabel(product, context)}
                 <Icon name="ChevronRight" size={16} />
               </button>
             ) : null}

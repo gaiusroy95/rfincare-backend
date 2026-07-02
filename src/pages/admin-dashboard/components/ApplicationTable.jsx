@@ -90,7 +90,7 @@ const ApplicationTable = ({
                 />
               </th>
               <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold text-foreground">Customer</th>
-              <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold text-foreground">Loan Type</th>
+              <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold text-foreground">Product Type</th>
               <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold text-foreground">Amount</th>
               <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold text-foreground">Bank</th>
               <th className="px-4 py-3 text-left text-xs md:text-sm font-semibold text-foreground">Status</th>

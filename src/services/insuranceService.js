@@ -33,6 +33,21 @@ export const insuranceService = {
     return res.data;
   },
 
+  async listProviderConfigs() {
+    const res = await apiClient.get('/insurance-products/provider-configs');
+    return res.data;
+  },
+
+  async createProviderConfig(payload) {
+    const res = await apiClient.post('/insurance-products/provider-configs', payload);
+    return res.data;
+  },
+
+  async updateProviderConfig(id, payload) {
+    const res = await apiClient.put(`/insurance-products/provider-configs/${id}`, payload);
+    return res.data;
+  },
+
   async create(payload) {
     const res = await apiClient.post('/insurance-products', payload);
     return res.data;
@@ -54,6 +69,16 @@ export const insuranceService = {
     const res = await apiClient.post(`/insurance-products/${id}/logo`, form, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
+    return res.data;
+  },
+
+  async startPurchaseCheckout(payload) {
+    const res = await apiClient.post('/insurance-purchases/checkout', payload);
+    return res.data;
+  },
+
+  async getPurchaseStatus(id, token) {
+    const res = await apiClient.get(`/insurance-purchases/${id}`, { params: { token } });
     return res.data;
   },
 

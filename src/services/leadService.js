@@ -1,6 +1,11 @@
 import { apiClient } from '../lib/apiClient';
 
 export const leadService = {
+  async downloadLeadsCsv() {
+    const res = await apiClient.get('/leads/export.csv', { responseType: 'blob' });
+    return res.data;
+  },
+
   async createLead(payload) {
     const res = await apiClient.post('/leads', payload);
     return res.data;

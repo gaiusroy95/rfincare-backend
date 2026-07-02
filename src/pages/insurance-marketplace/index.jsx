@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button';
 import Header from '../../components/ui/Header';
 import InsuranceSegmentBar, { InsuranceCategoryBar } from '../../components/insurance/InsuranceSegmentBar';
 import InsuranceFilterPanel from '../../components/insurance/InsuranceFilterPanel';
+import InsurancePurchaseModal from '../../components/insurance/InsurancePurchaseModal';
 import MarketplaceHero from '../../components/marketplace/MarketplaceHero';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceLeadWizard from '../../components/marketplace/MarketplaceLeadWizard';
@@ -42,6 +43,8 @@ const InsuranceMarketplacePage = () => {
   const [selected, setSelected] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [purchaseProduct, setPurchaseProduct] = useState(null);
+  const [latestPurchase, setLatestPurchase] = useState(null);
   const [filters, setFilters] = useState(() => {
     const saved = loadMarketplaceProfile('insurance');
     return {
@@ -138,6 +141,8 @@ const InsuranceMarketplacePage = () => {
   };
 
   const activeService = filters.service !== 'all' ? filters.service : 'new_policy';
+  const canUseInternalCheckout = (product) =>
+    activeService === 'new_policy' && product?.purchaseEnabled;
 
   return (
     <div className="min-h-screen bg-background">
@@ -234,6 +239,14 @@ const InsuranceMarketplacePage = () => {
                     onToggleSelect={toggleSelect}
                     onClearSelection={() => { setSelected([]); setShowCompare(false); }}
                     showCompare={showCompare}
+                    onApply={(product) => {
+                      if (canUseInternalCheckout(product)) {
+                        setPurchaseProduct(product);
+                        return;
+                      }
+                      const actionUrl = getServiceUrl(product, activeService);
+                      if (actionUrl) window.open(actionUrl, '_blank', 'noopener,noreferrer');
+                    }}
                     context={{ service: activeService }}
                     title="Insurance plan comparison"
                     emptyMessage="No plans match your filters."
@@ -266,7 +279,15 @@ const InsuranceMarketplacePage = () => {
                             <span>Premium: {formatPremiumRange(product)}</span>
                             <span>Cover: {formatSumInsuredRange(product)}</span>
                           </div>
-                          {actionUrl ? (
+                          {canUseInternalCheckout(product) ? (
+                            <button
+                              type="button"
+                              onClick={() => setPurchaseProduct(product)}
+                              className="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2.5 bg-orange-500 text-white rounded-lg text-sm font-semibold"
+                            >
+                              Buy on Rfincare <Icon name="ChevronRight" size={14} />
+                            </button>
+                          ) : actionUrl ? (
                             <a href={actionUrl} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2.5 bg-orange-500 text-white rounded-lg text-sm font-semibold">
                               View Plan <Icon name="ExternalLink" size={14} />
                             </a>
@@ -276,6 +297,21 @@ const InsuranceMarketplacePage = () => {
                     }}
                   />
                 )}
+                {latestPurchase ? (
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <p className="font-semibold">Latest purchase update</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      {latestPurchase.productName || purchaseProduct?.name || 'Insurance plan'} · Payment {latestPurchase.paymentStatus}
+                      {' '}· Insurer {latestPurchase.insurerPushStatus}
+                    </p>
+                    {latestPurchase.insurerPolicyNumber ? (
+                      <p className="text-sm text-emerald-700 mt-2">Policy number: {latestPurchase.insurerPolicyNumber}</p>
+                    ) : null}
+                    {latestPurchase.failureReason ? (
+                      <p className="text-sm text-destructive mt-2">{latestPurchase.failureReason}</p>
+                    ) : null}
+                  </div>
+                ) : null}
               </div>
             </div>
           </>
@@ -290,6 +326,13 @@ const InsuranceMarketplacePage = () => {
         productLabel={pendingProduct?.label}
         productCategory={pendingProduct?.slug}
         productSegment={pendingProduct?.segment}
+      />
+      <InsurancePurchaseModal
+        open={Boolean(purchaseProduct)}
+        product={purchaseProduct}
+        profile={profile}
+        onClose={() => setPurchaseProduct(null)}
+        onPurchaseComplete={(purchase) => setLatestPurchase(purchase)}
       />
     </div>
   );
