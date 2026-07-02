@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
-import { getRuntimeEnv } from '../../lib/runtimeConfig';
 import { insuranceService } from '../../services/insuranceService';
 import { formatPremiumRange } from '../../utils/insuranceFilters';
 
@@ -105,23 +104,57 @@ export default function InsurancePurchaseModal({
     return null;
   };
 
+  const [quote, setQuote] = useState(null);
+  const [quoteBusy, setQuoteBusy] = useState(false);
+  const [proposalBusy, setProposalBusy] = useState(false);
+  const [proposal, setProposal] = useState(null);
+
+  const handleFetchQuote = async () => {
+    setQuoteBusy(true);
+    setError('');
+    try {
+      const res = await insuranceService.fetchQuote({
+        productId: product.id,
+        customer: {
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          dob: form.dob || null,
+          gender: form.gender || null,
+        },
+        demographics: {
+          occupation: profile?.occupation || null,
+          annualIncome: profile?.annualIncome || null,
+          education: profile?.education || null,
+          tobaccoUse: profile?.tobaccoUse || null,
+          alcoholUse: profile?.alcoholUse || null,
+        },
+        coverage: {
+          sumInsured: product?.sumInsuredFrom || product?.sumInsuredTo || null,
+          segment: product?.segment || null,
+          category: profile?.productCategory || null,
+        },
+      });
+      setQuote(res);
+      if (res?.plans?.length && !form.selectedPremium) {
+        update('selectedPremium', String(res.plans[0].premium));
+      }
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Could not fetch quotes');
+    } finally {
+      setQuoteBusy(false);
+    }
+  };
+
   const handleCheckout = async () => {
     const validationError = validate();
     if (validationError) {
       setError(validationError);
       return;
     }
-
-    const razorpayKeyId = getRuntimeEnv('VITE_RAZORPAY_KEY_ID') || import.meta.env?.VITE_RAZORPAY_KEY_ID || '';
-    if (!razorpayKeyId) {
-      setError('Razorpay key is not configured yet.');
-      return;
-    }
-
     setBusy(true);
     setError('');
+    setProposal(null);
     try {
-      await ensureRazorpayScript();
       const checkout = await insuranceService.startPurchaseCheckout({
         productId: product.id,
         selectedPremium: Number(form.selectedPremium),
@@ -151,48 +184,59 @@ export default function InsurancePurchaseModal({
         },
         sourceProfile: profile || {},
       });
+      setStatus({
+        id: checkout.orderId,
+        paymentStatus: 'created',
+        insurerPushStatus: 'not_started',
+        productName: product.name,
+        insurerName: product.insurerName,
+      });
 
-      const instance = new window.Razorpay({
-        key: razorpayKeyId,
-        amount: checkout.razorpay.amount,
-        currency: checkout.razorpay.currency,
-        name: 'Rfincare',
-        description: `${product.name} - ${product.insurerName}`,
-        order_id: checkout.razorpay.id,
-        prefill: {
-          name: form.fullName,
-          email: form.email,
-          contact: form.phone,
+      setProposalBusy(true);
+      const returnUrl = `${window.location.origin}/insurance-marketplace`;
+      const prop = await insuranceService.createProposal({
+        purchaseOrderId: checkout.orderId,
+        token: checkout.publicToken,
+        quoteId: quote?.quoteId || quote?.quote_id || null,
+        returnUrl,
+        customer: {
+          fullName: form.fullName.trim(),
+          email: form.email.trim(),
+          phone: form.phone.trim(),
+          dob: form.dob || null,
+          gender: form.gender || null,
+          pan: form.pan.trim() || null,
+          addressLine1: form.addressLine1.trim(),
+          addressLine2: form.addressLine2.trim() || null,
+          city: form.city.trim(),
+          state: form.state.trim(),
+          pincode: form.pincode.trim(),
+          nomineeName: form.nomineeName.trim() || null,
+          nomineeRelation: form.nomineeRelation.trim() || null,
         },
-        notes: {
-          purchaseOrderId: checkout.orderId,
-        },
-        theme: { color: '#f97316' },
-        handler: async () => {
-          setStatus({
-            id: checkout.orderId,
-            paymentStatus: 'processing',
-            insurerPushStatus: 'processing',
-            productName: product.name,
-            insurerName: product.insurerName,
-          });
-          await pollStatus(checkout.orderId, checkout.publicToken);
-        },
-        modal: {
-          ondismiss: async () => {
-            const latest = await insuranceService.getPurchaseStatus(checkout.orderId, checkout.publicToken).catch(() => null);
-            if (latest) {
-              setStatus(latest);
-              onPurchaseComplete?.(latest);
-            }
-          },
+        demographics: {
+          ...(profile || {}),
+          selectedPremium: Number(form.selectedPremium),
         },
       });
-      instance.open();
+      setProposal(prop);
+      setProposalBusy(false);
+
+      if (prop?.paymentUrl) {
+        if (prop.paymentMode === 'iframe') {
+          // handled below via iframe section
+        } else {
+          window.open(prop.paymentUrl, '_blank', 'noopener,noreferrer');
+        }
+        await pollStatus(checkout.orderId, checkout.publicToken);
+      } else {
+        setError('Proposal created but no payment URL was returned by provider.');
+      }
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Could not start insurance checkout');
     } finally {
       setBusy(false);
+      setProposalBusy(false);
     }
   };
 
@@ -226,6 +270,39 @@ export default function InsurancePurchaseModal({
             </div>
           ) : null}
 
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/20 p-4">
+            <div>
+              <p className="font-semibold">Step 1: Fetch live quotes</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                We request premium/plan info from the provider API and render it in the Rfincare UI.
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleFetchQuote} loading={quoteBusy}>
+              Fetch quotes
+            </Button>
+          </div>
+          {quote?.plans?.length ? (
+            <div className="rounded-xl border border-border p-4">
+              <p className="font-semibold">Available premiums</p>
+              <div className="flex flex-wrap gap-2 mt-3">
+                {quote.plans.map((p) => (
+                  <button
+                    key={`${p.premium}-${p.label || ''}`}
+                    type="button"
+                    onClick={() => update('selectedPremium', String(p.premium))}
+                    className={`px-3 py-2 rounded-lg border text-sm font-semibold ${
+                      String(form.selectedPremium) === String(p.premium)
+                        ? 'bg-primary text-primary-foreground border-primary'
+                        : 'border-border hover:bg-muted'
+                    }`}
+                  >
+                    ₹{Number(p.premium).toLocaleString('en-IN')} / {p.term || 'year'} {p.label ? `· ${p.label}` : ''}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : null}
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input label="Full name" value={form.fullName} onChange={(e) => update('fullName', e.target.value)} required />
             <Input label="Email" type="email" value={form.email} onChange={(e) => update('email', e.target.value)} required />
@@ -245,10 +322,22 @@ export default function InsurancePurchaseModal({
 
           <div className="flex items-center justify-end gap-3">
             <Button variant="outline" onClick={onClose}>Cancel</Button>
-            <Button onClick={handleCheckout} loading={busy}>
-              Pay with Razorpay
+            <Button onClick={handleCheckout} loading={busy || proposalBusy}>
+              Step 2: Generate proposal & pay
             </Button>
           </div>
+
+          {proposal?.paymentUrl && proposal?.paymentMode === 'iframe' ? (
+            <div className="rounded-xl border border-border overflow-hidden">
+              <div className="p-3 bg-muted/30 border-b border-border flex items-center justify-between">
+                <p className="font-semibold text-sm">Step 3: Insurer payment (embedded)</p>
+                <a className="text-sm font-semibold text-primary" href={proposal.paymentUrl} target="_blank" rel="noreferrer">
+                  Open in new tab
+                </a>
+              </div>
+              <iframe title="Insurer payment" src={proposal.paymentUrl} className="w-full h-[520px]" />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>

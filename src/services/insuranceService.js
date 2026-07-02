@@ -77,6 +77,16 @@ export const insuranceService = {
     return res.data;
   },
 
+  async fetchQuote(payload) {
+    const res = await apiClient.post('/insurance-purchases/quote', payload);
+    return res.data;
+  },
+
+  async createProposal(payload) {
+    const res = await apiClient.post('/insurance-purchases/proposal', payload);
+    return res.data;
+  },
+
   async getPurchaseStatus(id, token) {
     const res = await apiClient.get(`/insurance-purchases/${id}`, { params: { token } });
     return res.data;
