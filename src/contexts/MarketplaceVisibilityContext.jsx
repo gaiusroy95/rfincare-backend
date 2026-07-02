@@ -10,6 +10,10 @@ const DEFAULT_VISIBILITY = {
   creditCardMarketplace: true,
   insuranceMarketplace: true,
   mutualFundMarketplace: true,
+  fixedIncomeMarketplace: true,
+  postOfficeMarketplace: true,
+  governmentSchemesMarketplace: true,
+  investmentMarketplace: true,
 };
 
 const MarketplaceVisibilityContext = createContext({
@@ -35,6 +39,10 @@ export function MarketplaceVisibilityProvider({ children }) {
           creditCardMarketplace: data.creditCardMarketplace !== false,
           insuranceMarketplace: data.insuranceMarketplace !== false,
           mutualFundMarketplace: data.mutualFundMarketplace !== false,
+          fixedIncomeMarketplace: data.fixedIncomeMarketplace !== false,
+          postOfficeMarketplace: data.postOfficeMarketplace !== false,
+          governmentSchemesMarketplace: data.governmentSchemesMarketplace !== false,
+          investmentMarketplace: data.investmentMarketplace !== false,
         });
       })
       .catch(() => {})

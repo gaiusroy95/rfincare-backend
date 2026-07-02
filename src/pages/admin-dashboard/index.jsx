@@ -35,6 +35,9 @@ import BankManagementTab from './components/BankManagementTab';
 import CreditCardsTab from './components/CreditCardsTab';
 import InsuranceTab from './components/InsuranceTab';
 import MutualFundsTab from './components/MutualFundsTab';
+import PostOfficeTab from './components/PostOfficeTab';
+import GovernmentSchemesTab from './components/GovernmentSchemesTab';
+import InvestmentProductsTab from './components/InvestmentProductsTab';
 import HomepageCmsTab from './components/HomepageCmsTab';
 import MarketingSeoTab from './components/MarketingSeoTab';
 import LeadsTab from './components/LeadsTab';
@@ -770,6 +773,9 @@ const AdminDashboard = () => {
                 {activeTab === 'credit-cards' && <CreditCardsTab />}
                 {activeTab === 'insurance' && <InsuranceTab />}
                 {activeTab === 'mutual-funds' && <MutualFundsTab />}
+                {activeTab === 'post-office' && <PostOfficeTab />}
+                {activeTab === 'government-schemes' && <GovernmentSchemesTab />}
+                {activeTab === 'investment-products' && <InvestmentProductsTab />}
 
                 {activeTab === 'loan-products' && <LoanProductsTab />}
 

@@ -1,12 +1,21 @@
 import { COMPARE_TABLE_ROWS as INSURANCE_ROWS } from './insuranceMarketplace';
 import { COMPARE_TABLE_ROWS as MF_ROWS } from './mutualFundMarketplace';
 import { COMPARE_TABLE_ROWS as CC_ROWS } from './creditCardMarketplace';
+import { COMPARE_TABLE_ROWS as FI_ROWS } from './fixedIncomeMarketplace';
+import { COMPARE_TABLE_ROWS as PO_ROWS } from './postOfficeMarketplace';
+import { COMPARE_TABLE_ROWS as GS_ROWS } from './governmentSchemeMarketplace';
+import { COMPARE_TABLE_ROWS as INV_ROWS } from './investmentMarketplace';
 import { formatCompareCell as formatInsuranceCell } from '../utils/insuranceFilters';
 import { formatPremiumRange, formatSumInsuredRange } from '../utils/insuranceFilters';
 import { formatCompareCell as formatMfCell } from '../utils/mutualFundFilters';
 import { formatPercent, formatExpenseRatio, formatRating, formatAum } from '../utils/mutualFundFilters';
 import { formatCompareCell as formatCcCell, formatCardFee } from '../utils/creditCardFilters';
+import { formatCompareCell as formatFiCell, formatInterestRate, formatMonths, formatBool } from '../utils/fixedIncomeFilters';
+import { formatCompareCell as formatPoCell } from '../utils/postOfficeFilters';
+import { formatCompareCell as formatGsCell, formatLoanAmount } from '../utils/governmentSchemeFilters';
+import { formatCompareCell as formatInvCell, formatPercent as formatInvPercent, formatCurrency as formatInvCurrency } from '../utils/investmentMarketplaceFilters';
 import { getRiskLabel } from './mutualFundMarketplace';
+import { getRiskLabel as getInvestmentRiskLabel } from './investmentMarketplace';
 import { getServiceUrl } from '../utils/insuranceFilters';
 import { resolveBankLogoUrl } from '../utils/bankBranding';
 import { getMarketplaceCompareKey } from '../utils/bankMarketplace';
@@ -24,6 +33,10 @@ function pickPriceNumber(product, type) {
   if (type === 'mutual_fund') return Number(product?.returns3y ?? product?.returns1y ?? 0);
   if (type === 'credit_card') return Number(product?.annualFee ?? 0);
   if (type === 'loan') return Number(product?.interestRate ?? 999);
+  if (type === 'fixed_income') return Number(product?.interestRate ?? product?.interestRateMax ?? 0);
+  if (type === 'post_office') return Number(product?.interestRate ?? 0);
+  if (type === 'government_scheme') return Number(product?.subsidyPercent ?? product?.interestRate ?? 0);
+  if (type === 'investment') return Number(product?.returns3y ?? product?.returns1y ?? 0);
   return 0;
 }
 
@@ -167,12 +180,120 @@ const LOAN_CONFIG = {
   getCtaLabel: () => 'Apply Now',
 };
 
+const POST_OFFICE_CONFIG = {
+  type: 'post_office',
+  label: 'Post Office',
+  maxCompare: 3,
+  tableRows: PO_ROWS,
+  formatCell: formatPoCell,
+  getId: (p) => p.id,
+  getName: (p) => p.name,
+  getProvider: (p) => p.providerName || 'India Post',
+  getLogo: (p) => resolveBankLogoUrl(p?.logoUrl),
+  getBadge: (p) => (p?.taxBenefitsText ? 'Tax benefits' : p?.calculatorEnabled !== false ? 'Calculator' : null),
+  getSubtitle: (p) => p?.returnsSummary || p?.highlights || null,
+  getHighlightMetrics: (p) => [
+    { label: 'Rate', value: formatInterestRate(p?.interestRate) },
+    { label: 'Returns', value: p?.returnsSummary || '—' },
+    { label: 'Tax', value: p?.taxBenefitsText ? 'Available' : '—' },
+  ],
+  getFeatures: (p) => (p?.features || []).slice(0, 5),
+  getPrice: (p) => formatInterestRate(p?.interestRate),
+  getPriceLabel: () => 'p.a.',
+  getOriginalPrice: () => null,
+  getSavingsText: (p) => (p?.taxBenefitsText ? 'Tax saving scheme' : null),
+  getCtaUrl: (p) => p?.applyUrl,
+  getCtaLabel: (p) => (p?.applyUrl ? 'Apply Now' : (p?.calculatorEnabled !== false ? 'Calculator' : 'View Scheme')),
+};
+
+const GOVERNMENT_SCHEME_CONFIG = {
+  type: 'government_scheme',
+  label: 'Government Scheme',
+  maxCompare: 3,
+  tableRows: GS_ROWS,
+  formatCell: formatGsCell,
+  getId: (p) => p.id,
+  getName: (p) => p.name,
+  getProvider: (p) => p.ministryName,
+  getLogo: (p) => resolveBankLogoUrl(p?.logoUrl),
+  getBadge: (p) => (p?.subsidyPercent ? `${p.subsidyPercent}% subsidy` : p?.loanAmountMax ? 'Loan available' : null),
+  getSubtitle: (p) => p?.highlights || p?.benefitsText || null,
+  getHighlightMetrics: (p) => [
+    { label: 'Loan / subsidy', value: formatLoanAmount(p) },
+    { label: 'Interest', value: formatInterestRate(p?.interestRate) },
+    { label: 'Subsidy', value: p?.subsidyPercent != null ? `${p.subsidyPercent}%` : '—' },
+  ],
+  getFeatures: (p) => (p?.features || []).slice(0, 5),
+  getPrice: (p) => (p?.subsidyPercent != null ? `${p.subsidyPercent}%` : formatInterestRate(p?.interestRate)),
+  getPriceLabel: (p) => (p?.subsidyPercent != null ? 'subsidy' : 'p.a.'),
+  getOriginalPrice: () => null,
+  getSavingsText: (p) => (p?.benefitsText ? 'Benefits available' : null),
+  getCtaUrl: (p) => p?.applicationUrl,
+  getCtaLabel: () => 'Apply Now',
+};
+
+const INVESTMENT_CONFIG = {
+  type: 'investment',
+  label: 'Investment',
+  maxCompare: 3,
+  tableRows: INV_ROWS,
+  formatCell: formatInvCell,
+  getId: (p) => p.id,
+  getName: (p) => p.name,
+  getProvider: (p) => p.providerName,
+  getLogo: (p) => resolveBankLogoUrl(p?.logoUrl),
+  getBadge: (p) => (p?.riskLevel === 'low' ? 'Low risk' : p?.returns3y >= 10 ? 'High returns' : null),
+  getSubtitle: (p) => p?.maturityTenureText || p?.highlights || null,
+  getHighlightMetrics: (p) => [
+    { label: '3Y Returns', value: formatInvPercent(p?.returns3y) },
+    { label: 'Risk', value: p?.riskLevel ? getInvestmentRiskLabel(p.riskLevel) : '—' },
+    { label: 'Min invest', value: formatInvCurrency(p?.minInvestmentAmount) },
+  ],
+  getFeatures: (p) => (p?.features || []).slice(0, 5),
+  getPrice: (p) => formatInvPercent(p?.returns1y ?? p?.returns3y),
+  getPriceLabel: () => 'returns',
+  getOriginalPrice: () => null,
+  getSavingsText: (p) => (p?.taxBenefitsText ? 'Tax benefits' : null),
+  getCtaUrl: (p) => p?.applyUrl,
+  getCtaLabel: () => 'Invest Now',
+};
+
+const FIXED_INCOME_CONFIG = {
+  type: 'fixed_income',
+  label: 'Fixed Income',
+  maxCompare: 3,
+  tableRows: FI_ROWS,
+  formatCell: formatFiCell,
+  getId: (p) => p.id,
+  getName: (p) => p.name,
+  getProvider: (p) => p.providerName,
+  getLogo: (p) => resolveBankLogoUrl(p?.logoUrl),
+  getBadge: (p) => (p?.interestRateMax != null || p?.interestRateMin != null ? 'Rate Range' : p?.interestRate != null ? 'Best Rate' : null),
+  getSubtitle: (p) => p?.highlights || p?.description || null,
+  getHighlightMetrics: (p) => [
+    { label: 'Rate', value: formatInterestRate(p?.interestRate ?? p?.interestRateMax ?? p?.interestRateMin) },
+    { label: 'Lock-in', value: formatMonths(p?.lockInMonths) },
+    { label: 'Premature', value: formatBool(p?.prematureWithdrawal) },
+  ],
+  getFeatures: (p) => (p?.features || []).slice(0, 5),
+  getPrice: (p) => formatInterestRate(p?.interestRate ?? p?.interestRateMax ?? p?.interestRateMin),
+  getPriceLabel: () => 'p.a.',
+  getOriginalPrice: () => null,
+  getSavingsText: (p) => (p?.taxBenefit ? '80C tax benefit' : null),
+  getCtaUrl: (p) => p?.applyUrl,
+  getCtaLabel: () => 'Apply Now',
+};
+
 export function getMarketplaceCompareConfig(type) {
   switch (type) {
     case 'insurance': return INSURANCE_CONFIG;
     case 'mutual_fund': return MUTUAL_FUND_CONFIG;
     case 'credit_card': return CREDIT_CARD_CONFIG;
     case 'loan': return LOAN_CONFIG;
+    case 'fixed_income': return FIXED_INCOME_CONFIG;
+    case 'post_office': return POST_OFFICE_CONFIG;
+    case 'government_scheme': return GOVERNMENT_SCHEME_CONFIG;
+    case 'investment': return INVESTMENT_CONFIG;
     default: return INSURANCE_CONFIG;
   }
 }

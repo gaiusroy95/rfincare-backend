@@ -39,6 +39,10 @@ const AdminSettingsTab = () => {
     creditCardMarketplace: true,
     insuranceMarketplace: true,
     mutualFundMarketplace: true,
+    fixedIncomeMarketplace: true,
+    postOfficeMarketplace: true,
+    governmentSchemesMarketplace: true,
+    investmentMarketplace: true,
   });
 
   const load = useCallback(async () => {
@@ -56,6 +60,10 @@ const AdminSettingsTab = () => {
           creditCardMarketplace: visibility.creditCardMarketplace !== false,
           insuranceMarketplace: visibility.insuranceMarketplace !== false,
           mutualFundMarketplace: visibility.mutualFundMarketplace !== false,
+          fixedIncomeMarketplace: visibility.fixedIncomeMarketplace !== false,
+          postOfficeMarketplace: visibility.postOfficeMarketplace !== false,
+          governmentSchemesMarketplace: visibility.governmentSchemesMarketplace !== false,
+          investmentMarketplace: visibility.investmentMarketplace !== false,
         });
       }
     } catch (err) {
@@ -129,6 +137,10 @@ const AdminSettingsTab = () => {
         creditCardMarketplace: updated.creditCardMarketplace !== false,
         insuranceMarketplace: updated.insuranceMarketplace !== false,
         mutualFundMarketplace: updated.mutualFundMarketplace !== false,
+        fixedIncomeMarketplace: updated.fixedIncomeMarketplace !== false,
+        postOfficeMarketplace: updated.postOfficeMarketplace !== false,
+        governmentSchemesMarketplace: updated.governmentSchemesMarketplace !== false,
+        investmentMarketplace: updated.investmentMarketplace !== false,
       });
       setMessage('Marketplace visibility updated');
     } catch (err) {
@@ -264,6 +276,10 @@ const AdminSettingsTab = () => {
             { key: 'creditCardMarketplace', label: 'Credit Card Marketplace' },
             { key: 'insuranceMarketplace', label: 'Insurance Marketplace' },
             { key: 'mutualFundMarketplace', label: 'Mutual Fund Marketplace' },
+            { key: 'fixedIncomeMarketplace', label: 'Fixed Income Marketplace' },
+            { key: 'postOfficeMarketplace', label: 'Post Office Marketplace' },
+            { key: 'governmentSchemesMarketplace', label: 'Government Schemes Marketplace' },
+            { key: 'investmentMarketplace', label: 'Investment Marketplace' },
           ].map((item) => (
             <label key={item.key} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border">
               <span className="text-sm font-medium text-foreground">{item.label}</span>

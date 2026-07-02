@@ -20,6 +20,10 @@ const PUBLIC_GUEST_PATHS = new Set([
   '/credit-cards',
   '/insurance-marketplace',
   '/mutual-fund-marketplace',
+  '/fixed-income-marketplace',
+  '/post-office-marketplace',
+  '/government-schemes-marketplace',
+  '/investment-marketplace',
   '/customer-assessment-portal',
   '/login-page',
   '/customer-login',
@@ -77,6 +81,18 @@ const Header = ({ children }) => {
       marketplaceVisibility.mutualFundMarketplace
         ? { label: t('header.mutualFundMarketplace', 'Mutual Fund Marketplace'), path: '/mutual-fund-marketplace', icon: 'TrendingUp' }
         : null,
+      marketplaceVisibility.fixedIncomeMarketplace
+        ? { label: t('header.fixedIncomeMarketplace', 'Fixed Income Marketplace'), path: '/fixed-income-marketplace', icon: 'Landmark' }
+        : null,
+      marketplaceVisibility.postOfficeMarketplace
+        ? { label: t('header.postOfficeMarketplace', 'Post Office Marketplace'), path: '/post-office-marketplace', icon: 'Mailbox' }
+        : null,
+      marketplaceVisibility.governmentSchemesMarketplace
+        ? { label: t('header.governmentSchemesMarketplace', 'Government Schemes'), path: '/government-schemes-marketplace', icon: 'Landmark' }
+        : null,
+      marketplaceVisibility.investmentMarketplace
+        ? { label: t('header.investmentMarketplace', 'Investment Marketplace'), path: '/investment-marketplace', icon: 'Gem' }
+        : null,
     ].filter(Boolean),
     [t, marketplaceVisibility],
   );
@@ -118,6 +134,7 @@ const Header = ({ children }) => {
       { label: t('header.creditCardMarketplace', 'Credit Card Marketplace'), path: '/credit-cards', icon: 'CreditCard', roles: ['customer'] },
       { label: t('header.insuranceMarketplace', 'Insurance Marketplace'), path: '/insurance-marketplace', icon: 'Shield', roles: ['customer'] },
       { label: t('header.mutualFundMarketplace', 'Mutual Fund Marketplace'), path: '/mutual-fund-marketplace', icon: 'TrendingUp', roles: ['customer'] },
+      { label: t('header.fixedIncomeMarketplace', 'Fixed Income Marketplace'), path: '/fixed-income-marketplace', icon: 'Landmark', roles: ['customer'] },
       { label: t('header.myDashboard'), path: '/customer-dashboard', icon: 'LayoutDashboard', roles: ['customer'] },
       { label: t('header.agentDashboard'), path: '/agent-dashboard', icon: 'Users', roles: ['agent'] },
       { label: t('header.adminDashboard'), path: '/admin-dashboard', icon: 'Shield', roles: ['admin', 'super_admin'] },

@@ -16,6 +16,10 @@ const MARKETPLACE_COMPARE_LINKS = [
   { slug: 'mutual_fund', label: 'Mutual funds', path: '/mutual-fund-marketplace', icon: 'TrendingUp', visibilityKey: 'mutualFundMarketplace' },
   { slug: 'credit_card', label: 'Credit cards', path: '/credit-cards', icon: 'CreditCard', visibilityKey: 'creditCardMarketplace' },
   { slug: 'bank', label: 'Bank loans', path: '/bank-marketplace', icon: 'Building2', visibilityKey: 'bankMarketplace' },
+  { slug: 'fixed_income', label: 'Fixed income', path: '/fixed-income-marketplace', icon: 'Landmark', visibilityKey: 'fixedIncomeMarketplace' },
+  { slug: 'post_office', label: 'Post office schemes', path: '/post-office-marketplace', icon: 'Mailbox', visibilityKey: 'postOfficeMarketplace' },
+  { slug: 'government_scheme', label: 'Government schemes', path: '/government-schemes-marketplace', icon: 'Landmark', visibilityKey: 'governmentSchemesMarketplace' },
+  { slug: 'investment', label: 'Investment products', path: '/investment-marketplace', icon: 'Gem', visibilityKey: 'investmentMarketplace' },
 ];
 
 function getCatalogViewRoute(product) {

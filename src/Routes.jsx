@@ -52,6 +52,10 @@ const BankMarketplaceManagement = lazyPage(() => import('./pages/bank-marketplac
 const CreditCardsPage = lazyPage(() => import('./pages/credit-cards'));
 const InsuranceMarketplacePage = lazyPage(() => import('./pages/insurance-marketplace'));
 const MutualFundMarketplacePage = lazyPage(() => import('./pages/mutual-fund-marketplace'));
+const FixedIncomeMarketplacePage = lazyPage(() => import('./pages/fixed-income-marketplace'));
+const PostOfficeMarketplacePage = lazyPage(() => import('./pages/post-office-marketplace'));
+const GovernmentSchemesMarketplacePage = lazyPage(() => import('./pages/government-schemes-marketplace'));
+const InvestmentMarketplacePage = lazyPage(() => import('./pages/investment-marketplace'));
 const ApprovalMatrixManagement = lazyPage(() => import('./pages/approval-matrix-management'));
 const InterestMatrixManagement = lazyPage(() => import('./pages/interest-matrix-management'));
 
@@ -112,6 +116,10 @@ function Routes() {
                 <Route path="/credit-cards" element={<SuspenseRoute><CreditCardsPage /></SuspenseRoute>} />
                 <Route path="/insurance-marketplace" element={<SuspenseRoute><InsuranceMarketplacePage /></SuspenseRoute>} />
                 <Route path="/mutual-fund-marketplace" element={<SuspenseRoute><MutualFundMarketplacePage /></SuspenseRoute>} />
+                <Route path="/fixed-income-marketplace" element={<SuspenseRoute><FixedIncomeMarketplacePage /></SuspenseRoute>} />
+                <Route path="/post-office-marketplace" element={<SuspenseRoute><PostOfficeMarketplacePage /></SuspenseRoute>} />
+                <Route path="/government-schemes-marketplace" element={<SuspenseRoute><GovernmentSchemesMarketplacePage /></SuspenseRoute>} />
+                <Route path="/investment-marketplace" element={<SuspenseRoute><InvestmentMarketplacePage /></SuspenseRoute>} />
 
                 <Route element={<AdminRouteShell />}>
                   <Route path="/admin-dashboard" element={<SuspenseRoute><AdminDashboard /></SuspenseRoute>} />
