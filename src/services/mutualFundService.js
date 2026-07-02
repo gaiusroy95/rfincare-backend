@@ -55,4 +55,9 @@ export const mutualFundService = {
   },
 
   formatListField: linesToList,
+
+  async calculate(payload) {
+    const res = await apiClient.post('/mutual-funds/calculate', payload);
+    return res.data;
+  },
 };

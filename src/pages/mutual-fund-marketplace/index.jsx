@@ -9,6 +9,7 @@ import MarketplaceHero from '../../components/marketplace/MarketplaceHero';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceLeadWizard from '../../components/marketplace/MarketplaceLeadWizard';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
+import MutualFundCalculatorPanel from '../../components/mutual-funds/MutualFundCalculatorPanel';
 import { mutualFundService } from '../../services/mutualFundService';
 import { resolveBankLogoUrl } from '../../utils/bankBranding';
 import { MUTUAL_FUND_PRODUCT_GRID } from '../../constants/marketplaceLeadFlow';
@@ -62,9 +63,22 @@ const MutualFundMarketplacePage = () => {
 
   useEffect(() => {
     if (!showCatalog) return;
-    if (filters.category !== 'all') setSearchParams({ category: filters.category }, { replace: true });
-    else setSearchParams({}, { replace: true });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (filters.category !== 'all') next.set('category', filters.category);
+      else next.delete('category');
+      return next;
+    }, { replace: true });
   }, [filters.category, setSearchParams, showCatalog]);
+
+  useEffect(() => {
+    if (searchParams.get('calculator') !== '1') return;
+    const timer = setTimeout(() => {
+      document.getElementById(showCatalog ? 'mf-calculator' : 'mf-calculator-landing')
+        ?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 200);
+    return () => clearTimeout(timer);
+  }, [searchParams, showCatalog]);
 
   const handleProductSelect = (item) => {
     if (profile?.verifiedAt) {
@@ -110,6 +124,9 @@ const MutualFundMarketplacePage = () => {
         {!showCatalog ? (
           <>
             <MarketplaceHero type="mutual_funds" onCtaClick={() => handleProductSelect(MUTUAL_FUND_PRODUCT_GRID[0])} />
+            <div id="mf-calculator-landing">
+              <MutualFundCalculatorPanel />
+            </div>
             <MarketplaceProductGrid
               items={MUTUAL_FUND_PRODUCT_GRID}
               onSelect={handleProductSelect}
@@ -145,9 +162,18 @@ const MutualFundMarketplacePage = () => {
                   </p>
                 ) : null}
               </div>
-              <Button variant="outline" size="sm" onClick={() => setShowCatalog(false)}>
-                <Icon name="LayoutGrid" size={16} className="mr-1" /> Browse categories
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" onClick={() => setShowCatalog(false)}>
+                  <Icon name="LayoutGrid" size={16} className="mr-1" /> Browse categories
+                </Button>
+                <Button variant="outline" size="sm" onClick={() => document.getElementById('mf-calculator')?.scrollIntoView({ behavior: 'smooth' })}>
+                  <Icon name="Calculator" size={16} className="mr-1" /> Calculator
+                </Button>
+              </div>
+            </div>
+
+            <div id="mf-calculator">
+              <MutualFundCalculatorPanel />
             </div>
 
             <MutualFundCategoryBar activeCategory={filters.category} onCategoryChange={(slug) => setFilters((p) => ({ ...p, category: slug }))} />

@@ -6,8 +6,11 @@ import Header from '../../components/ui/Header';
 import CreditCardCategoryBar from '../../components/credit-cards/CreditCardCategoryBar';
 import CreditCardFilterPanel from '../../components/credit-cards/CreditCardFilterPanel';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
+import MarketplaceLeadWizard from '../../components/marketplace/MarketplaceLeadWizard';
 import { creditCardService } from '../../services/creditCardService';
 import { resolveCreditCardLogo } from '../../utils/creditCardMarketplace';
+import { completeCreditCardApply } from '../../utils/creditCardApplyFlow';
+import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
 import {
   DEFAULT_CREDIT_CARD_FILTERS,
   getCategoryLabel,
@@ -32,6 +35,9 @@ const CreditCardsPage = () => {
     ...DEFAULT_CREDIT_CARD_FILTERS,
     category: searchParams.get('category') || 'all',
   }));
+  const [profile, setProfile] = useState(() => loadMarketplaceProfile('credit_card'));
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [pendingCard, setPendingCard] = useState(null);
 
   const loadCards = useCallback(async () => {
     setLoading(true);
@@ -95,6 +101,33 @@ const CreditCardsPage = () => {
 
   const activeFilterCount = countActiveFilters(filters);
 
+  const handleCreditCardApply = useCallback(async (card) => {
+    if (!card?.applyUrl) return;
+
+    const activeProfile = profile || loadMarketplaceProfile('credit_card');
+    if (!activeProfile?.verifiedAt) {
+      setPendingCard(card);
+      setWizardOpen(true);
+      return;
+    }
+
+    await completeCreditCardApply(card, activeProfile);
+  }, [profile]);
+
+  const handleWizardComplete = useCallback(async (completedProfile) => {
+    const saved = saveMarketplaceProfile('credit_card', {
+      ...completedProfile,
+      productLabel: pendingCard?.name || completedProfile.productLabel,
+    });
+    setProfile(saved);
+    setWizardOpen(false);
+    const card = pendingCard;
+    setPendingCard(null);
+    if (card) {
+      await completeCreditCardApply(card, saved);
+    }
+  }, [pendingCard]);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -105,6 +138,12 @@ const CreditCardsPage = () => {
             <p className="text-sm text-muted-foreground mt-1">
               Compare cards by category — fees, rewards, lounge access, and more. Select up to {MAX_COMPARE} to compare side by side.
             </p>
+            {profile?.fullName ? (
+              <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                <Icon name="CheckCircle2" size={14} />
+                Verified: {profile.phone} · {profile.email}
+              </p>
+            ) : null}
           </div>
           <Button variant="outline" onClick={() => navigate('/bank-marketplace?loanType=credit_card')}>
             Bank marketplace view
@@ -147,6 +186,7 @@ const CreditCardsPage = () => {
                 onToggleSelect={toggleSelect}
                 onClearSelection={() => { setSelected([]); setShowCompare(false); }}
                 showCompare={showCompare}
+                onApply={handleCreditCardApply}
                 title="Credit card comparison"
                 emptyMessage="No credit cards match your filters."
                 renderGridCard={(card, isSelected) => {
@@ -177,9 +217,13 @@ const CreditCardsPage = () => {
                       </div>
                       <div className="text-xs text-muted-foreground">Annual: {formatCardFee(card.annualFee)} · Joining: {formatCardFee(card.joiningFee)}</div>
                       {card.applyUrl ? (
-                        <a href={card.applyUrl} target="_blank" rel="noopener noreferrer" className="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2.5 bg-orange-500 text-white rounded-lg text-sm font-semibold">
-                          Apply <Icon name="ExternalLink" size={14} />
-                        </a>
+                        <button
+                          type="button"
+                          onClick={() => handleCreditCardApply(card)}
+                          className="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold"
+                        >
+                          Apply Now <Icon name="ChevronRight" size={14} />
+                        </button>
                       ) : null}
                     </div>
                   );
@@ -189,6 +233,15 @@ const CreditCardsPage = () => {
           </div>
         </div>
       </div>
+
+      <MarketplaceLeadWizard
+        open={wizardOpen}
+        onClose={() => { setWizardOpen(false); setPendingCard(null); }}
+        onComplete={handleWizardComplete}
+        marketplaceType="credit_card"
+        productLabel={pendingCard?.name}
+        productCategory={pendingCard?.categories?.[0]}
+      />
     </div>
   );
 };

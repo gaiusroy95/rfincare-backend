@@ -6,6 +6,13 @@ import BrandLogo from '../../../components/ui/BrandLogo';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
 import { useSiteContact } from '../../../contexts/SiteContactContext';
 import { POLICY_PAGES, legalPagePath } from '../../../constants/legalPages';
+import { useMarketplaceVisibility } from '../../../contexts/MarketplaceVisibilityContext';
+import {
+  buildFooterProductLinks,
+  buildFooterCompanyLinks,
+  FOOTER_CALCULATOR_LINKS,
+  FOOTER_RESOURCE_LINKS,
+} from '../../../constants/footerNavigation';
 
 const normalizeAddress = (value) =>
   String(value || '')
@@ -51,32 +58,21 @@ const Footer = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { products: loanProducts } = useLoanProducts();
+  const { visibility } = useMarketplaceVisibility();
   const { contact } = useSiteContact();
   const currentYear = new Date()?.getFullYear();
   const additionalOffices = useMemo(() => getAdditionalFooterOffices(contact), [contact]);
   const hasAdditionalOffices = additionalOffices.length > 0;
 
   const footerLinks = {
-    products: (Array.isArray(loanProducts) ? loanProducts : [])
-      .filter((p) => p?.slug)
-      .map((p) => ({
-        label: p.label,
-        path: `/products/${p.slug}`,
-      })),
-    company: [
-      { label: t('footer.aboutUs'), path: '/about-us' },
-      { label: t('footer.howItWorks'), path: '/homepage#how-it-works' },
-      { label: t('footer.bankPartners'), path: '/bank-marketplace' },
-      { label: 'Credit Cards', path: '/credit-cards' },
-      { label: 'Insurance Marketplace', path: '/insurance-marketplace' },
-      { label: 'Mutual Fund Marketplace', path: '/mutual-fund-marketplace' },
-      { label: t('footer.careers'), path: '/legal/careers' },
-    ],
+    products: buildFooterProductLinks(loanProducts, visibility),
+    company: buildFooterCompanyLinks(t, visibility),
     resources: [
-      { label: t('footer.helpCenter'), path: '/legal/help-center' },
-      { label: t('footer.financialGuides'), path: '/legal/financial-guides' },
-      { label: t('footer.loanEmiCalculator'), path: '/resources/loan-emi-calculator' },
-      { label: 'Share Your Story', path: '/share-your-story' },
+      ...FOOTER_CALCULATOR_LINKS,
+      ...FOOTER_RESOURCE_LINKS.map((link) => ({
+        label: link.labelKey ? t(link.labelKey, link.defaultLabel) : link.label,
+        path: link.path,
+      })),
     ],
     legal: [
       { label: t('footer.privacyPolicy'), path: '/legal/privacy-policy' },

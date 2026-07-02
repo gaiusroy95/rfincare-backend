@@ -69,13 +69,27 @@ const MarketplaceLeadWizard = ({
   const [alcoholUse, setAlcoholUse] = useState('');
   const [alcoholFrequency, setAlcoholFrequency] = useState('');
 
-  const loanType = marketplaceType === 'mutual_funds' ? 'mutual_funds' : 'insurance';
+  const isShortLeadFlow = marketplaceType === 'credit_card' || marketplaceType === 'post_office';
+  const loanType = marketplaceType === 'mutual_funds'
+    ? 'mutual_funds'
+    : marketplaceType === 'credit_card'
+      ? 'credit_card'
+      : marketplaceType === 'post_office'
+        ? 'post_office'
+        : 'insurance';
+  const finalProfileStep = isShortLeadFlow ? 3 : 4;
   const dateOfBirth = buildDob(dobDay, dobMonth, dobYear);
   const normalizedPhone = () => phone.replace(/\D/g, '').slice(-10);
 
   const headline = useMemo(() => {
     if (marketplaceType === 'mutual_funds') {
       return 'Start investing with personalised fund recommendations';
+    }
+    if (marketplaceType === 'post_office') {
+      return 'Apply for your post office scheme — we will take you to complete your investment';
+    }
+    if (marketplaceType === 'credit_card') {
+      return 'Apply for your credit card — we will take you to the bank to complete your application';
     }
     return (
       <>
@@ -98,11 +112,16 @@ const MarketplaceLeadWizard = ({
 
   if (!open) return null;
 
-  const stepsRemaining = MARKETPLACE_WIZARD_STEPS.length - step;
+  const wizardStepCount = isShortLeadFlow ? MARKETPLACE_WIZARD_STEPS.length - 1 : MARKETPLACE_WIZARD_STEPS.length;
+  const stepsRemaining = wizardStepCount - step;
   const stepHint =
     step === 0
-      ? 'Enter your contact details. We will verify your mobile and email with OTP.'
-      : `Just answer ${stepsRemaining} simple question${stepsRemaining === 1 ? '' : 's'} to get more accurate quotes`;
+      ? isShortLeadFlow
+        ? marketplaceType === 'post_office'
+          ? 'Enter your details to continue. We verify your mobile and email with OTP before redirecting you to complete your investment.'
+          : 'Enter your details to continue. We verify your mobile and email with OTP before redirecting you to the bank.'
+        : 'Enter your contact details. We will verify your mobile and email with OTP.'
+      : `Just answer ${stepsRemaining} simple question${stepsRemaining === 1 ? '' : 's'} to continue`;
 
   const validateContact = () => {
     if (!fullName.trim()) return 'Your name is required.';
@@ -225,6 +244,23 @@ const MarketplaceLeadWizard = ({
       setError('Please select your educational qualification.');
       return;
     }
+    if (step === 3 && isShortLeadFlow) {
+      const profile = {
+        fullName: fullName.trim(),
+        email: email.trim(),
+        phone: normalizedPhone(),
+        gender,
+        dateOfBirth,
+        occupation,
+        annualIncome,
+        education,
+        whatsappUpdates,
+      };
+      setLoading(true);
+      await saveProfileAndComplete(profile);
+      setLoading(false);
+      return;
+    }
     if (step === 4) {
       if (!tobaccoUse || !alcoholUse) {
         setError('Please answer both health habit questions.');
@@ -333,14 +369,25 @@ const MarketplaceLeadWizard = ({
             <div className="space-y-5">
               <div className="text-center space-y-2">
                 <h2 className="text-xl md:text-2xl font-bold text-foreground">{headline}</h2>
-                <div className="flex flex-wrap justify-center gap-2 text-xs">
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    <Icon name="BadgePercent" size={14} /> Online discount up to 15%
-                  </span>
-                  <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
-                    <Icon name="Handshake" size={14} /> Lowest price guarantee
-                  </span>
-                </div>
+                {isShortLeadFlow ? (
+                  <div className="flex flex-wrap justify-center gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <Icon name="ShieldCheck" size={14} /> Secure lead capture
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                      <Icon name="ExternalLink" size={14} /> {marketplaceType === 'post_office' ? 'Continue to invest' : 'Continue on bank website'}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap justify-center gap-2 text-xs">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                      <Icon name="BadgePercent" size={14} /> Online discount up to 15%
+                    </span>
+                    <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200">
+                      <Icon name="Handshake" size={14} /> Lowest price guarantee
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="flex rounded-xl border border-border p-1 bg-muted/30">
@@ -446,7 +493,7 @@ const MarketplaceLeadWizard = ({
             </div>
           )}
 
-          {step === 4 && (
+          {step === 4 && !isShortLeadFlow && (
             <div className="space-y-6">
               <div className="space-y-3">
                 <h2 className="text-xl md:text-2xl font-bold text-center">Do you smoke or chew tobacco?</h2>
@@ -488,7 +535,7 @@ const MarketplaceLeadWizard = ({
 
             {step > 0 && (
               <div className="flex gap-1.5">
-                {MARKETPLACE_WIZARD_STEPS.map((s, i) => (
+                {MARKETPLACE_WIZARD_STEPS.filter((s) => !(isShortLeadFlow && s.key === 'habits')).map((s, i) => (
                   <span key={s.key} className={`w-2 h-2 rounded-full ${i === step ? 'bg-primary' : 'bg-muted-foreground/30'}`} />
                 ))}
               </div>
@@ -497,7 +544,7 @@ const MarketplaceLeadWizard = ({
             {step === 0 ? (
               !otpSent ? (
                 <Button type="button" onClick={handleSendOtp} disabled={loading} className="bg-orange-500 hover:bg-orange-600 text-white">
-                  {loading ? 'Sending…' : 'View Plans'}
+                  {loading ? 'Sending…' : isShortLeadFlow ? 'Continue' : 'View Plans'}
                 </Button>
               ) : !otpVerified ? (
                 <Button type="button" onClick={handleVerifyOtp} disabled={loading} className="bg-orange-500 hover:bg-orange-600 text-white">
@@ -506,7 +553,7 @@ const MarketplaceLeadWizard = ({
               ) : null
             ) : (
               <Button type="button" onClick={handleNext} disabled={loading} className="bg-orange-500 hover:bg-orange-600 text-white">
-                {loading ? 'Saving…' : step === 4 ? 'Show Plans' : 'Continue'}
+                {loading ? 'Saving…' : step === finalProfileStep ? (isShortLeadFlow ? 'Apply Now' : 'Show Plans') : 'Continue'}
               </Button>
             )}
           </div>

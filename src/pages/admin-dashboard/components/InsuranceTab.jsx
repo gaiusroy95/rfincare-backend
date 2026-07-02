@@ -4,7 +4,6 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
-import { bankService } from '../../../services/apiServices';
 import { insuranceService } from '../../../services/insuranceService';
 import {
   INSURANCE_SEGMENTS,
@@ -25,6 +24,14 @@ const EMPTY = {
   purchaseEnabled: false, purchaseMode: 'redirect', insurerProviderCode: '', insurerProductCode: '',
   insurerPlanCode: '', paymentAccountCode: '', demographicMappingText: '{\n  "source": "marketplaceLeadProfile"\n}',
   featuresText: '', benefitsText: '', highlights: '', displayPriority: '0', status: 'active',
+};
+
+const EMPTY_INSURER = {
+  name: '',
+  logoUrl: '',
+  websiteUrl: '',
+  displayPriority: '0',
+  status: 'active',
 };
 
 const EMPTY_PROVIDER = {
@@ -51,21 +58,29 @@ function safeParseJson(text, fallback) {
 
 const InsuranceTab = () => {
   const [products, setProducts] = useState([]);
-  const [banks, setBanks] = useState([]);
+  const [insurers, setInsurers] = useState([]);
   const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingProvider, setSavingProvider] = useState(false);
+  const [savingInsurer, setSavingInsurer] = useState(false);
   const [error, setError] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editingProviderId, setEditingProviderId] = useState(null);
+  const [editingInsurerId, setEditingInsurerId] = useState(null);
   const [pendingLogoFile, setPendingLogoFile] = useState(null);
   const [form, setForm] = useState({ ...EMPTY });
   const [providerForm, setProviderForm] = useState({ ...EMPTY_PROVIDER });
+  const [insurerForm, setInsurerForm] = useState({ ...EMPTY_INSURER });
 
-  const bankOptions = useMemo(
-    () => [{ value: '', label: '— Select insurer —' }, ...banks.map((b) => ({ value: b.id, label: b.name }))],
-    [banks],
+  const insurerOptions = useMemo(
+    () => [
+      { value: '', label: insurers.length ? '— Select insurance company —' : '— Add an insurance company first —' },
+      ...insurers
+        .filter((i) => i.status !== 'inactive')
+        .map((i) => ({ value: i.id, label: i.name })),
+    ],
+    [insurers],
   );
 
   const providerOptions = useMemo(
@@ -79,13 +94,13 @@ const InsuranceTab = () => {
     setLoading(true);
     setError('');
     try {
-      const [list, bankList, providerList] = await Promise.all([
+      const [list, insurerList, providerList] = await Promise.all([
         insuranceService.listAll(),
-        bankService.getAllBanks().catch(() => []),
+        insuranceService.listInsurers({ includeInactive: true }).catch(() => []),
         insuranceService.listProviderConfigs().catch(() => []),
       ]);
       setProducts(Array.isArray(list) ? list : []);
-      setBanks(Array.isArray(bankList) ? bankList : []);
+      setInsurers(Array.isArray(insurerList) ? insurerList : []);
       setProviders(Array.isArray(providerList) ? providerList : []);
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Failed to load');
@@ -104,6 +119,59 @@ const InsuranceTab = () => {
   const resetProviderForm = () => {
     setEditingProviderId(null);
     setProviderForm({ ...EMPTY_PROVIDER });
+  };
+
+  const resetInsurerForm = () => {
+    setEditingInsurerId(null);
+    setInsurerForm({ ...EMPTY_INSURER });
+  };
+
+  const startInsurerEdit = (insurer) => {
+    setEditingInsurerId(insurer.id);
+    setInsurerForm({
+      name: insurer.name || '',
+      logoUrl: insurer.logoUrl || '',
+      websiteUrl: insurer.websiteUrl || '',
+      displayPriority: String(insurer.displayPriority ?? 0),
+      status: insurer.status || 'active',
+    });
+  };
+
+  const handleInsurerSave = async () => {
+    if (!insurerForm.name.trim()) {
+      setError('Insurance company name is required.');
+      return;
+    }
+    setSavingInsurer(true);
+    setError('');
+    try {
+      const payload = {
+        name: insurerForm.name.trim(),
+        logoUrl: insurerForm.logoUrl.trim() || null,
+        websiteUrl: insurerForm.websiteUrl.trim() || null,
+        displayPriority: Number(insurerForm.displayPriority) || 0,
+        status: insurerForm.status,
+      };
+      if (editingInsurerId) await insuranceService.updateInsurer(editingInsurerId, payload);
+      else await insuranceService.createInsurer(payload);
+      resetInsurerForm();
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Insurance company save failed');
+    }
+    setSavingInsurer(false);
+  };
+
+  const handleInsurerDelete = async (id) => {
+    if (!window.confirm('Delete this insurance company?')) return;
+    try {
+      await insuranceService.removeInsurer(id);
+      if (form.insurerId === id) setForm((f) => ({ ...f, insurerId: '', insurerName: '' }));
+      if (editingInsurerId === id) resetInsurerForm();
+      await load();
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Delete failed');
+    }
   };
 
   const startEdit = (p) => {
@@ -293,8 +361,49 @@ const InsuranceTab = () => {
       {error ? <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div> : null}
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-        <div className="bg-card border rounded-xl p-5 space-y-4">
+        <div className="space-y-6">
+          <div className="bg-card border rounded-xl p-5 space-y-4">
+            <h3 className="font-semibold">{editingInsurerId ? 'Edit insurance company' : 'Insurance companies'}</h3>
+            <p className="text-xs text-muted-foreground">
+              Add insurers here (e.g. HDFC ERGO, ICICI Lombard). They appear in the plan insurer dropdown — not loan banks.
+            </p>
+            <Input label="Company name" value={insurerForm.name} onChange={(e) => setInsurerForm((f) => ({ ...f, name: e.target.value }))} required placeholder="e.g. HDFC ERGO" />
+            <div className="grid grid-cols-2 gap-3">
+              <Input label="Logo URL" value={insurerForm.logoUrl} onChange={(e) => setInsurerForm((f) => ({ ...f, logoUrl: e.target.value }))} />
+              <Input label="Website URL" value={insurerForm.websiteUrl} onChange={(e) => setInsurerForm((f) => ({ ...f, websiteUrl: e.target.value }))} />
+              <Input label="Display priority" type="number" value={insurerForm.displayPriority} onChange={(e) => setInsurerForm((f) => ({ ...f, displayPriority: e.target.value }))} />
+              <Select label="Status" value={insurerForm.status} onChange={(v) => setInsurerForm((f) => ({ ...f, status: v }))} options={[{ value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }]} />
+            </div>
+            <div className="flex gap-3">
+              <Button onClick={handleInsurerSave} disabled={savingInsurer}>{savingInsurer ? 'Saving…' : editingInsurerId ? 'Update company' : 'Add company'}</Button>
+              {editingInsurerId ? <Button variant="outline" onClick={resetInsurerForm}>Cancel</Button> : null}
+            </div>
+            <div className="space-y-2 border-t pt-4">
+              <p className="text-sm font-medium">Registered insurers ({insurers.length})</p>
+              {insurers.length === 0 ? (
+                <p className="text-xs text-muted-foreground">No insurance companies yet. Add one above to use in plans.</p>
+              ) : (
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {insurers.map((insurer) => (
+                    <div key={insurer.id} className="border rounded-lg p-3 flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="font-medium truncate">{insurer.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{insurer.status}</p>
+                      </div>
+                      <div className="flex gap-2 shrink-0">
+                        <Button size="sm" variant="outline" onClick={() => startInsurerEdit(insurer)}>Edit</Button>
+                        <Button size="sm" variant="destructive" onClick={() => handleInsurerDelete(insurer.id)}>Delete</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-card border rounded-xl p-5 space-y-4">
           <h3 className="font-semibold">{editingProviderId ? 'Edit insurer provider config' : 'Insurer provider config'}</h3>
+          <p className="text-xs text-muted-foreground">API integration for purchase journey (separate from insurance company branding above).</p>
           <div className="grid grid-cols-2 gap-3">
             <Input label="Provider code" value={providerForm.providerCode} onChange={(e) => setProviderForm((f) => ({ ...f, providerCode: e.target.value }))} required />
             <Input label="Provider name" value={providerForm.providerName} onChange={(e) => setProviderForm((f) => ({ ...f, providerName: e.target.value }))} required />
@@ -332,14 +441,30 @@ const InsuranceTab = () => {
             </div>
           </div>
         </div>
+        </div>
 
         <div className="bg-card border rounded-xl p-5 space-y-4 max-h-[85vh] overflow-y-auto">
           <h3 className="font-semibold">{editingId ? 'Edit plan' : 'Add plan'}</h3>
-          <Select label="Insurer" options={bankOptions} value={form.insurerId} onChange={(id) => {
-            const bank = banks.find((b) => b.id === id);
-            setForm((f) => ({ ...f, insurerId: id, insurerName: bank?.name || f.insurerName }));
-          }} />
-          <Input label="Insurer name" value={form.insurerName} onChange={(e) => setForm((f) => ({ ...f, insurerName: e.target.value }))} required />
+          <Select
+            label="Insurance company"
+            options={insurerOptions}
+            value={form.insurerId}
+            onChange={(id) => {
+              const insurer = insurers.find((i) => i.id === id);
+              setForm((f) => ({
+                ...f,
+                insurerId: id,
+                insurerName: insurer?.name || f.insurerName,
+                logoUrl: insurer?.logoUrl || f.logoUrl,
+              }));
+            }}
+          />
+          {insurers.length === 0 ? (
+            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+              Add at least one insurance company in the left panel before creating plans.
+            </p>
+          ) : null}
+          <Input label="Insurer name (display)" value={form.insurerName} onChange={(e) => setForm((f) => ({ ...f, insurerName: e.target.value }))} required />
           <Input label="Plan name" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} required />
           <Select label="Segment" value={form.segment} onChange={(v) => setForm((f) => ({ ...f, segment: v, categories: [] }))} options={INSURANCE_SEGMENTS.map((s) => ({ value: s.slug, label: s.label }))} />
           <div>

@@ -194,7 +194,7 @@ export const AuthProvider = ({ children }) => {
       employeeAccess,
       refreshEmployeeAccess,
       isAuthenticated: !!user,
-      getRoleBasedRoute: () => getRoleBasedRoute(userProfile?.role),
+      getRoleBasedRoute: () => getRoleBasedRoute(userProfile?.role || user?.role),
     }),
     [
       user,

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { getWrongPortalMessage, resolveLoginRole } from '../../lib/portalLoginUtils';
+import { usePortalLoginRedirect } from '../../hooks/usePortalLoginRedirect';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -11,7 +12,7 @@ import OAuthProviderButtons from '../customer-registration-portal/components/OAu
 const CustomerLogin = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { signIn, signOut, user, userProfile, loading: authLoading } = useAuth();
+  const { signIn, signOut, loading: authLoading } = useAuth();
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -27,11 +28,7 @@ const CustomerLogin = () => {
     }
   }, [location.state]);
 
-  useEffect(() => {
-    if (user && userProfile?.role === 'customer') {
-      navigate('/customer-dashboard');
-    }
-  }, [user, userProfile, navigate]);
+  usePortalLoginRedirect('customer');
 
   const handleSignIn = async (e) => {
     e?.preventDefault();
@@ -54,9 +51,6 @@ const CustomerLogin = () => {
         setLoading(false);
         return;
       }
-
-      // Successful customer login
-      navigate('/customer-dashboard');
     } catch (err) {
       setError('An unexpected error occurred');
       setLoading(false);

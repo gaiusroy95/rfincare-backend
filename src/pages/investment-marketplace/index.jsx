@@ -5,6 +5,7 @@ import Button from '../../components/ui/Button';
 import Header from '../../components/ui/Header';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
+import InvestmentCalculatorModal from '../../components/investment/InvestmentCalculatorModal';
 import { investmentProductService } from '../../services/investmentProductService';
 import { INVESTMENT_PRODUCT_GRID } from '../../constants/investmentLeadFlow';
 import { DEFAULT_INVESTMENT_FILTERS, getCategoryLabel } from '../../constants/investmentMarketplace';
@@ -23,6 +24,8 @@ const InvestmentMarketplacePage = () => {
     ...DEFAULT_INVESTMENT_FILTERS,
     category: searchParams.get('category') || 'all',
   }));
+  const [calculatorOpen, setCalculatorOpen] = useState(false);
+  const [calculatorProduct, setCalculatorProduct] = useState(null);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -41,9 +44,19 @@ const InvestmentMarketplacePage = () => {
 
   useEffect(() => {
     const cat = filters.category;
-    if (cat && cat !== 'all') setSearchParams({ category: cat }, { replace: true });
-    else setSearchParams({}, { replace: true });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (cat && cat !== 'all') next.set('category', cat);
+      else next.delete('category');
+      return next;
+    }, { replace: true });
   }, [filters.category, setSearchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('calculator') === '1') {
+      setCalculatorOpen(true);
+    }
+  }, [searchParams]);
 
   const categoryCounts = useMemo(() => {
     const counts = { all: products.length };
@@ -94,6 +107,11 @@ const InvestmentMarketplacePage = () => {
     setShowCompare(false);
   };
 
+  const openCalculator = (product = null) => {
+    setCalculatorProduct(product);
+    setCalculatorOpen(true);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -105,10 +123,16 @@ const InvestmentMarketplacePage = () => {
               Compare sovereign gold bonds, ETFs, bonds, REITs, and InvITs. Select up to {MAX_COMPARE} to compare side by side.
             </p>
           </div>
-          <Button variant="outline" onClick={() => navigate('/product-comparison')}>
-            <Icon name="GitCompare" size={16} />
-            Compare other products
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => openCalculator()}>
+              <Icon name="Calculator" size={16} />
+              Open calculator
+            </Button>
+            <Button variant="outline" onClick={() => navigate('/product-comparison')}>
+              <Icon name="GitCompare" size={16} />
+              Compare other products
+            </Button>
+          </div>
         </div>
 
         <div className="rounded-2xl border border-border bg-card p-4 md:p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
@@ -159,9 +183,19 @@ const InvestmentMarketplacePage = () => {
           onToggleCompare={() => setShowCompare((v) => !v)}
           onToggleSelect={toggleSelect}
           onClearSelection={onClearSelection}
+          onApply={(product) => {
+            if (product?.applyUrl) window.open(product.applyUrl, '_blank', 'noopener,noreferrer');
+            else openCalculator(product);
+          }}
           context={{}}
         />
       </div>
+
+      <InvestmentCalculatorModal
+        open={calculatorOpen}
+        onClose={() => setCalculatorOpen(false)}
+        product={calculatorProduct}
+      />
     </div>
   );
 };

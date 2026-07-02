@@ -15,6 +15,14 @@ export function getPortalForRole(role) {
   return PORTAL_BY_ROLE[role] || null;
 }
 
+export function getLoginPathForRole(role) {
+  return getPortalForRole(role)?.path || '/login-page';
+}
+
+export function resolveEffectiveRole(user, userProfile) {
+  return userProfile?.role || user?.role || null;
+}
+
 export function getWrongPortalMessage(actualRole, expectedRole) {
   const actualPortal = getPortalForRole(actualRole);
   const expectedPortal = getPortalForRole(expectedRole);

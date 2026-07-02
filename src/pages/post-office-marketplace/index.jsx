@@ -5,8 +5,11 @@ import Button from '../../components/ui/Button';
 import Header from '../../components/ui/Header';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
+import MarketplaceLeadWizard from '../../components/marketplace/MarketplaceLeadWizard';
 import PostOfficeCalculatorModal from '../../components/post-office/PostOfficeCalculatorModal';
 import { postOfficeService } from '../../services/postOfficeService';
+import { completePostOfficeApply } from '../../utils/postOfficeApplyFlow';
+import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
 import { POST_OFFICE_PRODUCT_GRID } from '../../constants/postOfficeLeadFlow';
 import { DEFAULT_POST_OFFICE_FILTERS, getCategoryLabel } from '../../constants/postOfficeMarketplace';
 import { formatInterestRate, resetPostOfficeFilters } from '../../utils/postOfficeFilters';
@@ -26,6 +29,9 @@ const PostOfficeMarketplacePage = () => {
     ...DEFAULT_POST_OFFICE_FILTERS,
     category: searchParams.get('category') || 'all',
   }));
+  const [profile, setProfile] = useState(() => loadMarketplaceProfile('post_office'));
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [pendingProduct, setPendingProduct] = useState(null);
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -44,9 +50,19 @@ const PostOfficeMarketplacePage = () => {
 
   useEffect(() => {
     const cat = filters.category;
-    if (cat && cat !== 'all') setSearchParams({ category: cat }, { replace: true });
-    else setSearchParams({}, { replace: true });
+    setSearchParams((prev) => {
+      const next = new URLSearchParams(prev);
+      if (cat && cat !== 'all') next.set('category', cat);
+      else next.delete('category');
+      return next;
+    }, { replace: true });
   }, [filters.category, setSearchParams]);
+
+  useEffect(() => {
+    if (searchParams.get('calculator') === '1') {
+      setCalculatorOpen(true);
+    }
+  }, [searchParams]);
 
   const categoryCounts = useMemo(() => {
     const counts = { all: products.length };
@@ -102,6 +118,38 @@ const PostOfficeMarketplacePage = () => {
     setCalculatorOpen(true);
   };
 
+  const handlePostOfficeApply = useCallback(async (product) => {
+    if (product?.applyUrl) {
+      const activeProfile = profile || loadMarketplaceProfile('post_office');
+      if (!activeProfile?.verifiedAt) {
+        setPendingProduct(product);
+        setWizardOpen(true);
+        return;
+      }
+      await completePostOfficeApply(product, activeProfile);
+      return;
+    }
+
+    if (product?.calculatorEnabled !== false) {
+      openCalculator(product);
+    }
+  }, [profile]);
+
+  const handleWizardComplete = useCallback(async (completedProfile) => {
+    const saved = saveMarketplaceProfile('post_office', {
+      ...completedProfile,
+      productLabel: pendingProduct?.name || completedProfile.productLabel,
+      productCategory: pendingProduct?.categories?.[0] || completedProfile.productCategory,
+    });
+    setProfile(saved);
+    setWizardOpen(false);
+    const product = pendingProduct;
+    setPendingProduct(null);
+    if (product?.applyUrl) {
+      await completePostOfficeApply(product, saved);
+    }
+  }, [pendingProduct]);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -112,6 +160,12 @@ const PostOfficeMarketplacePage = () => {
             <p className="text-sm text-muted-foreground">
               Compare PPF, NSC, KVP, SCSS, MIS and other India Post savings schemes. Select up to {MAX_COMPARE} to compare side by side.
             </p>
+            {profile?.fullName ? (
+              <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                <Icon name="CheckCircle2" size={14} />
+                Verified: {profile.phone} · {profile.email}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => openCalculator()}>
@@ -175,9 +229,7 @@ const PostOfficeMarketplacePage = () => {
           onToggleCompare={() => setShowCompare((v) => !v)}
           onToggleSelect={toggleSelect}
           onClearSelection={onClearSelection}
-          onApply={(product) => {
-            if (product?.calculatorEnabled !== false && !product?.applyUrl) openCalculator(product);
-          }}
+          onApply={handlePostOfficeApply}
           context={{}}
           renderGridCard={(product, isSelected) => (
             <div
@@ -193,6 +245,11 @@ const PostOfficeMarketplacePage = () => {
                 <Button size="sm" variant="outline" onClick={() => openCalculator(product)}>
                   Calculator
                 </Button>
+                {product.applyUrl ? (
+                  <Button size="sm" variant="default" onClick={() => handlePostOfficeApply(product)}>
+                    Apply Now
+                  </Button>
+                ) : null}
                 <Button
                   size="sm"
                   variant={isSelected ? 'default' : 'outline'}
@@ -219,6 +276,15 @@ const PostOfficeMarketplacePage = () => {
         open={calculatorOpen}
         onClose={() => setCalculatorOpen(false)}
         product={calculatorProduct}
+      />
+
+      <MarketplaceLeadWizard
+        open={wizardOpen}
+        onClose={() => { setWizardOpen(false); setPendingProduct(null); }}
+        onComplete={handleWizardComplete}
+        marketplaceType="post_office"
+        productLabel={pendingProduct?.name}
+        productCategory={pendingProduct?.categories?.[0]}
       />
     </div>
   );

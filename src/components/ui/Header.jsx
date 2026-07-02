@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
+import { getLoginPathForRole, resolveEffectiveRole } from '../../lib/portalLoginUtils';
 import { useMarketplaceVisibility } from '../../contexts/MarketplaceVisibilityContext';
 import { employeeCanReachRoute } from '../../utils/employeeAccess';
 import Icon from '../AppIcon';
@@ -41,13 +42,13 @@ const Header = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { user, userProfile, employeeAccess } = useAuth();
+  const { user, userProfile, employeeAccess, signOut } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const { visibility: marketplaceVisibility } = useMarketplaceVisibility();
 
   const isGuest = !user;
-  const currentRole = userProfile?.role || 'customer';
+  const currentRole = resolveEffectiveRole(user, userProfile) || 'customer';
   const showGuestNav = isGuest && isPublicGuestRoute(location?.pathname);
 
   useEffect(() => {
@@ -168,6 +169,13 @@ const Header = ({ children }) => {
     setIsMobileMenuOpen(false);
   };
 
+  const handleLogout = async () => {
+    const role = resolveEffectiveRole(user, userProfile);
+    await signOut();
+    setIsMobileMenuOpen(false);
+    navigate(getLoginPathForRole(role), { replace: true });
+  };
+
   const roleLabel = currentRole === 'super_admin' ? 'Admin' : t(`header.${currentRole}`);
 
   return (
@@ -219,6 +227,17 @@ const Header = ({ children }) => {
             <div className="header-actions">
               <LanguageSwitcher />
               {!isGuest && <span className={`role-badge ${currentRole}`}>{roleLabel}</span>}
+              {!isGuest && (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleLogout}
+                  className="hidden sm:inline-flex items-center gap-1.5"
+                >
+                  <Icon name="LogOut" size={16} />
+                  <span>{t('header.logout', 'Log out')}</span>
+                </Button>
+              )}
               {children}
               {/* Menu icon — visible only below md (when menu bar is hidden) */}
               <Button
@@ -247,6 +266,14 @@ const Header = ({ children }) => {
                 </div>
               </button>
             ))}
+            {!isGuest && (
+              <button type="button" onClick={handleLogout} className="mobile-menu-item text-destructive">
+                <div className="flex items-center space-x-3">
+                  <Icon name="LogOut" size={20} />
+                  <span>{t('header.logout', 'Log out')}</span>
+                </div>
+              </button>
+            )}
           </div>
         </div>
       )}

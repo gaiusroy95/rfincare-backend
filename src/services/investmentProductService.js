@@ -44,4 +44,9 @@ export const investmentProductService = {
     if (Array.isArray(text)) return text.filter(Boolean).map(String);
     return String(text).split('\n').map((s) => s.trim()).filter(Boolean);
   },
+
+  async calculate(payload) {
+    const res = await apiClient.post('/investment-products/calculate', payload);
+    return res.data;
+  },
 };

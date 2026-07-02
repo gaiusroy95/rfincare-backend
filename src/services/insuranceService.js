@@ -38,6 +38,28 @@ export const insuranceService = {
     return res.data;
   },
 
+  async listInsurers({ includeInactive = true } = {}) {
+    const res = await apiClient.get('/insurance-products/insurers', {
+      params: includeInactive ? { includeInactive: 'true' } : {},
+    });
+    return res.data;
+  },
+
+  async createInsurer(payload) {
+    const res = await apiClient.post('/insurance-products/insurers', payload);
+    return res.data;
+  },
+
+  async updateInsurer(id, payload) {
+    const res = await apiClient.put(`/insurance-products/insurers/${id}`, payload);
+    return res.data;
+  },
+
+  async removeInsurer(id) {
+    const res = await apiClient.delete(`/insurance-products/insurers/${id}`);
+    return res.data;
+  },
+
   async createProviderConfig(payload) {
     const res = await apiClient.post('/insurance-products/provider-configs', payload);
     return res.data;

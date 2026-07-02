@@ -138,7 +138,7 @@ const CREDIT_CARD_CONFIG = {
   getPriceLabel: () => '/year',
   getOriginalPrice: (p) => (Number(p?.joiningFee) > 0 ? formatCardFee(p.joiningFee) : null),
   getSavingsText: (p) => (Number(p?.annualFee) === 0 ? 'No annual fee' : null),
-  getCtaUrl: (p) => p?.applyUrl,
+  getCtaUrl: () => null,
   getCtaLabel: () => 'Apply Now',
 };
 
@@ -202,7 +202,7 @@ const POST_OFFICE_CONFIG = {
   getPriceLabel: () => 'p.a.',
   getOriginalPrice: () => null,
   getSavingsText: (p) => (p?.taxBenefitsText ? 'Tax saving scheme' : null),
-  getCtaUrl: (p) => p?.applyUrl,
+  getCtaUrl: () => null,
   getCtaLabel: (p) => (p?.applyUrl ? 'Apply Now' : (p?.calculatorEnabled !== false ? 'Calculator' : 'View Scheme')),
 };
 

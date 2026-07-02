@@ -1,26 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { getWrongPortalMessage, resolveLoginRole } from '../../lib/portalLoginUtils';
+import { usePortalLoginRedirect } from '../../hooks/usePortalLoginRedirect';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Icon from '../../components/AppIcon';
 
 const AgentLogin = () => {
   const navigate = useNavigate();
-  const { signIn, signOut, user, userProfile, loading: authLoading } = useAuth();
+  const { signIn, signOut, loading: authLoading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  useEffect(() => {
-    // Redirect if already logged in as agent
-    if (user && userProfile?.role === 'agent') {
-      navigate('/agent-dashboard');
-    }
-  }, [user, userProfile, navigate]);
+  usePortalLoginRedirect('agent');
 
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -43,9 +39,6 @@ const AgentLogin = () => {
         setLoading(false);
         return;
       }
-
-      // Successful agent login
-      navigate('/agent-dashboard');
     } catch (err) {
       setError('An unexpected error occurred');
       setLoading(false);
