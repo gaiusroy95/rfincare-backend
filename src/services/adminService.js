@@ -17,10 +17,29 @@ function apiError(error, fallback) {
 export const adminService = {
   async getAllApplications(filters = {}) {
     try {
-      const res = await apiClient.get('/loan-applications', { params: filters });
-      return { data: toCamelCase(res.data), error: null };
+      const params = {
+        ...filters,
+        page: filters.page || 1,
+        pageSize: filters.pageSize || 50,
+        includePhotos: filters.includePhotos !== false ? 'true' : undefined,
+      };
+      const res = await apiClient.get('/loan-applications', { params });
+      const data = toCamelCase(res.data);
+      if (data && Array.isArray(data.items)) {
+        return {
+          data: data.items,
+          meta: {
+            total: data.total,
+            page: data.page,
+            pageSize: data.pageSize,
+            hasMore: data.hasMore,
+          },
+          error: null,
+        };
+      }
+      return { data: Array.isArray(data) ? data : [], meta: null, error: null };
     } catch (error) {
-      return { data: null, error: apiError(error, 'Failed to fetch applications') };
+      return { data: null, meta: null, error: apiError(error, 'Failed to fetch applications') };
     }
   },
 

@@ -32,7 +32,6 @@ const BankOffersSection = ({ product }) => {
         const [data, cards] = await Promise.all([
           bankService.getActiveBanks({
             loanType: isCreditCardProduct ? undefined : product.slug,
-            forceRefresh: true,
           }),
           isCreditCardProduct ? creditCardService.listActive().catch(() => []) : Promise.resolve([]),
         ]);

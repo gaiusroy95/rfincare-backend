@@ -7,6 +7,7 @@ import AdminRouteShell from './components/layout/AdminRouteShell';
 import ReportsRouteShell from './components/layout/ReportsRouteShell';
 import PageLoader from './components/PageLoader';
 import { LoanProductsProvider } from './contexts/LoanProductsContext';
+import { MarketplaceVisibilityProvider } from './contexts/MarketplaceVisibilityContext';
 import { SiteContactProvider } from './contexts/SiteContactContext';
 import { MarketingProvider } from './contexts/MarketingContext';
 import { useMarketingTags } from './hooks/useMarketingTags';
@@ -78,6 +79,7 @@ function Routes() {
   return (
     <BrowserRouter>
       <LoanProductsProvider>
+        <MarketplaceVisibilityProvider>
         <SiteContactProvider>
           <MarketingProvider>
             <ErrorBoundary>
@@ -240,6 +242,7 @@ function Routes() {
           </ErrorBoundary>
           </MarketingProvider>
         </SiteContactProvider>
+        </MarketplaceVisibilityProvider>
       </LoanProductsProvider>
     </BrowserRouter>
   );

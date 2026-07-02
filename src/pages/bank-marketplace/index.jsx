@@ -91,7 +91,7 @@ const BankMarketplace = () => {
       slowTimer = setTimeout(() => setLoadSlowHint(true), 4000);
       const [data, creditCards] = await Promise.all([
         bankService?.getActiveBanks({
-          forceRefresh: true,
+          loanType: loanTypeSlug || undefined,
         }),
         creditCardService.listActive(isCreditCardView ? creditCardFilters : {}).catch(() => []),
       ]);

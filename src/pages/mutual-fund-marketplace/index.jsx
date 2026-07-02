@@ -21,6 +21,7 @@ import {
   resetMutualFundFilters,
 } from '../../utils/mutualFundFilters';
 import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 const MAX_COMPARE = 3;
 
@@ -43,17 +44,19 @@ const MutualFundMarketplacePage = () => {
     };
   });
 
+  const debouncedFilters = useDebouncedValue(filters, 350);
+
   const loadFunds = useCallback(async () => {
     if (!showCatalog) return;
     setLoading(true);
     try {
-      const list = await mutualFundService.listActive(filters);
+      const list = await mutualFundService.listActive(debouncedFilters);
       setFunds(Array.isArray(list) ? list : []);
     } catch {
       setFunds([]);
     }
     setLoading(false);
-  }, [filters, showCatalog]);
+  }, [debouncedFilters, showCatalog]);
 
   useEffect(() => { loadFunds(); }, [loadFunds]);
 

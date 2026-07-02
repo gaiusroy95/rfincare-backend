@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react';
 import { apiClient, setAccessToken } from '../lib/apiClient';
 
 const AuthContext = createContext(null)
@@ -182,19 +182,32 @@ export const AuthProvider = ({ children }) => {
     }
   }
 
-  const value = {
-    user,
-    userProfile,
-    loading,
-    profileLoading,
-    signIn,
-    signOut,
-    updateProfile,
-    employeeAccess,
-    refreshEmployeeAccess,
-    isAuthenticated: !!user,
-    getRoleBasedRoute: () => getRoleBasedRoute(userProfile?.role)
-  }
+  const value = useMemo(
+    () => ({
+      user,
+      userProfile,
+      loading,
+      profileLoading,
+      signIn,
+      signOut,
+      updateProfile,
+      employeeAccess,
+      refreshEmployeeAccess,
+      isAuthenticated: !!user,
+      getRoleBasedRoute: () => getRoleBasedRoute(userProfile?.role),
+    }),
+    [
+      user,
+      userProfile,
+      loading,
+      profileLoading,
+      signIn,
+      signOut,
+      updateProfile,
+      employeeAccess,
+      refreshEmployeeAccess,
+    ],
+  );
 
   return (
     <AuthContext.Provider value={value}>

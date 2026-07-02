@@ -6,7 +6,7 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
-import { useMarketplaceVisibility } from '../../hooks/useMarketplaceVisibility';
+import { useMarketplaceVisibility } from '../../contexts/MarketplaceVisibilityContext';
 import { buildProductCatalogChips, filterMarketplaceShowcase } from '../../utils/showcaseProducts';
 import BankOffersSection from '../product-landing/components/BankOffersSection';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';

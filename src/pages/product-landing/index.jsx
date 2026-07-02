@@ -6,7 +6,7 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
-import { useMarketplaceVisibility } from '../../hooks/useMarketplaceVisibility';
+import { useMarketplaceVisibility } from '../../contexts/MarketplaceVisibilityContext';
 import { buildProductCatalogChips } from '../../utils/showcaseProducts';
 import NotFound from '../NotFound';
 import BankOffersSection from './components/BankOffersSection';

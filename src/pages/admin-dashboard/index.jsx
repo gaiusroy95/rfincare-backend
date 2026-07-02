@@ -30,8 +30,7 @@ import DocumentVerificationModal from './components/DocumentVerificationModal';
 import ApplicationDeleteModal from './components/ApplicationDeleteModal';
 import { adminService } from '../../services/adminService';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
-import { pickCustomerPhotoDocument } from '../../utils/applicationFormDetails';
-import { getDocumentPreviewUrl } from '../../utils/documentUrls';
+import { resolveUploadUrl } from '../../utils/documentUrls';
 import BankManagementTab from './components/BankManagementTab';
 import CreditCardsTab from './components/CreditCardsTab';
 import InsuranceTab from './components/InsuranceTab';
@@ -208,30 +207,25 @@ const AdminDashboard = () => {
     date: new Date(app?.createdAt || app?.submittedAt)?.toISOString()?.split('T')?.[0] || '',
   });
 
-  const enrichApplicationsWithPhotos = async (apps) => {
-    const rows = await Promise.all(
-      apps.map(async (app) => {
-        try {
-          const { data: docs } = await adminService.getApplicationDocuments(app.id);
-          const photo = pickCustomerPhotoDocument(docs || []);
-          const url = getDocumentPreviewUrl(photo);
-          return mapApplicationRow(app, url);
-        } catch {
-          return mapApplicationRow(app, null);
-        }
-      }),
-    );
-    return rows;
-  };
+  const enrichApplicationsWithPhotos = (apps) =>
+    apps.map((app) => {
+      const photoUrl = app.customerPhotoUrl ? resolveUploadUrl(app.customerPhotoUrl) : null;
+      return mapApplicationRow(app, photoUrl);
+    });
 
   const loadApplications = async (filterState = filters) => {
-    const { data: apps, error } = await adminService.getAllApplications(filterState);
+    const { data: apps, error } = await adminService.getAllApplications({
+      ...filterState,
+      page: 1,
+      pageSize: 50,
+      includePhotos: true,
+    });
     if (error) {
       setApplicationsData([]);
       return { error };
     }
     const list = Array.isArray(apps) ? apps : [];
-    const rows = await enrichApplicationsWithPhotos(list);
+    const rows = enrichApplicationsWithPhotos(list);
     setApplicationsData(rows);
     return { error: null };
   };

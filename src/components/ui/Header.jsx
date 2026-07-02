@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
+import { useMarketplaceVisibility } from '../../contexts/MarketplaceVisibilityContext';
 import { employeeCanReachRoute } from '../../utils/employeeAccess';
-import { adminProfileService } from '../../services/adminProfileService';
 import Icon from '../AppIcon';
 import Button from './Button';
 import LanguageSwitcher from './LanguageSwitcher';
@@ -40,12 +40,7 @@ const Header = ({ children }) => {
   const { user, userProfile, employeeAccess } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-  const [marketplaceVisibility, setMarketplaceVisibility] = useState({
-    bankMarketplace: true,
-    creditCardMarketplace: true,
-    insuranceMarketplace: true,
-    mutualFundMarketplace: true,
-  });
+  const { visibility: marketplaceVisibility } = useMarketplaceVisibility();
 
   const isGuest = !user;
   const currentRole = userProfile?.role || 'customer';
@@ -67,25 +62,6 @@ const Header = ({ children }) => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
-
-  useEffect(() => {
-    let active = true;
-    adminProfileService
-      .getPublicMarketplaceVisibility()
-      .then((data) => {
-        if (!active || !data) return;
-        setMarketplaceVisibility({
-          bankMarketplace: data.bankMarketplace !== false,
-          creditCardMarketplace: data.creditCardMarketplace !== false,
-          insuranceMarketplace: data.insuranceMarketplace !== false,
-          mutualFundMarketplace: data.mutualFundMarketplace !== false,
-        });
-      })
-      .catch(() => {});
-    return () => {
-      active = false;
-    };
-  }, []);
 
   const marketplaceNav = useMemo(
     () => [

@@ -83,7 +83,7 @@ export const bankService = {
     const params = { includeProducts: options.includeProducts !== false };
     if (options.loanType) params.loanType = options.loanType;
     if (options.includeProducts === false) params.includeProducts = false;
-    return fetchBankList(params, { forceRefresh: options.forceRefresh !== false });
+    return fetchBankList(params, { forceRefresh: options.forceRefresh === true });
   },
   async getBankById(bankId) {
     const res = await apiClient.get(`/banks/${bankId}`);

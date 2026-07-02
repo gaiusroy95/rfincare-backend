@@ -23,6 +23,7 @@ import {
   resetInsuranceFilters,
 } from '../../utils/insuranceFilters';
 import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 const MAX_COMPARE = 3;
 
@@ -51,17 +52,19 @@ const InsuranceMarketplacePage = () => {
     };
   });
 
+  const debouncedFilters = useDebouncedValue(filters, 350);
+
   const loadProducts = useCallback(async () => {
     if (!showCatalog) return;
     setLoading(true);
     try {
-      const list = await insuranceService.listActive(filters);
+      const list = await insuranceService.listActive(debouncedFilters);
       setProducts(Array.isArray(list) ? list : []);
     } catch {
       setProducts([]);
     }
     setLoading(false);
-  }, [filters, showCatalog]);
+  }, [debouncedFilters, showCatalog]);
 
   useEffect(() => {
     loadProducts();

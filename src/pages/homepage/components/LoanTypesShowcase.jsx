@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
-import { useMarketplaceVisibility } from '../../../hooks/useMarketplaceVisibility';
+import { useMarketplaceVisibility } from '../../../contexts/MarketplaceVisibilityContext';
 import {
   buildHomepageShowcaseProducts,
   getShowcasePrimaryCtaLabel,

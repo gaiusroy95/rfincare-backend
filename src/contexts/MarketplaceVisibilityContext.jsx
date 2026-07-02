@@ -1,5 +1,9 @@
-import { useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { adminProfileService } from '../services/adminProfileService';
+import { queryCacheFetch } from '../lib/queryCache';
+
+const CACHE_KEY = 'public:marketplace-visibility';
+const CACHE_TTL_MS = 5 * 60 * 1000;
 
 const DEFAULT_VISIBILITY = {
   bankMarketplace: true,
@@ -8,14 +12,22 @@ const DEFAULT_VISIBILITY = {
   mutualFundMarketplace: true,
 };
 
-export function useMarketplaceVisibility() {
+const MarketplaceVisibilityContext = createContext({
+  visibility: DEFAULT_VISIBILITY,
+  loading: true,
+});
+
+export function MarketplaceVisibilityProvider({ children }) {
   const [visibility, setVisibility] = useState(DEFAULT_VISIBILITY);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     let active = true;
-    adminProfileService
-      .getPublicMarketplaceVisibility()
+    queryCacheFetch(
+      CACHE_KEY,
+      () => adminProfileService.getPublicMarketplaceVisibility(),
+      CACHE_TTL_MS,
+    )
       .then((data) => {
         if (!active || !data) return;
         setVisibility({
@@ -34,5 +46,15 @@ export function useMarketplaceVisibility() {
     };
   }, []);
 
-  return { visibility, loading };
+  const value = useMemo(() => ({ visibility, loading }), [visibility, loading]);
+
+  return (
+    <MarketplaceVisibilityContext.Provider value={value}>
+      {children}
+    </MarketplaceVisibilityContext.Provider>
+  );
+}
+
+export function useMarketplaceVisibility() {
+  return useContext(MarketplaceVisibilityContext);
 }
