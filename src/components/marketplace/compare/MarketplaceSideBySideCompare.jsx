@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Icon from '../../AppIcon';
-import Button from '../ui/Button';
-import { COMPARE_SORT_OPTIONS, getMarketplaceCompareConfig, sortCompareProducts } from '../../constants/marketplaceCompareConfig';
+import Button from '../../ui/Button';
+import { COMPARE_SORT_OPTIONS, getMarketplaceCompareConfig, sortCompareProducts } from '../../../constants/marketplaceCompareConfig';
 
 function FeatureList({ items, included = true }) {
   if (!items?.length) return <span className="text-xs text-muted-foreground">—</span>;
