@@ -6,14 +6,30 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
+import { useMarketplaceVisibility } from '../../hooks/useMarketplaceVisibility';
+import { buildProductCatalogChips, filterMarketplaceShowcase } from '../../utils/showcaseProducts';
 import BankOffersSection from '../product-landing/components/BankOffersSection';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
+
+const MARKETPLACE_COMPARE_LINKS = [
+  { slug: 'insurance', label: 'Insurance plans', path: '/insurance-marketplace', icon: 'Shield', visibilityKey: 'insuranceMarketplace' },
+  { slug: 'mutual_fund', label: 'Mutual funds', path: '/mutual-fund-marketplace', icon: 'TrendingUp', visibilityKey: 'mutualFundMarketplace' },
+  { slug: 'credit_card', label: 'Credit cards', path: '/credit-cards', icon: 'CreditCard', visibilityKey: 'creditCardMarketplace' },
+  { slug: 'bank', label: 'Bank loans', path: '/bank-marketplace', icon: 'Building2', visibilityKey: 'bankMarketplace' },
+];
+
+function getCatalogViewRoute(product) {
+  if (product.route) return product.route;
+  if (product.slug === 'credit_card') return '/credit-cards';
+  return `/products/${product.slug}`;
+}
 
 const ProductComparison = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams] = useSearchParams();
   const { products: loanProducts } = useLoanProducts();
+  const { visibility } = useMarketplaceVisibility();
   const filterSlug = searchParams.get('loanType');
   const activeProduct = filterSlug ? getLoanProductBySlug(filterSlug) : null;
   const [selectedSlugs, setSelectedSlugs] = useState([]);
@@ -30,20 +46,43 @@ const ProductComparison = () => {
     navigate(`/product-comparison?loanType=${slug}#bank-comparison`);
   };
 
-  const catalog = useMemo(
-    () =>
-      loanProducts.map((p, index) => ({
-        id: index + 1,
-        slug: p.slug,
-        name: p.label,
-        icon: p.icon,
-        interestRate: p.interestRange,
-        maxAmount: p.features[0]?.replace('Up to ', '') || '—',
-        tenure: p.features[1] || '—',
-        processingFee: 'Varies by lender',
-        features: p.features,
-      })),
-    [loanProducts],
+  const catalog = useMemo(() => {
+    const loans = loanProducts.map((p, index) => ({
+      id: index + 1,
+      slug: p.slug,
+      name: p.label,
+      icon: p.icon,
+      interestRate: p.interestRange,
+      maxAmount: p.features[0]?.replace('Up to ', '') || '—',
+      tenure: p.features[1] || '—',
+      processingFee: 'Varies by lender',
+      features: p.features,
+      kind: 'loan',
+    }));
+    const marketplaces = filterMarketplaceShowcase(visibility).map((p, index) => ({
+      id: `mp-${index}`,
+      slug: p.slug,
+      name: p.label,
+      icon: p.icon,
+      interestRate: p.interestRange,
+      maxAmount: '—',
+      tenure: '—',
+      processingFee: '—',
+      features: p.features,
+      kind: 'marketplace',
+      route: p.route,
+    }));
+    return [...loans, ...marketplaces];
+  }, [loanProducts, visibility]);
+
+  const filterChips = useMemo(
+    () => buildProductCatalogChips(loanProducts, visibility),
+    [loanProducts, visibility],
+  );
+
+  const marketplaceCompareLinks = useMemo(
+    () => MARKETPLACE_COMPARE_LINKS.filter((item) => visibility[item.visibilityKey] !== false),
+    [visibility],
   );
 
   const visibleProducts = useMemo(() => {
@@ -90,9 +129,9 @@ const ProductComparison = () => {
       <main>
         <section className="bg-gradient-to-br from-primary via-secondary to-accent text-white py-16 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-6">Compare Loan Products</h1>
+            <h1 className="text-4xl md:text-5xl font-bold mb-6">Compare Products</h1>
             <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
-              Compare loan types side by side, then compare bank offers for the same product on this page
+              Compare loans, insurance, mutual funds, and credit cards side by side — then drill into bank and marketplace offers
             </p>
           </div>
         </section>
@@ -120,19 +159,60 @@ const ProductComparison = () => {
             >
               All products
             </Link>
-            {loanProducts.map((p) => (
-              <Link
-                key={p.slug}
-                to={`/product-comparison?loanType=${p.slug}#bank-comparison`}
-                className={`px-4 py-2 rounded-full text-sm border ${
-                  filterSlug === p.slug ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-card'
-                }`}
-              >
-                {p.shortLabel}
-              </Link>
-            ))}
+            {filterChips
+              .filter((p) => p.chipKind !== 'compare')
+              .map((p) => (
+                <Link
+                  key={p.slug}
+                  to={
+                    p.chipKind === 'loan'
+                      ? `/product-comparison?loanType=${p.slug}#bank-comparison`
+                      : p.route
+                  }
+                  className={`px-4 py-2 rounded-full text-sm border ${
+                    filterSlug === p.slug ? 'bg-primary text-primary-foreground border-primary' : 'border-border bg-card'
+                  }`}
+                >
+                  {p.shortLabel || p.label}
+                </Link>
+              ))}
+            <Link
+              to="/product-comparison"
+              className="px-4 py-2 rounded-full text-sm border border-primary/30 bg-primary/5 text-primary font-medium"
+            >
+              Compare
+            </Link>
           </div>
         </section>
+
+        {!activeProduct && marketplaceCompareLinks.length > 0 && (
+          <section className="py-8 bg-card border-b border-border">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <h2 className="text-xl md:text-2xl font-bold mb-2 text-center">Marketplace comparison</h2>
+              <p className="text-sm text-muted-foreground text-center mb-6 max-w-2xl mx-auto">
+                Open a marketplace to compare live plans with side-by-side columns, filters, and apply links.
+              </p>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {marketplaceCompareLinks.map((item) => (
+                  <Link
+                    key={item.slug}
+                    to={item.path}
+                    className="flex items-center gap-3 rounded-xl border border-border bg-background p-4 hover:border-primary/40 hover:shadow-md transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Icon name={item.icon} size={20} color="var(--color-primary)" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="font-semibold text-sm">{item.label}</p>
+                      <p className="text-xs text-muted-foreground">Side-by-side compare</p>
+                    </div>
+                    <Icon name="ArrowRight" size={16} className="ml-auto text-muted-foreground flex-shrink-0" />
+                  </Link>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
 
         {activeProduct && (
           <BankOffersSection product={activeProduct} />
@@ -172,17 +252,20 @@ const ProductComparison = () => {
                     )}
                   </div>
                   <h3 className="text-xl font-semibold mb-2">{product.name}</h3>
-                  <p className="text-sm text-gray-600">Interest: {product.interestRate}</p>
+                  <p className="text-sm text-gray-600">
+                    {product.kind === 'marketplace' ? 'From: ' : 'Interest: '}
+                    {product.interestRate}
+                  </p>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="mt-3 w-full"
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(`/products/${product.slug}`);
+                      navigate(getCatalogViewRoute(product));
                     }}
                   >
-                    View product page
+                    {product.kind === 'marketplace' ? 'Open marketplace' : 'View product page'}
                   </Button>
                 </div>
               ))}
@@ -211,7 +294,7 @@ const ProductComparison = () => {
                   </thead>
                   <tbody>
                     <tr className="border-b">
-                      <td className="p-4 font-medium">Interest rate</td>
+                      <td className="p-4 font-medium">{selectedProductDetails.some((p) => p.kind === 'marketplace') ? 'Rate / premium' : 'Interest rate'}</td>
                       {selectedProductDetails.map((product) => (
                         <td key={product.slug} className="p-4">{product.interestRate}</td>
                       ))}
@@ -232,21 +315,51 @@ const ProductComparison = () => {
                       <td className="p-4 font-medium">Actions</td>
                       {selectedProductDetails.map((product) => (
                         <td key={product.slug} className="p-4 space-y-2">
-                          <Button
-                            size="sm"
-                            className="w-full"
-                            iconName="GitCompare"
-                            onClick={() => openBankCompareForProduct(product.slug)}
-                          >
-                            Compare bank offers
-                          </Button>
+                          {product.kind === 'marketplace' ? (
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              iconName="GitCompare"
+                              onClick={() => navigate(product.route)}
+                            >
+                              Compare in marketplace
+                            </Button>
+                          ) : product.slug === 'credit_card' ? (
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              iconName="GitCompare"
+                              onClick={() => navigate('/credit-cards')}
+                            >
+                              Compare cards
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="w-full"
+                              iconName="GitCompare"
+                              onClick={() => openBankCompareForProduct(product.slug)}
+                            >
+                              Compare bank offers
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="outline"
                             className="w-full"
-                            onClick={() => openAssessmentOrEligibilityFirst(navigate, { slug: product.slug })}
+                            onClick={() => {
+                              if (product.kind === 'marketplace') {
+                                navigate(product.route);
+                                return;
+                              }
+                              if (product.slug === 'credit_card') {
+                                navigate('/credit-cards');
+                                return;
+                              }
+                              openAssessmentOrEligibilityFirst(navigate, { slug: product.slug });
+                            }}
                           >
-                            Apply now
+                            {product.kind === 'marketplace' ? 'Explore' : 'Apply now'}
                           </Button>
                         </td>
                       ))}

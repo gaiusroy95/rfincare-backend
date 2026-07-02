@@ -117,11 +117,11 @@ const Header = ({ children }) => {
   const guestMoreNav = useMemo(
     () => [
       { label: 'About Us', path: '/about-us', icon: 'Info' },
-      { label: 'Product Comparison', path: '/product-comparison', icon: 'GitCompare' },
+      { label: t('header.productComparison', 'Compare Products'), path: '/product-comparison', icon: 'GitCompare' },
       { label: 'Check Eligibility', path: '/eligibility-assessment', icon: 'CheckCircle' },
       { label: 'Contact Us', path: '/contact-us', icon: 'Phone' },
     ],
-    [],
+    [t],
   );
 
   const customerNav = useMemo(

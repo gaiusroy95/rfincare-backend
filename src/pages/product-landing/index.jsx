@@ -6,6 +6,8 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
+import { useMarketplaceVisibility } from '../../hooks/useMarketplaceVisibility';
+import { buildProductCatalogChips } from '../../utils/showcaseProducts';
 import NotFound from '../NotFound';
 import BankOffersSection from './components/BankOffersSection';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
@@ -14,7 +16,12 @@ const ProductLanding = () => {
   const { loanType } = useParams();
   const navigate = useNavigate();
   const { products, loading } = useLoanProducts();
+  const { visibility } = useMarketplaceVisibility();
   const product = useMemo(() => getLoanProductBySlug(loanType), [loanType, products]);
+  const catalogChips = useMemo(
+    () => buildProductCatalogChips(products, visibility),
+    [products, visibility],
+  );
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -33,7 +40,7 @@ const ProductLanding = () => {
   }
 
   const qs = `loanType=${product.slug}`;
-  const otherProducts = products.filter((p) => p.slug !== product.slug);
+  const otherProducts = catalogChips.filter((p) => p.slug !== product.slug);
 
   return (
     <div className="min-h-screen bg-background">
@@ -114,15 +121,15 @@ const ProductLanding = () => {
 
         <section className="py-10 bg-background border-t border-border">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-lg font-semibold mb-4">Other loan products</h2>
+            <h2 className="text-lg font-semibold mb-4">Other products</h2>
             <div className="flex flex-wrap gap-2">
               {otherProducts.map((p) => (
                 <Link
                   key={p.slug}
-                  to={`/products/${p.slug}`}
+                  to={p.route || `/products/${p.slug}`}
                   className="px-4 py-2 rounded-full text-sm border border-border hover:bg-muted transition-colors"
                 >
-                  {p.shortLabel}
+                  {p.shortLabel || p.label}
                 </Link>
               ))}
             </div>

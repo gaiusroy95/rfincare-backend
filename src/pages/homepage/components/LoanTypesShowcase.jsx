@@ -1,13 +1,37 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { useLoanProducts } from '../../../contexts/LoanProductsContext';
+import { useMarketplaceVisibility } from '../../../hooks/useMarketplaceVisibility';
+import {
+  buildHomepageShowcaseProducts,
+  getShowcasePrimaryCtaLabel,
+  getShowcaseViewRoute,
+} from '../../../utils/showcaseProducts';
 import { openAssessmentOrEligibilityFirst } from '../../../utils/eligibilityGate';
 
 const LoanTypesShowcase = () => {
   const navigate = useNavigate();
   const { products: loanProducts, loading } = useLoanProducts();
+  const { visibility } = useMarketplaceVisibility();
+
+  const showcaseProducts = useMemo(
+    () => buildHomepageShowcaseProducts(loanProducts, visibility),
+    [loanProducts, visibility],
+  );
+
+  const handlePrimaryCta = (item) => {
+    if (item.kind === 'compare' || item.kind === 'marketplace') {
+      navigate(getShowcaseViewRoute(item));
+      return;
+    }
+    if (item.slug === 'credit_card') {
+      navigate('/credit-cards');
+      return;
+    }
+    openAssessmentOrEligibilityFirst(navigate, { slug: item.slug });
+  };
 
   return (
     <section className="bg-muted py-12 md:py-16 lg:py-20">
@@ -25,8 +49,11 @@ const LoanTypesShowcase = () => {
           {loading && (
             <p className="col-span-full text-center text-muted-foreground py-8">Loading loan products…</p>
           )}
-          {!loading && loanProducts.map((loan) => (
-            <div key={loan.slug} className="feature-card">
+          {!loading && showcaseProducts.map((loan) => (
+            <div
+              key={loan.slug}
+              className={`feature-card ${loan.kind === 'compare' ? 'ring-2 ring-primary/20 bg-primary/5' : ''}`}
+            >
               <div className="flex items-start space-x-4 mb-4">
                 <div
                   className="w-14 h-14 md:w-16 md:h-16 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -42,7 +69,9 @@ const LoanTypesShowcase = () => {
 
               <div className="bg-muted rounded-lg p-4 mb-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs md:text-sm font-medium text-muted-foreground">Interest Rate Range</span>
+                  <span className="text-xs md:text-sm font-medium text-muted-foreground">
+                    {loan.kind === 'marketplace' ? 'Starting from' : 'Interest Rate Range'}
+                  </span>
                   <span className="text-sm md:text-base font-bold" style={{ color: loan.color }}>
                     {loan.interestRange}
                   </span>
@@ -62,17 +91,17 @@ const LoanTypesShowcase = () => {
                   variant="default"
                   size="sm"
                   className="flex-1"
-                  onClick={() => navigate(`/products/${loan.slug}`)}
+                  onClick={() => navigate(getShowcaseViewRoute(loan))}
                 >
-                  View product
+                  {loan.kind === 'compare' ? 'Compare now' : 'View product'}
                 </Button>
                 <Button
                   variant="outline"
                   size="sm"
                   className="flex-1"
-                  onClick={() => openAssessmentOrEligibilityFirst(navigate, { slug: loan.slug })}
+                  onClick={() => handlePrimaryCta(loan)}
                 >
-                  Apply now
+                  {getShowcasePrimaryCtaLabel(loan)}
                 </Button>
               </div>
             </div>
