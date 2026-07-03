@@ -1,9 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import PortalShell from '../../components/layout/PortalShell';
 import DashboardKpiCard from '../../components/dashboard/DashboardKpiCard';
-import { EMPLOYEE_NAV_ITEMS } from '../../constants/portalNavigation';
+import {
+  EMPLOYEE_NAV_ITEMS,
+  EMPLOYEE_ALWAYS_VISIBLE_TABS,
+  getEmployeeTabFromSearch,
+} from '../../constants/portalNavigation';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
@@ -25,6 +29,8 @@ import SessionTimeout from '../../components/SessionTimeout';
 import { useAuth } from '../../contexts/AuthContext';
 import { usePortalPolling } from '../../hooks/usePortalPolling';
 import StaffCommunicationPanel from '../agent-dashboard/components/StaffCommunicationPanel';
+import CustomerSupportPanel from '../customer-dashboard/components/CustomerSupportPanel';
+import EmployeeSettingsPanel from './components/EmployeeSettingsPanel';
 import { staffMessagingService } from '../../services/staffMessagingService';
 import {
   employeeCan,
@@ -36,6 +42,7 @@ import {
 
 const EmployeePortal = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { signOut, employeeAccess: authEmployeeAccess } = useAuth();
   const [selectedDocument, setSelectedDocument] = useState(null);
   const [selectedAgent, setSelectedAgent] = useState(null);
@@ -43,7 +50,7 @@ const EmployeePortal = () => {
   const [filterPriority, setFilterPriority] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeTab, setActiveTab] = useState('applications');
+  const [activeTab, setActiveTab] = useState(() => getEmployeeTabFromSearch(searchParams));
   const [initialLoading, setInitialLoading] = useState(true);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const loadInFlightRef = useRef(false);
@@ -299,17 +306,26 @@ const EmployeePortal = () => {
   const tabs = allTabs.filter((tab) => !tab.module || employeeCan(effectiveAccess, tab.module, 'read'));
 
   useEffect(() => {
+    const tab = getEmployeeTabFromSearch(searchParams);
+    if (tab !== activeTab) setActiveTab(tab);
+  }, [searchParams]);
+
+  useEffect(() => {
     if (!tabs.length) return;
+    if (EMPLOYEE_ALWAYS_VISIBLE_TABS.includes(activeTab)) return;
     if (!tabs.some((tab) => tab.id === activeTab)) {
-      setActiveTab(tabs[0].id);
+      const nextTab = tabs[0].id;
+      setActiveTab(nextTab);
+      setSearchParams(nextTab === 'applications' ? {} : { tab: nextTab });
     }
-  }, [tabs, activeTab]);
+  }, [tabs, activeTab, setSearchParams]);
 
   const accessLabels = grantedModuleLabels(effectiveAccess);
   const accessBlocked = effectiveAccess?.configured && !isEmployeeAccessActive(effectiveAccess);
 
 
   const employeeNavItems = EMPLOYEE_NAV_ITEMS.filter((item) => {
+    if (item.tab && EMPLOYEE_ALWAYS_VISIBLE_TABS.includes(item.tab)) return true;
     const tab = tabs.find((t) => t.id === item.tab);
     if (item.tab && !tab) return false;
     return true;
@@ -319,12 +335,28 @@ const EmployeePortal = () => {
   });
 
   const handleEmployeeNav = (item) => {
-    if (item.path) {
-      navigate(item.path);
-      return;
+    if (item.tab) {
+      setActiveTab(item.tab);
+      if (item.tab === 'applications') {
+        setSearchParams({});
+      } else {
+        setSearchParams({ tab: item.tab });
+      }
     }
-    if (item.tab) setActiveTab(item.tab);
   };
+
+  const EMPLOYEE_TAB_HEADINGS = {
+    applications: null,
+    leads: { title: 'Leads & CRM', subtitle: 'Manage and follow up on customer leads.' },
+    agents: { title: 'Agent Verification', subtitle: 'Review and verify pending agent registrations.' },
+    documents: { title: 'Documents', subtitle: 'Review pending document uploads.' },
+    training: { title: 'Training', subtitle: 'Complete modules to boost productivity.' },
+    activity: { title: 'Activity Log', subtitle: 'Your recent actions and audit trail.' },
+    support: { title: 'Support Center', subtitle: 'Get help from our operations team.' },
+    settings: { title: 'Settings', subtitle: 'Update your profile photo and password.' },
+  };
+
+  const tabHeading = EMPLOYEE_TAB_HEADINGS[activeTab];
 
   const employeeKpis = dashboardStats ? [
     { title: 'Pending Review', value: String(dashboardStats.pendingReview ?? 0), icon: 'Clock', iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
@@ -351,7 +383,7 @@ const EmployeePortal = () => {
         <div>
           <p className="text-sm font-bold text-foreground mb-1">Training Hub</p>
           <p className="text-xs text-muted-foreground mb-3">Complete modules to boost productivity</p>
-          <Button className="rf-btn-primary w-full" size="sm" onClick={() => setActiveTab('training')}>
+          <Button className="rf-btn-primary w-full" size="sm" onClick={() => handleEmployeeNav({ tab: 'training' })}>
             Start Learning
           </Button>
         </div>
@@ -370,15 +402,24 @@ const EmployeePortal = () => {
       <SessionTimeout timeoutMinutes={30} warningMinutes={2} />
 
         <div className="mb-6">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-            Welcome back! 👋
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            Manage verifications, applications, and customer support tasks
-          </p>
+          {tabHeading ? (
+            <>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{tabHeading.title}</h1>
+              <p className="text-sm text-muted-foreground">{tabHeading.subtitle}</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                Welcome back! 👋
+              </h1>
+              <p className="text-sm text-muted-foreground">
+                Manage verifications, applications, and customer support tasks
+              </p>
+            </>
+          )}
         </div>
 
-        {employeeKpis.length > 0 ? (
+        {activeTab === 'applications' && employeeKpis.length > 0 ? (
           <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
             {employeeKpis.map((kpi) => (
               <DashboardKpiCard key={kpi.title} {...kpi} />
@@ -386,13 +427,13 @@ const EmployeePortal = () => {
           </div>
         ) : null}
 
-        {accessBlocked && (
+        {activeTab === 'applications' && accessBlocked && (
           <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             Your portal access has expired or been disabled. Contact your administrator.
           </div>
         )}
 
-        {!accessBlocked && (
+        {activeTab === 'applications' && !accessBlocked && (
           <div className="mb-4 rounded-lg border border-border bg-muted/40 px-4 py-3">
             <p className="text-xs font-semibold text-foreground mb-2">Your assigned access</p>
             {accessLabels.length > 0 ? (
@@ -418,7 +459,7 @@ const EmployeePortal = () => {
           </div>
         )}
 
-        {activeTab === 'applications' && (
+        {activeTab === 'applications' && !accessBlocked && (
           <div className="space-y-6">
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
@@ -662,6 +703,10 @@ const EmployeePortal = () => {
             onOpenResource={handleLearningOpen}
           />
         )}
+
+        {activeTab === 'support' && <CustomerSupportPanel />}
+
+        {activeTab === 'settings' && <EmployeeSettingsPanel />}
 
       {activeLearningResource && (
         <LearningResourceModal

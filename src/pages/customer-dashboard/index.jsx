@@ -4,7 +4,7 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import PortalShell from '../../components/layout/PortalShell';
 import DashboardKpiCard from '../../components/dashboard/DashboardKpiCard';
-import { CUSTOMER_NAV_ITEMS } from '../../constants/portalNavigation';
+import { CUSTOMER_NAV_ITEMS, CUSTOMER_TAB_IDS } from '../../constants/portalNavigation';
 import ApplicationStatusCard from './components/ApplicationStatusCard';
 import DocumentCard from './components/DocumentCard';
 import NotificationCard from './components/NotificationCard';
@@ -56,8 +56,13 @@ const CustomerDashboard = () => {
   const [creditPullError, setCreditPullError] = useState('');
 
   useEffect(() => {
-    const tab = searchParams.get('tab');
-    if (tab && tab !== activeTab) setActiveTab(tab);
+    const tab = searchParams.get('tab') || 'overview';
+    if (!CUSTOMER_TAB_IDS.includes(tab)) {
+      setSearchParams({});
+      setActiveTab('overview');
+      return;
+    }
+    if (tab !== activeTab) setActiveTab(tab);
   }, [searchParams]);
 
   const loadFinancialSnapshot = async () => {
@@ -316,8 +321,23 @@ const CustomerDashboard = () => {
       )}
       headerActions={(
         <>
-          <Button variant="outline" size="sm" onClick={() => navigate('/product-comparison')}>Explore Products</Button>
-          <Button className="rf-btn-primary" size="sm" onClick={() => openAssessmentOrEligibilityFirst(navigate)}>Apply for Loan</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rf-portal-action-hide-md"
+            title="Explore Products"
+            onClick={() => navigate('/product-comparison')}
+          >
+            Explore Products
+          </Button>
+          <Button
+            className="rf-btn-primary"
+            size="sm"
+            title="Apply for Loan"
+            onClick={() => openAssessmentOrEligibilityFirst(navigate)}
+          >
+            Apply for Loan
+          </Button>
         </>
       )}
     >

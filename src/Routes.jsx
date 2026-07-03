@@ -202,6 +202,14 @@ function Routes() {
                   }
                 />
                 <Route
+                  path="/agent-learning"
+                  element={
+                    <ProtectedRoute allowedRoles={['agent', 'admin', 'super_admin']}>
+                      <SuspenseRoute><AgentLearningPage /></SuspenseRoute>
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
                   path="/agent/settings"
                   element={
                     <ProtectedRoute allowedRoles={['agent', 'admin', 'super_admin']}>

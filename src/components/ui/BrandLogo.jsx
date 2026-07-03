@@ -10,6 +10,8 @@ const SIZES = {
   lg: 'h-12',
   xl: 'h-14',
   '2xl': 'h-[4.5rem]',
+  icon: 'h-9',
+  sidebar: 'h-16',
 };
 
 /** Taller image height when cropping embedded tagline from logo.png */
@@ -19,7 +21,12 @@ const IMG_SIZES_CROP = {
   lg: 'h-[4.25rem]',
   xl: 'h-[5.25rem]',
   '2xl': 'h-[6.5rem]',
+  icon: 'h-9 w-9 object-contain',
+  sidebar: 'h-auto w-[220px] max-w-none',
 };
+
+/** Width-based crop — shows RFINCARE wordmark clearly in portal sidebars */
+const SIDEBAR_LOGO_WIDTH = 220;
 
 /**
  * RFINCARE logo — image from public/assets with text wordmark fallback.
@@ -34,16 +41,27 @@ const BrandLogo = ({
   const [imgFailed, setImgFailed] = useState(false);
 
   const containerHeight = SIZES[size] || SIZES.md;
-  const imgHeight = wordmarkOnly
+  const isSidebar = size === 'sidebar';
+  const isIcon = size === 'icon';
+  const imgHeight = wordmarkOnly && !isSidebar && !isIcon
     ? IMG_SIZES_CROP[size] || IMG_SIZES_CROP.md
-    : containerHeight;
+    : isSidebar
+      ? IMG_SIZES_CROP.sidebar
+      : isIcon
+        ? IMG_SIZES_CROP.icon
+        : containerHeight;
 
   if (!imgFailed) {
     const img = (
       <img
         src={LOGO_SRC}
         alt="RFINCARE"
-        className={`${imgHeight} w-auto object-contain object-left object-top`}
+        className={
+          isSidebar
+            ? `${imgHeight} object-contain object-left object-top`
+            : `${imgHeight} w-auto object-contain object-left object-top`
+        }
+        style={isSidebar ? { width: SIDEBAR_LOGO_WIDTH } : undefined}
         onError={(e) => {
           if (e.currentTarget.src.includes(LOGO_SRC_ALT)) {
             setImgFailed(true);
@@ -57,7 +75,13 @@ const BrandLogo = ({
     return (
       <div className={`inline-flex flex-col leading-none ${className}`}>
         {wordmarkOnly ? (
-          <div className={`${containerHeight} overflow-hidden flex items-start`}>{img}</div>
+          <div
+            className={`${containerHeight} overflow-hidden flex items-start ${
+              isSidebar ? 'w-full max-w-[220px]' : ''
+            }`}
+          >
+            {img}
+          </div>
         ) : (
           img
         )}
@@ -70,7 +94,14 @@ const BrandLogo = ({
     );
   }
 
-  const textSizes = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl', xl: 'text-4xl', '2xl': 'text-5xl' };
+  const textSizes = {
+    sm: 'text-lg',
+    md: 'text-2xl',
+    lg: 'text-3xl',
+    xl: 'text-4xl',
+    '2xl': 'text-5xl',
+    sidebar: 'text-3xl',
+  };
 
   return (
     <div className={`inline-flex flex-col leading-none ${className}`}>

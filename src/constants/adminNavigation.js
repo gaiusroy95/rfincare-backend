@@ -4,7 +4,7 @@
  * route: separate admin page
  */
 export const ADMIN_NAV_ITEMS = [
-  { label: 'Applications', tab: 'applications', icon: 'FileText' },
+  { label: 'Dashboard', tab: 'applications', icon: 'LayoutDashboard' },
   { label: 'Registrations', tab: 'registrations', icon: 'UserPlus' },
   { label: 'Agents', tab: 'agents', icon: 'Users' },
   { label: 'Employees', tab: 'employees', icon: 'Briefcase' },

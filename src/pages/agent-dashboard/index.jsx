@@ -1,9 +1,16 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import PortalShell from '../../components/layout/PortalShell';
 import DashboardKpiCard from '../../components/dashboard/DashboardKpiCard';
-import { AGENT_NAV_ITEMS } from '../../constants/portalNavigation';
+import {
+  AGENT_NAV_ITEMS,
+  resolveAgentNavFromSearch,
+  getAgentSearchParamsForNavId,
+} from '../../constants/portalNavigation';
+import CustomerSupportPanel from '../customer-dashboard/components/CustomerSupportPanel';
+import AgentSettingsPanel from './components/AgentSettingsPanel';
+import AgentProductsPanel from './components/AgentProductsPanel';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import PerformanceMetrics from './components/PerformanceMetrics';
@@ -30,10 +37,42 @@ import { resolveAvatarUrl } from '../../services/agentProfileService';
 import { resolveUploadUrl } from '../../utils/documentUrls';
 import { useAuth } from '../../contexts/AuthContext';
 
+const CLIENT_SECTION_META = {
+  leads: { title: 'Leads', subtitle: 'New prospects in your pipeline.' },
+  applications: { title: 'Applications', subtitle: 'Track in-progress loan applications.' },
+  customers: { title: 'My Customers', subtitle: 'All clients you are working with.' },
+};
+
+const PERFORMANCE_SECTION_META = {
+  earnings: { title: 'My Earnings', subtitle: 'Commission earned and payout history.' },
+  payouts: { title: 'Payouts', subtitle: 'Pending and upcoming commission payouts.' },
+  reports: { title: 'Reports', subtitle: 'Performance analytics and commission reports.' },
+};
+
+const VIEW_HEADINGS = {
+  learning: { title: 'Trainings & Materials', subtitle: 'Courses, guides, and marketing resources.' },
+  products: { title: 'Products', subtitle: 'Browse financial products to offer your clients.' },
+  support: { title: 'Support Center', subtitle: 'Get help from our team — we are here for you.' },
+  settings: { title: 'Profile Settings', subtitle: 'Manage your photo, login, and payout account.' },
+  refer: { title: 'Refer & Earn', subtitle: 'Invite partners and grow your income.' },
+};
+
+function filterClientsBySection(clients, section) {
+  if (section === 'leads') return clients.filter((c) => c.status === 'new');
+  if (section === 'applications') {
+    return clients.filter((c) => ['in-progress', 'documents', 'submitted'].includes(c.status));
+  }
+  return clients;
+}
+
 const AgentDashboard = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { userProfile, signOut } = useAuth();
-  const [selectedView, setSelectedView] = useState('overview');
+  const navState = resolveAgentNavFromSearch(searchParams);
+  const selectedView = navState.view;
+  const selectedSection = navState.section;
+  const activeNavId = navState.navId;
   const [dashboard, setDashboard] = useState(null);
   const [loading, setLoading] = useState(true);
   const [communicationOpen, setCommunicationOpen] = useState(false);
@@ -43,31 +82,35 @@ const AgentDashboard = () => {
     mode: 'help',
   });
 
-  const loadDashboard = useCallback(async () => {
-    setLoading(true);
+  const loadDashboard = useCallback(async ({ background = false } = {}) => {
+    if (!background) setLoading(true);
     try {
       const data = await agentService.getDashboard();
       setDashboard(data);
     } catch (err) {
-      console.error('Agent dashboard load failed:', err);
-      setDashboard({
-        profile: { name: userProfile?.full_name || 'Agent', tier: 'Agent' },
-        metrics: [
-          { id: 1, type: 'customers', label: 'Active Clients', value: '0', subtitle: 'Could not load data' },
-        ],
-        clients: [],
-        performanceAnalytics: { week: [], month: [], quarter: [], year: [] },
-      });
+      if (!background) {
+        console.error('Agent dashboard load failed:', err);
+      }
+      setDashboard((prev) =>
+        prev || {
+          profile: { name: userProfile?.full_name || 'Agent', tier: 'Agent' },
+          metrics: [
+            { id: 1, type: 'customers', label: 'Active Clients', value: '0', subtitle: 'Could not load data' },
+          ],
+          clients: [],
+          performanceAnalytics: { week: [], month: [], quarter: [], year: [] },
+        },
+      );
     } finally {
-      setLoading(false);
+      if (!background) setLoading(false);
     }
-  }, []);
+  }, [userProfile?.full_name]);
 
   useEffect(() => {
     loadDashboard();
   }, [loadDashboard]);
 
-  usePortalPolling(loadDashboard, 20000, !loading);
+  usePortalPolling(() => loadDashboard({ background: true }), 20000, true);
 
   const agentProfile = {
     name: dashboard?.profile?.name || userProfile?.full_name || 'Agent',
@@ -230,16 +273,14 @@ const AgentDashboard = () => {
         openCommunication({}, 'help');
         break;
       case 'schedule-meeting':
-        // Scroll to appointments section or open scheduling modal
-        setSelectedView('overview');
+        setSearchParams({});
         setTimeout(() => {
           const appointmentsSection = document.querySelector('[data-section="appointments"]');
           appointmentsSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
         break;
       case 'view-commission':
-        // Switch to performance view to show commission tracker
-        setSelectedView('performance');
+        setSearchParams({ view: 'performance', section: 'earnings' });
         setTimeout(() => {
           const commissionSection = document.querySelector('[data-section="commission"]');
           commissionSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -253,14 +294,22 @@ const AgentDashboard = () => {
   const leadCount = clients.filter((c) => c.status === 'new').length;
 
   const handleNavSelect = (item) => {
-    if (item.path) {
-      navigate(item.path);
-      return;
+    const params = getAgentSearchParamsForNavId(item.id);
+    if (Object.keys(params).length === 0) {
+      setSearchParams({});
+    } else {
+      setSearchParams(params);
     }
-    if (item.view) setSelectedView(item.view);
   };
 
-  const sidebarActiveId = AGENT_NAV_ITEMS.find((n) => n.view === selectedView)?.id || 'overview';
+  const sectionMeta =
+    selectedView === 'clients'
+      ? CLIENT_SECTION_META[selectedSection] || CLIENT_SECTION_META.leads
+      : selectedView === 'performance'
+        ? PERFORMANCE_SECTION_META[selectedSection] || PERFORMANCE_SECTION_META.earnings
+        : VIEW_HEADINGS[selectedView];
+
+  const filteredClients = filterClientsBySection(clients, selectedSection || 'leads');
 
   const agentKpis = [
     { title: 'Total Leads', value: String(dashboard?.metrics?.find((m) => m.type === 'leads')?.value || clients.length), change: '+18.4%', icon: 'UserPlus' },
@@ -277,7 +326,7 @@ const AgentDashboard = () => {
         ...item,
         badge: item.badgeKey === 'leads' ? leadCount : 0,
       }))}
-      activeId={sidebarActiveId}
+      activeId={activeNavId}
       onNavSelect={handleNavSelect}
       userName={agentProfile?.name}
       userRole="Agent"
@@ -292,13 +341,19 @@ const AgentDashboard = () => {
         <div>
           <p className="text-sm font-bold text-foreground mb-1">Earn More</p>
           <p className="text-xs text-muted-foreground mb-3">Refer partners and grow your income</p>
-          <Button className="rf-btn-primary w-full" size="sm" onClick={() => navigate('/share-your-story')}>
+          <Button className="rf-btn-primary w-full" size="sm" onClick={() => handleNavSelect({ id: 'refer' })}>
             Refer Now
           </Button>
         </div>
       )}
       headerActions={(
-        <Button className="rf-btn-primary" size="sm" iconName="Download" onClick={() => handleQuickAction('view-commission')}>
+        <Button
+          className="rf-btn-primary"
+          size="sm"
+          iconName="Download"
+          title="Download Report"
+          onClick={() => handleQuickAction('view-commission')}
+        >
           Download Report
         </Button>
       )}
@@ -306,10 +361,19 @@ const AgentDashboard = () => {
       <SessionTimeout timeoutMinutes={30} warningMinutes={2} />
 
         <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-            Welcome back, {agentProfile?.name?.split(' ')?.[0]}! 👋
-          </h1>
-          <p className="text-sm text-muted-foreground">Here&apos;s your business overview for today.</p>
+          {selectedView === 'overview' ? (
+            <>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                Welcome back, {agentProfile?.name?.split(' ')?.[0]}! 👋
+              </h1>
+              <p className="text-sm text-muted-foreground">Here&apos;s your business overview for today.</p>
+            </>
+          ) : sectionMeta ? (
+            <>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{sectionMeta.title}</h1>
+              <p className="text-sm text-muted-foreground">{sectionMeta.subtitle}</p>
+            </>
+          ) : null}
         </div>
 
         {selectedView === 'overview' ? (
@@ -371,40 +435,133 @@ const AgentDashboard = () => {
 
             <TrainingResources
               resources={trainingResources}
-              onViewAll={() => navigate('/agent/learning')}
+              onViewAll={() => handleNavSelect({ id: 'training' })}
               onOpenResource={handleLearningOpen}
               onStartResource={handleLearningStart}
             />
           </div>
         }
 
-        {selectedView === 'clients' &&
-        <div className="space-y-6">
-            <ClientKanbanBoard
-            clients={clients}
-            onClientClick={handleClientClick}
-            onStatusChange={handleStatusChange} />
-
-          </div>
-        }
-
-        {selectedView === 'performance' &&
-        <div className="space-y-6">
-            <PerformanceMetrics metrics={performanceMetrics} />
-            <PerformanceChart performanceAnalytics={performanceAnalytics} fallbackData={chartData} />
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div data-section="commission">
-                <CommissionTracker commissions={commissions} />
+        {selectedView === 'clients' && (
+          <div className="space-y-6">
+            {selectedSection === 'customers' ? (
+              <div className="bg-card rounded-lg border border-border overflow-hidden">
+                {filteredClients.length === 0 ? (
+                  <p className="text-sm text-muted-foreground p-6 text-center">No customers yet.</p>
+                ) : (
+                  <div className="divide-y divide-border">
+                    {filteredClients.map((client) => (
+                      <div key={client.id} className="p-4 md:p-5 flex items-center justify-between gap-4">
+                        <div>
+                          <p className="font-semibold text-foreground">{client.name}</p>
+                          <p className="text-sm text-muted-foreground">{client.loanType || 'Loan application'}</p>
+                        </div>
+                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-muted text-muted-foreground capitalize">
+                          {client.status?.replace('-', ' ')}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
-              <TrainingResources
-                resources={trainingResources}
-                onViewAll={() => navigate('/agent/learning')}
-                onOpenResource={handleLearningOpen}
-                onStartResource={handleLearningStart}
+            ) : (
+              <ClientKanbanBoard
+                clients={filteredClients}
+                onClientClick={handleClientClick}
+                onStatusChange={handleStatusChange}
               />
+            )}
+          </div>
+        )}
+
+        {selectedView === 'performance' && (
+          <div className="space-y-6">
+            {selectedSection === 'earnings' && (
+              <>
+                <PerformanceMetrics metrics={performanceMetrics} />
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  <div data-section="commission">
+                    <CommissionTracker commissions={commissions} />
+                  </div>
+                  <CommissionReportPanel />
+                </div>
+              </>
+            )}
+            {selectedSection === 'payouts' && (
+              <>
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
+                  <DashboardKpiCard
+                    title="Pending Payout"
+                    value={`₹${(dashboard?.pendingPayout || 0).toLocaleString('en-IN')}`}
+                    subtitle="Next payout: 25 May"
+                    icon="Wallet"
+                    iconBg="bg-sky-50"
+                    iconColor="text-sky-600"
+                  />
+                  <DashboardKpiCard
+                    title="Total Earnings"
+                    value={`₹${(dashboard?.totalEarnings || 0).toLocaleString('en-IN')}`}
+                    icon="IndianRupee"
+                    iconBg="bg-orange-50"
+                    iconColor="text-orange-600"
+                  />
+                </div>
+                <CommissionTracker commissions={commissions} />
+              </>
+            )}
+            {selectedSection === 'reports' && (
+              <>
+                <PerformanceChart performanceAnalytics={performanceAnalytics} fallbackData={chartData} />
+                <CommissionReportPanel />
+              </>
+            )}
+            {!selectedSection && (
+              <>
+                <PerformanceMetrics metrics={performanceMetrics} />
+                <PerformanceChart performanceAnalytics={performanceAnalytics} fallbackData={chartData} />
+                <CommissionTracker commissions={commissions} />
+              </>
+            )}
+          </div>
+        )}
+
+        {selectedView === 'learning' && (
+          <div className="space-y-6">
+            {selectedSection === 'marketing' && (
+              <div className="bg-card border border-border rounded-lg p-4 md:p-6">
+                <h2 className="text-lg font-semibold text-foreground mb-2">Marketing Toolkit</h2>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Download brochures, social media creatives, and co-branded materials for your campaigns.
+                </p>
+              </div>
+            )}
+            <TrainingResources
+              resources={trainingResources}
+              onOpenResource={handleLearningOpen}
+              onStartResource={handleLearningStart}
+            />
+          </div>
+        )}
+
+        {selectedView === 'products' && <AgentProductsPanel />}
+
+        {selectedView === 'support' && <CustomerSupportPanel />}
+
+        {selectedView === 'settings' && <AgentSettingsPanel />}
+
+        {selectedView === 'refer' && (
+          <div className="space-y-6">
+            <AgentReferralBanner attribution={dashboard?.attribution} />
+            <div className="bg-card border border-border rounded-lg p-6 text-center">
+              <p className="text-muted-foreground mb-4">
+                Share your referral link and earn commissions when partners join RFINCARE.
+              </p>
+              <Button className="rf-btn-primary" iconName="Share2" onClick={() => navigate('/share-your-story')}>
+                Share Referral Link
+              </Button>
             </div>
           </div>
-        }
+        )}
 
       <StaffCommunicationPanel
         isOpen={communicationOpen}

@@ -11,20 +11,22 @@ export const CUSTOMER_NAV_ITEMS = [
   { id: 'settings', label: 'Settings', icon: 'Settings', tab: 'settings' },
 ];
 
+export const CUSTOMER_TAB_IDS = CUSTOMER_NAV_ITEMS.map((i) => i.tab).filter(Boolean);
+
 export const AGENT_NAV_ITEMS = [
   { id: 'overview', label: 'Dashboard', icon: 'LayoutDashboard', view: 'overview' },
-  { id: 'leads', label: 'Leads', icon: 'UserPlus', view: 'clients', badgeKey: 'leads' },
-  { id: 'applications', label: 'Applications', icon: 'FileText', view: 'clients' },
-  { id: 'customers', label: 'My Customers', icon: 'Users', view: 'clients' },
-  { id: 'earnings', label: 'My Earnings', icon: 'IndianRupee', view: 'performance' },
-  { id: 'payouts', label: 'Payouts', icon: 'Wallet', view: 'performance' },
-  { id: 'marketing', label: 'Marketing Tools', icon: 'Megaphone', path: '/agent-learning' },
-  { id: 'products', label: 'Products', icon: 'Package', path: '/product-comparison' },
-  { id: 'training', label: 'Trainings & Materials', icon: 'GraduationCap', path: '/agent-learning' },
-  { id: 'refer', label: 'Refer & Earn', icon: 'Gift', view: 'overview' },
-  { id: 'support', label: 'Support Center', icon: 'Headphones', path: '/contact-us' },
-  { id: 'reports', label: 'Reports', icon: 'BarChart3', view: 'performance' },
-  { id: 'settings', label: 'Profile Settings', icon: 'Settings', path: '/agent/settings' },
+  { id: 'leads', label: 'Leads', icon: 'UserPlus', view: 'clients', section: 'leads', badgeKey: 'leads' },
+  { id: 'applications', label: 'Applications', icon: 'FileText', view: 'clients', section: 'applications' },
+  { id: 'customers', label: 'My Customers', icon: 'Users', view: 'clients', section: 'customers' },
+  { id: 'earnings', label: 'My Earnings', icon: 'IndianRupee', view: 'performance', section: 'earnings' },
+  { id: 'payouts', label: 'Payouts', icon: 'Wallet', view: 'performance', section: 'payouts' },
+  { id: 'marketing', label: 'Marketing Tools', icon: 'Megaphone', view: 'learning', section: 'marketing' },
+  { id: 'products', label: 'Products', icon: 'Package', view: 'products' },
+  { id: 'training', label: 'Trainings & Materials', icon: 'GraduationCap', view: 'learning', section: 'training' },
+  { id: 'refer', label: 'Refer & Earn', icon: 'Gift', view: 'refer' },
+  { id: 'support', label: 'Support Center', icon: 'Headphones', view: 'support' },
+  { id: 'reports', label: 'Reports', icon: 'BarChart3', view: 'performance', section: 'reports' },
+  { id: 'settings', label: 'Profile Settings', icon: 'Settings', view: 'settings' },
 ];
 
 export const EMPLOYEE_NAV_ITEMS = [
@@ -34,6 +36,47 @@ export const EMPLOYEE_NAV_ITEMS = [
   { id: 'documents', label: 'Documents', icon: 'FolderOpen', tab: 'documents' },
   { id: 'training', label: 'Training', icon: 'GraduationCap', tab: 'training' },
   { id: 'activity', label: 'Activity Log', icon: 'Activity', tab: 'activity' },
-  { id: 'support', label: 'Support Center', icon: 'Headphones', path: '/contact-us' },
-  { id: 'settings', label: 'Settings', icon: 'Settings', path: '/employee/settings' },
+  { id: 'support', label: 'Support Center', icon: 'Headphones', tab: 'support' },
+  { id: 'settings', label: 'Settings', icon: 'Settings', tab: 'settings' },
 ];
+
+export const EMPLOYEE_ALWAYS_VISIBLE_TABS = ['support', 'settings'];
+
+export function resolveAgentNavFromSearch(searchParams) {
+  const view = searchParams.get('view');
+  const section = searchParams.get('section');
+
+  if (!view) {
+    return { view: 'overview', section: null, navId: 'overview' };
+  }
+
+  const exact = AGENT_NAV_ITEMS.find(
+    (item) => item.view === view && (item.section ? item.section === section : !section),
+  );
+  if (exact) {
+    return { view: exact.view, section: exact.section || null, navId: exact.id };
+  }
+
+  const byView = AGENT_NAV_ITEMS.find((item) => item.view === view);
+  if (byView) {
+    return { view: byView.view, section: byView.section || section || null, navId: byView.id };
+  }
+
+  return { view: 'overview', section: null, navId: 'overview' };
+}
+
+export function getAgentSearchParamsForNavId(navId) {
+  const item = AGENT_NAV_ITEMS.find((i) => i.id === navId);
+  if (!item || item.view === 'overview') return {};
+  if (item.section) return { view: item.view, section: item.section };
+  return { view: item.view };
+}
+
+export function getEmployeeTabFromSearch(searchParams) {
+  const tab = searchParams.get('tab');
+  const validTabs = [
+    ...EMPLOYEE_NAV_ITEMS.map((i) => i.tab).filter(Boolean),
+  ];
+  if (tab && validTabs.includes(tab)) return tab;
+  return 'applications';
+}
