@@ -7,7 +7,7 @@ const ProfileSummaryCard = ({ profile, onEditProfile }) => {
   const completionPercentage = profile?.completionPercentage || 0;
 
   return (
-    <div className="bg-gradient-to-br from-primary to-secondary rounded-lg p-6 md:p-8 text-white">
+    <div className="bg-[var(--color-brand-green-dark)] rounded-lg p-6 md:p-8 text-white">
       <div className="flex flex-col md:flex-row items-start md:items-center gap-4 md:gap-6 mb-6">
         <div className="relative">
           <div className="w-20 h-20 md:w-24 md:h-24 rounded-full overflow-hidden border-4 border-white/20">

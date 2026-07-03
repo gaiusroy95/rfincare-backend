@@ -43,7 +43,7 @@ const LoanEmiCalculator = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main>
-        <section className="bg-gradient-to-br from-primary via-secondary to-accent text-white py-12 md:py-16">
+        <section className="bg-[var(--color-brand-green-dark)] text-white py-12 md:py-16">
           <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Icon name="Calculator" size={40} className="mx-auto mb-4 opacity-90" />
             <h1 className="text-3xl md:text-4xl font-bold mb-3">
@@ -58,7 +58,7 @@ const LoanEmiCalculator = () => {
         <section className="py-10 md:py-14">
           <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm space-y-5">
+              <div className="rf-filter-card space-y-5">
                 <h2 className="text-lg font-bold text-foreground">Loan details</h2>
 
                 <Input
@@ -96,7 +96,7 @@ const LoanEmiCalculator = () => {
               </div>
 
               <div className="space-y-6">
-                <div className="bg-primary text-primary-foreground rounded-2xl p-6 md:p-8 shadow-lg">
+                <div className="bg-[var(--color-brand-green-dark)] text-white rounded-2xl p-6 md:p-8 shadow-lg">
                   <p className="text-sm opacity-90 mb-1">Estimated monthly EMI</p>
                   <p className="text-4xl md:text-5xl font-bold tracking-tight">
                     {result ? formatInr(result.emi) : '—'}
@@ -137,7 +137,7 @@ const LoanEmiCalculator = () => {
                   <div className="flex flex-col sm:flex-row gap-3">
                     <Button
                       variant="default"
-                      className="flex-1"
+                      className="flex-1 rf-btn-primary"
                       iconName="Calculator"
                       iconPosition="left"
                       onClick={() => navigate('/eligibility-assessment')}

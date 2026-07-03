@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
-import Header from '../../components/ui/Header';
-import Footer from '../homepage/components/Footer';
+import MarketingPageShell from '../../components/layout/MarketingPageShell';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
+import Icon from '../../components/AppIcon';
 import { homepageService } from '../../services/homepageService';
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024;
@@ -67,118 +67,125 @@ const ShareYourStory = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="max-w-2xl mx-auto px-4 py-12">
-        <h1 className="text-3xl font-bold mb-2">Share Your Story</h1>
-        <p className="text-muted-foreground mb-8">
-          Tell us about your loan journey. Approved stories may appear on our homepage after review.
-        </p>
-        {done ? (
-          <p className="text-green-600 font-medium">
-            Thank you! Your story is pending moderation and will appear once approved.
-          </p>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {error && <p className="text-destructive text-sm">{error}</p>}
-            <Input
-              label="Your name"
-              value={form.submitterName}
-              onChange={(e) => setForm({ ...form, submitterName: e.target.value })}
-              required
-            />
-            <Input
-              label="Email"
-              type="email"
-              value={form.submitterEmail}
-              onChange={(e) => setForm({ ...form, submitterEmail: e.target.value })}
-              required
-            />
-            <Input
-              label="Phone"
-              value={form.submitterPhone}
-              onChange={(e) => setForm({ ...form, submitterPhone: e.target.value })}
-              placeholder="10-digit mobile (recommended)"
-            />
-            <Select
-              label="I am a"
-              value={form.storyType}
-              onChange={(v) => setForm({ ...form, storyType: v })}
-              options={[
-                { value: 'customer', label: 'Customer' },
-                { value: 'agent', label: 'Agent' },
-              ]}
-            />
-            <div>
-              <label className="block text-sm font-medium mb-1">Your story</label>
-              <textarea
-                className="w-full min-h-[160px] rounded-md border border-input px-3 py-2"
-                value={form.storyText}
-                onChange={(e) => setForm({ ...form, storyText: e.target.value })}
-                required
-                minLength={20}
-                placeholder="Describe your experience (minimum 20 characters)"
-              />
-            </div>
-            <Input
-              label="Location (optional)"
-              value={form.location}
-              onChange={(e) => setForm({ ...form, location: e.target.value })}
-              placeholder="City, State"
-            />
-            <Input
-              label="Loan amount (optional)"
-              value={form.loanAmount}
-              onChange={(e) => setForm({ ...form, loanAmount: e.target.value })}
-              placeholder="e.g. ₹5,00,000"
-            />
-
-            <div className="space-y-2">
-              <label className="block text-sm font-medium">Photo (optional)</label>
-              <p className="text-xs text-muted-foreground">
-                Add a photo of yourself or your experience. JPG, PNG, or WebP, max 5 MB.
-              </p>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                className="hidden"
-                onChange={handlePhotoChange}
-              />
-              <div className="flex flex-wrap gap-3 items-start">
-                <Button
-                  type="button"
-                  variant="outline"
-                  iconName="Upload"
-                  onClick={() => fileInputRef.current?.click()}
-                >
-                  {photoFile ? 'Change photo' : 'Upload photo'}
-                </Button>
-                {photoFile && (
-                  <button
-                    type="button"
-                    onClick={clearPhoto}
-                    className="text-sm text-muted-foreground hover:text-foreground underline"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              {photoPreview && (
-                <div className="mt-2 rounded-lg border border-border overflow-hidden max-w-xs">
-                  <img src={photoPreview} alt="Preview" className="w-full h-auto object-cover max-h-48" />
+    <MarketingPageShell
+      title="Share Your Story"
+      subtitle="Tell us about your loan journey. Approved stories may appear on our homepage after review."
+    >
+      <section className="py-12">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="rf-filter-card">
+            {done ? (
+              <div className="text-center py-10">
+                <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icon name="CheckCircle" size={32} color="white" />
                 </div>
-              )}
-            </div>
+                <h3 className="text-xl font-bold mb-2">Thank you!</h3>
+                <p className="text-muted-foreground">
+                  Your story is pending moderation and will appear once approved.
+                </p>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                {error && <p className="text-destructive text-sm">{error}</p>}
+                <Input
+                  label="Your name"
+                  value={form.submitterName}
+                  onChange={(e) => setForm({ ...form, submitterName: e.target.value })}
+                  required
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  value={form.submitterEmail}
+                  onChange={(e) => setForm({ ...form, submitterEmail: e.target.value })}
+                  required
+                />
+                <Input
+                  label="Phone"
+                  value={form.submitterPhone}
+                  onChange={(e) => setForm({ ...form, submitterPhone: e.target.value })}
+                  placeholder="10-digit mobile (recommended)"
+                />
+                <Select
+                  label="I am a"
+                  value={form.storyType}
+                  onChange={(v) => setForm({ ...form, storyType: v })}
+                  options={[
+                    { value: 'customer', label: 'Customer' },
+                    { value: 'agent', label: 'Agent' },
+                  ]}
+                />
+                <div>
+                  <label className="block text-sm font-medium mb-1">Your story</label>
+                  <textarea
+                    className="w-full min-h-[160px] rounded-lg border border-border px-3 py-2 focus:ring-2 focus:ring-[var(--color-brand-green)]/30 outline-none"
+                    value={form.storyText}
+                    onChange={(e) => setForm({ ...form, storyText: e.target.value })}
+                    required
+                    minLength={20}
+                    placeholder="Describe your experience (minimum 20 characters)"
+                  />
+                </div>
+                <Input
+                  label="Location (optional)"
+                  value={form.location}
+                  onChange={(e) => setForm({ ...form, location: e.target.value })}
+                  placeholder="City, State"
+                />
+                <Input
+                  label="Loan amount (optional)"
+                  value={form.loanAmount}
+                  onChange={(e) => setForm({ ...form, loanAmount: e.target.value })}
+                  placeholder="e.g. ₹5,00,000"
+                />
 
-            <Button type="submit" disabled={loading} className="w-full">
-              {loading ? 'Submitting...' : 'Submit story'}
-            </Button>
-          </form>
-        )}
-      </main>
-      <Footer />
-    </div>
+                <div className="space-y-2">
+                  <label className="block text-sm font-medium">Photo (optional)</label>
+                  <p className="text-xs text-muted-foreground">
+                    Add a photo of yourself or your experience. JPG, PNG, or WebP, max 5 MB.
+                  </p>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
+                    className="hidden"
+                    onChange={handlePhotoChange}
+                  />
+                  <div className="flex flex-wrap gap-3 items-start">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      iconName="Upload"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      {photoFile ? 'Change photo' : 'Upload photo'}
+                    </Button>
+                    {photoFile && (
+                      <button
+                        type="button"
+                        onClick={clearPhoto}
+                        className="text-sm text-muted-foreground hover:text-foreground underline"
+                      >
+                        Remove
+                      </button>
+                    )}
+                  </div>
+                  {photoPreview && (
+                    <div className="mt-2 rounded-lg border border-border overflow-hidden max-w-xs">
+                      <img src={photoPreview} alt="Preview" className="w-full h-auto object-cover max-h-48" />
+                    </div>
+                  )}
+                </div>
+
+                <Button type="submit" disabled={loading} className="w-full rf-btn-primary">
+                  {loading ? 'Submitting...' : 'Submit story'}
+                </Button>
+              </form>
+            )}
+          </div>
+        </div>
+      </section>
+    </MarketingPageShell>
   );
 };
 

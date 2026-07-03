@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 
-import Header from '../../components/ui/Header';
+import MarketingPageShell from '../../components/layout/MarketingPageShell';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import BankSelectionCard from './components/BankSelectionCard';
@@ -237,22 +237,20 @@ const BankSelectionAndConsent = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">Loading...</p>
-          </div>
-        </main>
-      </div>
+      <MarketingPageShell title="Bank Selection & Consent" subtitle="Loading your application…">
+        <div className="py-12 text-center text-muted-foreground">Loading...</div>
+      </MarketingPageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        {/* Page Header */}
+    <MarketingPageShell
+      title="Bank Selection & Consent"
+      subtitle="Complete your loan application by selecting a bank and providing necessary consents"
+    >
+      <section className="py-8">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Page actions */}
         <div className="mb-6 md:mb-8">
           <button
             onClick={handleBackToMarketplace}
@@ -262,17 +260,8 @@ const BankSelectionAndConsent = () => {
             Back to Bank Marketplace
           </button>
 
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
-                Bank Selection & Consent
-              </h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                Complete your loan application by selecting a bank and providing necessary consents
-              </p>
-            </div>
-
-            <div className="flex items-center gap-3 p-3 md:p-4 bg-card border border-border rounded-lg">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-end gap-4">
+            <div className="flex items-center gap-3 p-3 md:p-4 rf-sidebar-widget">
               <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                 <Icon name="User" size={20} className="text-primary" />
               </div>
@@ -293,7 +282,7 @@ const BankSelectionAndConsent = () => {
 
         {/* Application Summary */}
         {currentStep < 4 && applicationData &&
-        <div className="mb-6 md:mb-8 bg-gradient-to-r from-primary/5 to-secondary/5 border border-primary/20 rounded-xl p-4 md:p-6">
+        <div className="mb-6 md:mb-8 bg-emerald-50 border border-emerald-200 rounded-xl p-4 md:p-6">
             <h3 className="text-base md:text-lg font-semibold text-foreground mb-4 flex items-center gap-2">
               <Icon name="FileText" size={20} className="text-primary" />
               Application Summary
@@ -467,8 +456,10 @@ const BankSelectionAndConsent = () => {
             </div>
           </div>
         }
-      </main>
-    </div>);
+      </div>
+      </section>
+    </MarketingPageShell>
+  );
 
 };
 

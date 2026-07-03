@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import { getWrongPortalMessage, resolveLoginRole } from '../../lib/portalLoginUtils';
 import { usePortalLoginRedirect } from '../../hooks/usePortalLoginRedirect';
-import Button from '../../components/ui/Button';
-import Input from '../../components/ui/Input';
+import PortalLoginLayout from '../../components/layout/PortalLoginLayout';
+import PortalLoginForm from '../../components/auth/PortalLoginForm';
 import Icon from '../../components/AppIcon';
 
 const EmployeeLogin = () => {
@@ -25,7 +25,6 @@ const EmployeeLogin = () => {
 
     try {
       const { data, error: signInError } = await signIn(email, password);
-      
       if (signInError) {
         setError(signInError?.message || 'Login failed');
         setLoading(false);
@@ -37,9 +36,8 @@ const EmployeeLogin = () => {
         await signOut();
         setError(getWrongPortalMessage(role, 'employee'));
         setLoading(false);
-        return;
       }
-    } catch (err) {
+    } catch {
       setError('An unexpected error occurred');
       setLoading(false);
     }
@@ -47,105 +45,47 @@ const EmployeeLogin = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+      <PortalLoginLayout title="Loading…" accent="employee">
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--color-brand-green)]" />
         </div>
-      </div>
+      </PortalLoginLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-blue-100 to-blue-200 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-2xl">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-blue-500 rounded-full flex items-center justify-center mb-4">
-            <Icon name="Users" size={32} color="white" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900">Employee Portal</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Process applications and manage tasks
-          </p>
+    <PortalLoginLayout
+      title="Employee Login"
+      subtitle="Process applications, verify documents, and manage tasks"
+      accent="employee"
+      footer={(
+        <p>
+          <button type="button" onClick={() => navigate('/login-page')} className="text-[var(--color-brand-green)] font-semibold hover:underline">All portal logins</button>
+          {' · '}
+          <button type="button" onClick={() => navigate('/homepage')} className="text-[var(--color-brand-green)] font-semibold hover:underline">Back to home</button>
+        </p>
+      )}
+    >
+      {error ? (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3 mb-4">
+          <Icon name="AlertCircle" size={20} color="#dc2626" />
+          <p className="text-sm text-red-800">{error}</p>
         </div>
+      ) : null}
 
-        {/* Error Message */}
-        {error && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start gap-3">
-            <Icon name="AlertCircle" size={20} color="#dc2626" />
-            <p className="text-sm text-red-800">{error}</p>
-          </div>
-        )}
-
-        {/* Login Form */}
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="space-y-4">
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email Address
-              </label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e?.target?.value)}
-                placeholder="employee@rfincare.com"
-                className="w-full"
-              />
-            </div>
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Password
-              </label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e?.target?.value)}
-                  placeholder="Enter your password"
-                  className="w-full pr-10"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  <Icon name={showPassword ? 'EyeOff' : 'Eye'} size={20} color="#6b7280" />
-                </button>
-              </div>
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            variant="default"
-            size="lg"
-            className="w-full"
-            disabled={loading}
-          >
-            {loading ? 'Signing in...' : 'Sign In as Employee'}
-          </Button>
-        </form>
-
-        {/* Footer Links */}
-        <div className="text-center space-y-2">
-          <button
-            onClick={() => navigate('/login-page')}
-            className="text-sm text-gray-600 hover:text-gray-900 underline"
-          >
-            Back to Login Selection
-          </button>
-        </div>
-      </div>
-    </div>
+      <PortalLoginForm
+        email={email}
+        password={password}
+        showPassword={showPassword}
+        loading={loading}
+        onEmailChange={(e) => setEmail(e.target.value)}
+        onPasswordChange={(e) => setPassword(e.target.value)}
+        onTogglePassword={() => setShowPassword((v) => !v)}
+        onSubmit={handleSubmit}
+        submitLabel="Sign In as Employee"
+        emailPlaceholder="employee@rfincare.com"
+      />
+    </PortalLoginLayout>
   );
 };
 

@@ -53,6 +53,7 @@ import AgentLearningTab from './components/AgentLearningTab';
 import EmployeeLearningTab from './components/EmployeeLearningTab';
 import AdminSettingsTab from './components/AdminSettingsTab';
 import Milestone4AdminPanel from './components/Milestone4AdminPanel';
+import AdminDashboardOverview from './components/AdminDashboardOverview';
 
 
 const AdminDashboard = () => {
@@ -107,7 +108,7 @@ const AdminDashboard = () => {
       change: '+0%',
       changeType: 'positive',
       icon: 'FileText',
-      iconBg: 'bg-gradient-to-br from-primary to-secondary',
+      iconBg: 'bg-[var(--color-brand-green-dark)]',
       trend: 'up'
     },
     {
@@ -148,6 +149,7 @@ const AdminDashboard = () => {
     priority: 'all',
     loanType: 'all'
   });
+  const [showApplicationsTable, setShowApplicationsTable] = useState(false);
 
   const activeTabMeta = ADMIN_NAV_ITEMS.find((i) => i.tab === activeTab);
 
@@ -165,6 +167,11 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (authLoading || !user) return;
     loadTabData(activeTab);
+    if (activeTab === 'applications' || activeTab === 'activity') {
+      adminService.getAuditLogs(20).then(({ data }) => {
+        if (data) setActivityLog(data);
+      });
+    }
   }, [activeTab, authLoading, user]);
 
   const resolveLoanTypeLabel = (app) => {
@@ -267,7 +274,7 @@ const AdminDashboard = () => {
             change: '+12.5%',
             changeType: 'positive',
             icon: 'FileText',
-            iconBg: 'bg-gradient-to-br from-primary to-secondary',
+            iconBg: 'bg-[var(--color-brand-green-dark)]',
             trend: 'up'
           },
           {
@@ -634,7 +641,7 @@ const AdminDashboard = () => {
           </div>
         )}
 
-        {showStats && (
+        {showStats && activeTab !== 'applications' && (
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mb-5">
             {statsData?.map((stat, index) => (
               <StatsCard key={index} {...stat} />
@@ -642,13 +649,44 @@ const AdminDashboard = () => {
           </div>
         )}
 
+        {activeTab === 'applications' && !showApplicationsTable && (
+          <AdminDashboardOverview
+            applications={applicationsData}
+            stats={{
+              totalApplications: statsData[0]?.value,
+              pendingReviews: statsData[1]?.value,
+              activeAgents: statsData[2]?.value,
+            }}
+            activityLog={activityLog}
+            onQuickAction={handleQuickAction}
+            onViewApplication={handleViewApplicationDetails}
+          />
+        )}
+
+        {activeTab === 'applications' && (
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <h1 className="text-xl md:text-2xl font-bold text-foreground">
+              {showApplicationsTable ? 'All Applications' : activeTabMeta?.label || 'Dashboard'}
+            </h1>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowApplicationsTable((v) => !v)}
+            >
+              {showApplicationsTable ? 'Back to overview' : 'Manage all applications'}
+            </Button>
+          </div>
+        )}
+
+        {activeTab !== 'applications' && (
         <div className="mb-4">
           <h1 className="text-xl md:text-2xl font-bold text-foreground">
             {activeTabMeta?.label || 'Dashboard'}
           </h1>
         </div>
+        )}
 
-        <div className="bg-card rounded-lg border border-border p-4 md:p-6">
+        <div className={`bg-card rounded-lg border border-border p-4 md:p-6 ${activeTab === 'applications' && !showApplicationsTable ? 'hidden' : ''}`}>
             {loading || tabLoading ? (
               <div className="text-center py-12">
                 <div className="inline-block animate-spin rounded-full h-10 w-10 border-b-2 border-primary" />

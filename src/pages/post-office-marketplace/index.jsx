@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import MarketplacePageShell from '../../components/layout/MarketplacePageShell';
+import { MarketplaceFilterSidebar, MarketplaceSearchInput } from '../../components/marketplace/MarketplacePageHelpers';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import Header from '../../components/ui/Header';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
 import MarketplaceLeadWizard from '../../components/marketplace/MarketplaceLeadWizard';
@@ -165,65 +166,38 @@ const PostOfficeMarketplacePage = () => {
     }
   }, [pendingProduct]);
 
+  const filterSidebar = (
+    <MarketplaceFilterSidebar resultCount={filteredProducts.length} onClear={() => setFilters(resetPostOfficeFilters())}>
+      <MarketplaceSearchInput
+        value={filters.search}
+        onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+        placeholder="Search scheme or product…"
+      />
+    </MarketplaceFilterSidebar>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
-        {resumeSessions.length > 0 ? (
-          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
-        ) : null}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Post Office Marketplace</h1>
-            <p className="text-sm text-muted-foreground">
-              Compare PPF, NSC, KVP, SCSS, MIS and other India Post savings schemes. Select up to {MAX_COMPARE} to compare side by side.
-            </p>
-            {profile?.fullName ? (
-              <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                <Icon name="CheckCircle2" size={14} />
-                Verified: {profile.phone} · {profile.email}
-              </p>
-            ) : null}
-          </div>
-          <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={() => openCalculator()}>
-              <Icon name="Calculator" size={16} />
-              Open calculator
-            </Button>
-            <Button variant="outline" onClick={() => navigate('/product-comparison')}>
-              <Icon name="GitCompare" size={16} />
-              Compare other products
-            </Button>
-          </div>
+    <>
+    <MarketplacePageShell
+      breadcrumbs={[{ label: 'Home', path: '/homepage' }, { label: 'Investments', path: '/investment-marketplace' }, { label: 'Post Office Schemes' }]}
+      title="Post Office Schemes"
+      subtitle="Compare PPF, NSC, KVP, SCSS, MIS and other India Post savings schemes."
+      benefits={[
+        { icon: 'ShieldCheck', label: 'Government Backed', sub: 'Sovereign guarantee' },
+        { icon: 'Percent', label: 'Attractive Rates', sub: 'Competitive interest' },
+        { icon: 'Calendar', label: 'Flexible Tenure', sub: 'Short to long term' },
+        { icon: 'Calculator', label: 'Maturity Calculator', sub: 'Plan your returns' },
+      ]}
+      resultCount={`${filteredProducts.length} Post Office Schemes`}
+      filterSidebar={filterSidebar}
+      ctaTitle="Not sure which post office scheme suits you?"
+      ctaButtonLabel="Get Free Recommendation"
+    >
+        {resumeSessions.length > 0 ? <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} /> : null}
+        <div className="flex gap-2 mb-4">
+          <Button variant="outline" size="sm" onClick={() => openCalculator()}><Icon name="Calculator" size={16} className="mr-1" /> Calculator</Button>
         </div>
-
-        <div className="rounded-2xl border border-border bg-card p-4 md:p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <div className="relative w-full md:w-[360px]">
-              <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={filters.search}
-                onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-                placeholder="Search scheme or product…"
-                className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <Button variant="ghost" onClick={() => setFilters(resetPostOfficeFilters())}>
-              Reset
-            </Button>
-          </div>
-
-          <div className="text-xs text-muted-foreground">
-            {filters.category !== 'all' ? (
-              <>Showing <span className="font-semibold text-foreground">{getCategoryLabel(filters.category)}</span> · {filteredProducts.length} options</>
-            ) : (
-              <>{filteredProducts.length} options</>
-            )}
-          </div>
-        </div>
-
-        <div className="space-y-4">
-          <MarketplaceProductGrid
+        <MarketplaceProductGrid
             items={[
               { slug: 'all', label: 'All', icon: 'LayoutGrid' },
               ...POST_OFFICE_PRODUCT_GRID,
@@ -235,7 +209,6 @@ const PostOfficeMarketplacePage = () => {
             title="Choose a scheme"
             subtitle="Government-backed post office savings and deposit products"
           />
-        </div>
 
         <MarketplaceCompareBoard
           type="post_office"
@@ -288,7 +261,7 @@ const PostOfficeMarketplacePage = () => {
             </Button>
           </div>
         ) : null}
-      </div>
+    </MarketplacePageShell>
 
       <PostOfficeCalculatorModal
         open={calculatorOpen}
@@ -304,7 +277,7 @@ const PostOfficeMarketplacePage = () => {
         productLabel={pendingProduct?.name}
         productCategory={pendingProduct?.categories?.[0]}
       />
-    </div>
+    </>
   );
 };
 

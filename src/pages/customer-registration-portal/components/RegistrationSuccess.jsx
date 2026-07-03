@@ -17,7 +17,7 @@ export default function RegistrationSuccess({ onNavigateToLogin }) {
           Thank you for registering with our loan platform. Your application has been received and is under review.
         </p>
         
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-left">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-6 text-left">
           <h3 className="font-semibold text-blue-900 mb-3">What happens next?</h3>
           <ul className="space-y-2 text-blue-800">
             <li className="flex items-start gap-2">
@@ -48,7 +48,7 @@ export default function RegistrationSuccess({ onNavigateToLogin }) {
 
       <button
         onClick={onNavigateToLogin}
-        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-8 rounded-lg transition-colors inline-flex items-center gap-2"
+        className="rf-btn-primary font-medium py-3 px-8 rounded-lg transition-colors inline-flex items-center gap-2"
       >
         Go to Login Page
         <ArrowRight className="w-5 h-5" />

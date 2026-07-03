@@ -8,7 +8,7 @@ const CalculatorProductCTA = ({ bridge }) => {
   if (!bridge) return null;
 
   return (
-    <div className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent border border-primary/25 rounded-2xl p-6 space-y-4">
+    <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6 space-y-4">
       <div>
         <p className="text-xs font-semibold uppercase tracking-wide text-primary mb-1">Next step</p>
         <h3 className="text-lg font-bold text-foreground">{bridge.headline}</h3>

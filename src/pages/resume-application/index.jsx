@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { leadService } from '../../services/leadService';
+import LoadingPageShell from '../../components/layout/LoadingPageShell';
 
 const SESSION_KEY = 'loan_assessment_session';
 
@@ -8,6 +9,7 @@ const ResumeApplicationPage = () => {
   const { token } = useParams();
   const navigate = useNavigate();
   const [message, setMessage] = useState('Restoring your application…');
+  const [isError, setIsError] = useState(false);
 
   useEffect(() => {
     const run = async () => {
@@ -26,17 +28,14 @@ const ResumeApplicationPage = () => {
           state: { resumeDraft: true },
         });
       } catch (err) {
+        setIsError(true);
         setMessage(err?.response?.data?.error || 'This link is invalid or expired.');
       }
     };
     run();
   }, [token, navigate]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center bg-background px-4">
-      <p className="text-muted-foreground text-center max-w-md">{message}</p>
-    </div>
-  );
+  return <LoadingPageShell message={message} error={isError} />;
 };
 
 export default ResumeApplicationPage;

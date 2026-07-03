@@ -27,7 +27,7 @@ export default function BankInfoForm({ formData, banks, onSubmit, onBack, loadin
               onClick={() => setLocalData(prev => ({ ...prev, preferredBankId: bank?.id }))}
               className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
                 localData?.preferredBankId === bank?.id
-                  ? 'border-blue-600 bg-blue-50' :'border-gray-200 hover:border-gray-300'
+                  ? 'border-[var(--color-brand-green)] bg-emerald-50' :'border-gray-200 hover:border-gray-300'
               }`}
             >
               <div className="flex items-center gap-3">

@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/ui/Header';
+import MarketingPageShell from '../../components/layout/MarketingPageShell';
 import Button from '../../components/ui/Button';
 import TrainingResources from '../agent-dashboard/components/TrainingResources';
 import {
@@ -78,16 +78,13 @@ const AgentLearningPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-foreground">Training &amp; Learning</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Videos, PDFs, presentations, and circulars from your admin team.
-            </p>
-          </div>
+    <MarketingPageShell
+      title="Training & Learning"
+      subtitle="Videos, PDFs, presentations, and circulars from your admin team."
+    >
+      <section className="py-10">
+      <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex justify-end mb-6">
           <Button variant="outline" iconName="ArrowLeft" onClick={() => navigate('/agent-dashboard')}>
             Dashboard
           </Button>
@@ -108,7 +105,8 @@ const AgentLearningPage = () => {
           />
         )}
       </main>
-    </div>
+      </section>
+    </MarketingPageShell>
   );
 };
 

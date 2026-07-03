@@ -68,7 +68,7 @@ export default function EmploymentForm({ formData, onSubmit, onBack }) {
         />
         <p className="mt-2 text-sm text-gray-500">Enter your total annual income before taxes</p>
       </div>
-      <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+      <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
         <p className="text-sm text-blue-800">
           <strong>Privacy Note:</strong> Your employment and income information is kept confidential and used only for loan eligibility assessment.
         </p>
@@ -84,7 +84,7 @@ export default function EmploymentForm({ formData, onSubmit, onBack }) {
         </button>
         <button
           type="submit"
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
+          className="flex-1 rf-btn-primary font-medium py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
         >
           Continue
           <ArrowRight className="w-5 h-5" />

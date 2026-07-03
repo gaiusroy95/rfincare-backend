@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import Header from '../../components/ui/Header';
+import PortalShell from '../../components/layout/PortalShell';
+import DashboardKpiCard from '../../components/dashboard/DashboardKpiCard';
+import { EMPLOYEE_NAV_ITEMS } from '../../constants/portalNavigation';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
@@ -307,161 +309,114 @@ const EmployeePortal = () => {
   const accessBlocked = effectiveAccess?.configured && !isEmployeeAccessActive(effectiveAccess);
 
 
+  const employeeNavItems = EMPLOYEE_NAV_ITEMS.filter((item) => {
+    const tab = tabs.find((t) => t.id === item.tab);
+    if (item.tab && !tab) return false;
+    return true;
+  }).map((item) => {
+    const tab = tabs.find((t) => t.id === item.tab);
+    return { ...item, badge: tab?.count || 0 };
+  });
+
+  const handleEmployeeNav = (item) => {
+    if (item.path) {
+      navigate(item.path);
+      return;
+    }
+    if (item.tab) setActiveTab(item.tab);
+  };
+
+  const employeeKpis = dashboardStats ? [
+    { title: 'Pending Review', value: String(dashboardStats.pendingReview ?? 0), icon: 'Clock', iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
+    { title: 'Completed Today', value: String(dashboardStats.completedToday ?? 0), change: '+8.2%', icon: 'CheckCircle2' },
+    { title: 'Pending Documents', value: String(dashboardStats.pendingDocuments ?? 0), icon: 'FolderOpen', iconBg: 'bg-violet-50', iconColor: 'text-violet-600' },
+    { title: 'Active Applications', value: String(assignedApplications.length), icon: 'FileText', iconBg: 'bg-sky-50', iconColor: 'text-sky-600' },
+    { title: 'Quality Score', value: '96%', subtitle: 'This month', icon: 'Award', iconBg: 'bg-emerald-50' },
+  ] : [];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <SessionTimeout timeoutMinutes={30} warningMinutes={2} />
-      
-      {/* Header */}
-      <Header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-employee-primary to-employee-secondary rounded-xl flex items-center justify-center shadow-lg">
-              <Icon name="Briefcase" className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-employee-primary to-employee-secondary bg-clip-text text-transparent">
-                Employee Portal
-              </h1>
-              <p className="text-sm text-gray-600">Document verification and application processing</p>
-            </div>
-          </div>
-          <Button
-            onClick={async () => {
-              await signOut();
-              navigate('/employee-login');
-            }}
-            variant="outline"
-            className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50"
-          >
-            <Icon name="LogOut" className="w-4 h-4" />
-            Logout
+    <PortalShell
+      portalLabel="Employee Portal"
+      navItems={employeeNavItems}
+      activeId={activeTab}
+      onNavSelect={handleEmployeeNav}
+      userName="Employee"
+      userRole="Operations"
+      notificationCount={unreadMessageCount}
+      onLogout={async () => {
+        await signOut();
+        navigate('/employee-login');
+      }}
+      promoCard={(
+        <div>
+          <p className="text-sm font-bold text-foreground mb-1">Training Hub</p>
+          <p className="text-xs text-muted-foreground mb-3">Complete modules to boost productivity</p>
+          <Button className="rf-btn-primary w-full" size="sm" onClick={() => setActiveTab('training')}>
+            Start Learning
           </Button>
         </div>
-      </Header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        <div className="mb-6 md:mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
-                Employee Portal
-              </h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                Manage verifications, applications, and customer support tasks
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {employeeCan(effectiveAccess, 'agents', 'read') && (
-                <Button
-                  variant="outline"
-                  iconName="MessageSquare"
-                  onClick={() => openCommunication({})}
-                >
-                  Agent messages
-                  {unreadMessageCount > 0 && (
-                    <span className="ml-2 px-2 py-0.5 bg-destructive text-destructive-foreground rounded-full text-xs font-semibold">
-                      {unreadMessageCount}
-                    </span>
-                  )}
-                </Button>
-              )}
-              <Button
-                variant="outline"
-                iconName="User"
-                onClick={() => navigate('/employee/settings')}
-              >
-                Profile
-              </Button>
-              {employeeCan(effectiveAccess, 'documents', 'read') && (
-                <Button
-                  variant="outline"
-                  onClick={() => navigate('/document-management-center')}
-                >
-                  <Icon name="FolderOpen" size={16} className="mr-2" />
-                  All documents
-                </Button>
-              )}
-              <Button
-                variant="default"
-                onClick={() => loadDashboardData()}
-                disabled={isRefreshing}
-              >
-                <Icon name="RefreshCw" size={16} className={`mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
-                {isRefreshing ? 'Refreshing…' : 'Refresh'}
-              </Button>
-            </div>
-          </div>
-
-          {accessBlocked && (
-            <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
-              Your portal access has expired or been disabled. Contact your administrator.
-            </div>
-          )}
-
-          {!accessBlocked && (
-            <div className="mb-4 rounded-lg border border-border bg-muted/40 px-4 py-3">
-              <p className="text-xs font-semibold text-foreground mb-2">Your assigned access</p>
-              {accessLabels.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {accessLabels.map((label) => (
-                    <span
-                      key={label}
-                      className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20"
-                    >
-                      {label}
-                    </span>
-                  ))}
-                </div>
-              ) : isAccessConfigured(effectiveAccess) ? (
-                <p className="text-xs text-amber-700">
-                  Access is configured but no modules are enabled. Contact your administrator.
-                </p>
-              ) : (
-                <p className="text-xs text-muted-foreground">
-                  Full employee access — all modules available (not restricted by admin).
-                </p>
-              )}
-              {effectiveAccess?.expiresAt && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Access valid until {new Date(effectiveAccess.expiresAt).toLocaleDateString('en-IN')}
-                </p>
-              )}
-            </div>
-          )}
-
-          {dashboardStats && (
-            <PerformanceMetrics metrics={{
-              tasksCompletedToday: dashboardStats?.completedToday ?? 0,
-              pendingTasks:
-                (Number(dashboardStats?.pendingReview) || 0) +
-                (Number(dashboardStats?.pendingDocuments) || 0),
-              avgProcessingTime: '18 min',
-              qualityScore: 96,
-            }} />
-          )}
-        </div>
+      )}
+      headerActions={(
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => loadDashboardData()}
+          disabled={isRefreshing}
+        >
+          <Icon name="RefreshCw" size={16} className={isRefreshing ? 'animate-spin' : ''} />
+        </Button>
+      )}
+    >
+      <SessionTimeout timeoutMinutes={30} warningMinutes={2} />
 
         <div className="mb-6">
-          <div className="flex flex-wrap gap-2 border-b border-border">
-            {tabs?.map((tab) =>
-            <button
-              key={tab?.id}
-              onClick={() => setActiveTab(tab?.id)}
-              className={`flex items-center space-x-2 px-4 py-3 border-b-2 transition-colors ${
-              activeTab === tab?.id
-                ? 'border-primary text-primary font-semibold' :'border-transparent text-muted-foreground hover:text-foreground hover:border-muted'
-              }`}>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+            Welcome back! 👋
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Manage verifications, applications, and customer support tasks
+          </p>
+        </div>
 
-                <Icon name={tab?.icon} size={18} />
-                <span className="text-sm md:text-base">{tab?.label}</span>
-                {tab?.count !== undefined && (
-                  <span className="ml-1 px-2 py-0.5 bg-primary text-primary-foreground rounded-full text-xs font-semibold">
-                    {tab?.count}
+        {employeeKpis.length > 0 ? (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+            {employeeKpis.map((kpi) => (
+              <DashboardKpiCard key={kpi.title} {...kpi} />
+            ))}
+          </div>
+        ) : null}
+
+        {accessBlocked && (
+          <div className="mb-4 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+            Your portal access has expired or been disabled. Contact your administrator.
+          </div>
+        )}
+
+        {!accessBlocked && (
+          <div className="mb-4 rounded-lg border border-border bg-muted/40 px-4 py-3">
+            <p className="text-xs font-semibold text-foreground mb-2">Your assigned access</p>
+            {accessLabels.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {accessLabels.map((label) => (
+                  <span
+                    key={label}
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs bg-primary/10 text-primary border border-primary/20"
+                  >
+                    {label}
                   </span>
-                )}
-              </button>
+                ))}
+              </div>
+            ) : isAccessConfigured(effectiveAccess) ? (
+              <p className="text-xs text-amber-700">
+                Access is configured but no modules are enabled. Contact your administrator.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Full employee access — all modules available (not restricted by admin).
+              </p>
             )}
           </div>
-        </div>
+        )}
 
         {activeTab === 'applications' && (
           <div className="space-y-6">
@@ -707,7 +662,6 @@ const EmployeePortal = () => {
             onOpenResource={handleLearningOpen}
           />
         )}
-      </main>
 
       {activeLearningResource && (
         <LearningResourceModal
@@ -757,7 +711,7 @@ const EmployeePortal = () => {
         variant="employee"
         initialMode="help"
       />
-    </div>
+    </PortalShell>
   );
 };
 

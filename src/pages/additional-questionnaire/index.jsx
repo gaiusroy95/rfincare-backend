@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import Header from '../../components/ui/Header';
+import MarketingPageShell from '../../components/layout/MarketingPageShell';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import QuestionSection from './components/QuestionSection';
@@ -443,9 +443,12 @@ const AdditionalQuestionnaire = () => {
   const canProceed = currentSection?.questions?.filter((q) => q?.required)?.every((q) => responses?.[q?.id] && responses?.[q?.id] !== '');
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8 py-6 md:py-8 lg:py-12">
+    <MarketingPageShell
+      title="Additional Questionnaire"
+      subtitle="Complete the required information for your selected banks"
+    >
+      <section className="py-8">
+      <main className="max-w-5xl mx-auto px-4 md:px-6 lg:px-8">
         <div className="mb-6 md:mb-8">
           <button
             onClick={() => navigate('/bank-selection-and-consent')}
@@ -454,13 +457,6 @@ const AdditionalQuestionnaire = () => {
             <Icon name="ArrowLeft" size={16} />
             <span>Back to Bank Selection</span>
           </button>
-
-          <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-foreground mb-2">
-            Additional Questionnaire
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Complete the required information for your selected banks
-          </p>
         </div>
 
         <ContextBanner
@@ -503,6 +499,7 @@ const AdditionalQuestionnaire = () => {
           canProceed={canProceed} />
 
       </main>
+      </section>
       {showSuccessModal &&
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 animate-fade-in">
           <div className="bg-card rounded-lg p-6 md:p-8 max-w-md w-full animate-scale-in">
@@ -532,7 +529,7 @@ const AdditionalQuestionnaire = () => {
           </div>
         </div>
       }
-    </div>);
+    </MarketingPageShell>);
 
 };
 

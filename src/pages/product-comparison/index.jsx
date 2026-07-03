@@ -155,7 +155,7 @@ const ProductComparison = () => {
       <Header />
 
       <main>
-        <section className="bg-gradient-to-br from-primary via-secondary to-accent text-white py-16 md:py-20">
+        <section className="bg-[var(--color-brand-green-dark)] text-white py-16 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-6">Compare Products</h1>
             <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
@@ -313,7 +313,7 @@ const ProductComparison = () => {
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                      <Icon name={product.icon} size={24} color="#6366f1" />
+                      <Icon name={product.icon} size={24} className="text-[var(--color-brand-green)]" />
                     </div>
                     {selectedSlugs.includes(product.slug) && (
                       <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
@@ -355,7 +355,7 @@ const ProductComparison = () => {
                       {selectedProductDetails.map((product) => (
                         <th key={product.slug} className={`p-4 text-left font-semibold ${product.slug === bestLoanSlug ? 'bg-emerald-50' : ''}`}>
                           <div className="flex items-center space-x-2">
-                            <Icon name={product.icon} size={20} color="#6366f1" />
+                            <Icon name={product.icon} size={20} className="text-[var(--color-brand-green)]" />
                             <span>{product.name}</span>
                             {product.slug === bestLoanSlug && (
                               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white ml-1">

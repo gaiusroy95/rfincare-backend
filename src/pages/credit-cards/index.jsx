@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import MarketplacePageShell from '../../components/layout/MarketplacePageShell';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import Header from '../../components/ui/Header';
 import CreditCardCategoryBar from '../../components/credit-cards/CreditCardCategoryBar';
 import CreditCardFilterPanel from '../../components/credit-cards/CreditCardFilterPanel';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
@@ -129,26 +129,49 @@ const CreditCardsPage = () => {
   }, [pendingCard]);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Credit Card Marketplace</h1>
-            <p className="text-sm text-muted-foreground mt-1">
-              Compare cards by category — fees, rewards, lounge access, and more. Select up to {MAX_COMPARE} to compare side by side.
-            </p>
-            {profile?.fullName ? (
-              <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                <Icon name="CheckCircle2" size={14} />
-                Verified: {profile.phone} · {profile.email}
-              </p>
-            ) : null}
-          </div>
-          <Button variant="outline" onClick={() => navigate('/bank-marketplace?loanType=credit_card')}>
-            Bank marketplace view
-          </Button>
-        </div>
+    <>
+    <MarketplacePageShell
+      breadcrumbs={[
+        { label: 'Home', path: '/homepage' },
+        { label: 'Credit Cards' },
+      ]}
+      title="Credit Cards"
+      subtitle="Compare and apply for the best credit cards from leading banks"
+      benefits={[
+        { icon: 'Gift', label: 'Exclusive Rewards', sub: 'Earn on every spend' },
+        { icon: 'BadgeIndianRupee', label: 'Zero Joining Fees', sub: 'On select cards' },
+        { icon: 'Zap', label: 'Instant Approval', sub: 'Digital KYC' },
+        { icon: 'ShieldCheck', label: 'Secure Payments', sub: 'Bank-grade security' },
+      ]}
+      resultCount={`${cards.length} Credit Cards`}
+      sortControl={(
+        <select className="text-sm border border-border rounded-lg px-3 py-1.5 bg-white">
+          <option>Recommended</option>
+          <option>Lowest Annual Fee</option>
+          <option>Highest Rewards</option>
+        </select>
+      )}
+      ctaTitle="Not sure which card is right for you?"
+      ctaDescription="Answer a few questions and we'll recommend the best credit card for your spending habits."
+      ctaButtonLabel="Find My Best Card"
+      onCtaClick={() => navigate('/contact-us')}
+      filterSidebar={(
+        <CreditCardFilterPanel
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          onReset={handleResetFilters}
+          isOpen={isFilterOpen}
+          onToggle={() => setIsFilterOpen(!isFilterOpen)}
+          resultCount={cards.length}
+        />
+      )}
+    >
+        {profile?.fullName ? (
+          <p className="text-xs text-emerald-700 mb-4 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+            <Icon name="CheckCircle2" size={14} />
+            Verified: {profile.phone} · {profile.email}
+          </p>
+        ) : null}
 
         <CreditCardCategoryBar
           activeCategory={filters.category}
@@ -156,30 +179,10 @@ const CreditCardsPage = () => {
           counts={categoryCounts}
         />
 
-        {filters.category !== 'all' ? (
-          <p className="text-sm text-muted-foreground">
-            Showing <span className="font-semibold text-foreground">{getCategoryLabel(filters.category)}</span>
-            {activeFilterCount > 0 ? ` · ${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'} active` : ''}
-          </p>
-        ) : null}
-
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
-          <div className="lg:col-span-1">
-            <CreditCardFilterPanel
-              filters={filters}
-              onFilterChange={handleFilterChange}
-              onReset={handleResetFilters}
-              isOpen={isFilterOpen}
-              onToggle={() => setIsFilterOpen(!isFilterOpen)}
-              resultCount={cards.length}
-            />
-          </div>
-
-          <div className="lg:col-span-3 space-y-6">
-            {loading ? (
-              <div className="text-center py-16 text-muted-foreground">Loading credit cards…</div>
-            ) : (
-              <MarketplaceCompareBoard
+        {loading ? (
+          <div className="text-center py-16 text-muted-foreground">Loading credit cards…</div>
+        ) : (
+          <MarketplaceCompareBoard
                 type="credit_card"
                 products={cards}
                 selectedIds={selected}
@@ -220,7 +223,7 @@ const CreditCardsPage = () => {
                         <button
                           type="button"
                           onClick={() => handleCreditCardApply(card)}
-                          className="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-lg text-sm font-semibold"
+                          className="mt-auto inline-flex items-center justify-center gap-1.5 w-full py-2.5 rf-btn-primary text-sm font-semibold rounded-lg"
                         >
                           Apply Now <Icon name="ChevronRight" size={14} />
                         </button>
@@ -229,10 +232,8 @@ const CreditCardsPage = () => {
                   );
                 }}
               />
-            )}
-          </div>
-        </div>
-      </div>
+        )}
+    </MarketplacePageShell>
 
       <MarketplaceLeadWizard
         open={wizardOpen}
@@ -242,7 +243,7 @@ const CreditCardsPage = () => {
         productLabel={pendingCard?.name}
         productCategory={pendingCard?.categories?.[0]}
       />
-    </div>
+    </>
   );
 };
 

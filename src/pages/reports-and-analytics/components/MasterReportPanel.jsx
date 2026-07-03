@@ -23,7 +23,7 @@ const MasterReportPanel = ({
 
   return (
     <div className="space-y-4">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 rounded-xl border-2 border-primary/30 bg-gradient-to-br from-primary/10 to-primary/5 p-4 md:p-6">
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4 rounded-xl border-2 border-emerald-200 bg-emerald-50 p-4 md:p-6">
         <div className="flex items-start gap-3">
           <div className="w-12 h-12 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
             <Icon name="FileArchive" size={24} className="text-primary" />

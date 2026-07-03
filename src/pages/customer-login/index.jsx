@@ -4,6 +4,7 @@ import { useAuth } from '../../contexts/AuthContext';
 import { getWrongPortalMessage, resolveLoginRole } from '../../lib/portalLoginUtils';
 import { usePortalLoginRedirect } from '../../hooks/usePortalLoginRedirect';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
+import PortalLoginLayout from '../../components/layout/PortalLoginLayout';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Icon from '../../components/AppIcon';
@@ -76,34 +77,32 @@ const CustomerLogin = () => {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+      <PortalLoginLayout title="Loading…" subtitle="" accent="customer">
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-[var(--color-brand-green)]" />
         </div>
-      </div>
+      </PortalLoginLayout>
     );
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-purple-100 to-purple-200 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-10 rounded-2xl shadow-2xl">
-        {/* Header */}
-        <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-purple-600 rounded-full flex items-center justify-center mb-4">
-            <Icon name="User" size={32} color="white" />
-          </div>
-          <h2 className="text-3xl font-bold text-gray-900">
-            {isSignUp ? 'Create Account' : 'Customer Portal'}
-          </h2>
-          <p className="mt-2 text-sm text-gray-600">
-            {isSignUp ? 'Complete assessment to register' : 'Apply for loans and track applications'}
-          </p>
-        </div>
+    <PortalLoginLayout
+      title={isSignUp ? 'Create Account' : 'Customer Login'}
+      subtitle={isSignUp ? 'Complete assessment to register' : 'Apply for loans and track your applications'}
+      accent="customer"
+      footer={(
+        <p>
+          Not a customer?{' '}
+          <button type="button" onClick={() => navigate('/agent-login')} className="text-[var(--color-brand-green)] font-semibold hover:underline">Agent login</button>
+          {' · '}
+          <button type="button" onClick={() => navigate('/homepage')} className="text-[var(--color-brand-green)] font-semibold hover:underline">Back to home</button>
+        </p>
+      )}
+    >
 
         {/* Assessment Notice (only for sign up) */}
         {isSignUp && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 flex items-start gap-3">
+          <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 flex items-start gap-3">
             <Icon name="Info" size={20} color="#2563eb" />
             <div>
               <p className="text-sm font-semibold text-blue-800">Assessment Required</p>
@@ -212,7 +211,7 @@ const CustomerLogin = () => {
             type="submit"
             variant="default"
             size="lg"
-            className="w-full"
+            className="w-full rf-btn-primary"
             disabled={loading}
           >
             {loading ? 'Processing...' : isSignUp ? 'Continue to Assessment' : 'Sign In'}
@@ -226,34 +225,12 @@ const CustomerLogin = () => {
               setIsSignUp(!isSignUp);
               setError('');
             }}
-            className="text-sm text-purple-600 hover:text-purple-800 font-medium"
+            className="text-sm text-[var(--color-brand-green)] hover:underline font-medium"
           >
             {isSignUp ? 'Already have an account? Sign In' : 'New customer? Create Account'}
           </button>
         </div>
-
-        {/* Footer Links */}
-        <div className="text-center space-y-2">
-          <button
-            type="button"
-            onClick={() => navigate('/homepage')}
-            className="text-sm text-gray-600 hover:text-gray-900 underline"
-          >
-            Back to Home
-          </button>
-          <p className="text-xs text-gray-500">
-            Staff or admin?{' '}
-            <button
-              type="button"
-              onClick={() => navigate('/login-page')}
-              className="text-purple-600 hover:underline font-medium"
-            >
-              Go to portal login
-            </button>
-          </p>
-        </div>
-      </div>
-    </div>
+    </PortalLoginLayout>
   );
 };
 

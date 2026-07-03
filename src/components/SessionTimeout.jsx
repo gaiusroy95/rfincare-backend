@@ -171,7 +171,7 @@ const SessionTimeout = ({ timeoutMinutes = 30, warningMinutes = 2 }) => {
             </Button>
             <Button
               onClick={handleStayLoggedIn}
-              className="flex-1 bg-gradient-to-r from-primary to-secondary text-white hover:opacity-90"
+              className="flex-1 rf-btn-primary hover:opacity-90"
             >
               Stay Logged In
             </Button>

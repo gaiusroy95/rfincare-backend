@@ -29,7 +29,7 @@ const MarketplaceProductGrid = ({ items, onSelect, title, subtitle }) => (
                 {item.badge}
               </span>
             ) : null}
-            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
+            <div className="w-14 h-14 md:w-16 md:h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mb-3 group-hover:scale-105 transition-transform">
               <Icon name={item.icon} size={28} className="text-primary" />
             </div>
             <span className="text-xs md:text-sm font-semibold text-foreground leading-snug">{item.label}</span>

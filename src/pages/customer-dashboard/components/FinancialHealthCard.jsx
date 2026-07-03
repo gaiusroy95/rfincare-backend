@@ -36,7 +36,7 @@ const FinancialHealthCard = ({ snapshot, loading, onViewPortfolio }) => {
 
   return (
     <div className="bg-card border border-border rounded-2xl overflow-hidden">
-      <div className="p-6 md:p-8 border-b border-border bg-gradient-to-r from-primary/5 to-transparent">
+      <div className="p-6 md:p-8 border-b border-border bg-emerald-50/50">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <div className="relative w-24 h-24 shrink-0">

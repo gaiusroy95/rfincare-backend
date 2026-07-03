@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import MarketplacePageShell from '../../components/layout/MarketplacePageShell';
+import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import Header from '../../components/ui/Header';
 import InsuranceSegmentBar, { InsuranceCategoryBar } from '../../components/insurance/InsuranceSegmentBar';
 import InsuranceFilterPanel from '../../components/insurance/InsuranceFilterPanel';
 import InsurancePurchaseModal from '../../components/insurance/InsurancePurchaseModal';
@@ -186,14 +187,14 @@ const InsuranceMarketplacePage = () => {
     activeService === 'new_policy' && product?.purchaseEnabled;
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
-        {resumeSessions.length > 0 ? (
-          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
-        ) : null}
-        {!showCatalog ? (
-          <>
+    <>
+      {!showCatalog ? (
+        <div className="min-h-screen bg-[#f8faf9]">
+          <Header />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
+            {resumeSessions.length > 0 ? (
+              <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
+            ) : null}
             <MarketplaceHero type="insurance" onCtaClick={() => handleProductSelect(INSURANCE_PRODUCT_GRID[1])} />
             <MarketplaceProductGrid
               items={INSURANCE_PRODUCT_GRID}
@@ -212,71 +213,67 @@ const InsuranceMarketplacePage = () => {
                 View all products
               </Button>
             </div>
-          </>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">Insurance Marketplace</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {profile?.productLabel
-                    ? `Showing plans for ${profile.productLabel}`
-                    : 'Compare life, health, and motor insurance — new policy, renewal, and claim assistance.'}
-                </p>
-                {profile?.fullName ? (
-                  <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                    <Icon name="CheckCircle2" size={14} />
-                    Verified: {profile.phone} · {profile.email}
-                  </p>
-                ) : null}
-              </div>
-              <Button variant="outline" size="sm" onClick={() => setShowCatalog(false)}>
-                <Icon name="LayoutGrid" size={16} className="mr-1" /> Browse categories
-              </Button>
-            </div>
-
-            <InsuranceSegmentBar activeSegment={filters.segment} onSegmentChange={handleSegmentChange} />
-            <InsuranceCategoryBar
-              activeSegment={filters.segment}
-              activeCategory={filters.category}
-              onCategoryChange={(slug) => handleFilterChange('category', slug)}
+          </div>
+        </div>
+      ) : (
+        <MarketplacePageShell
+          breadcrumbs={[{ label: 'Home', path: '/homepage' }, { label: 'Insurance' }]}
+          title="Insurance"
+          subtitle="Compare life, health, and motor insurance — new policy, renewal, and claim assistance."
+          benefits={[
+            { icon: 'Shield', label: '50+ Insurers', sub: 'Top-rated partners' },
+            { icon: 'BadgeIndianRupee', label: 'Best Premiums', sub: 'Compare & save' },
+            { icon: 'Zap', label: 'Instant Quotes', sub: 'Quick comparison' },
+            { icon: 'Headphones', label: 'Claim Support', sub: '24x7 assistance' },
+          ]}
+          resultCount={`${products.length} Insurance Plans`}
+          filterSidebar={(
+            <InsuranceFilterPanel
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={() => setFilters(resetInsuranceFilters())}
+              isOpen={isFilterOpen}
+              onToggle={() => setIsFilterOpen(!isFilterOpen)}
+              resultCount={products.length}
             />
+          )}
+          footer={false}
+          ctaTitle="Not sure which insurance plan is right for you?"
+          ctaButtonLabel="Get Free Recommendation"
+        >
+          <Button variant="outline" size="sm" className="mb-4" onClick={() => setShowCatalog(false)}>
+            <Icon name="LayoutGrid" size={16} className="mr-1" /> Browse categories
+          </Button>
 
-            <div className="flex flex-wrap gap-2">
-              {INSURANCE_SERVICES.map((svc) => (
-                <button
-                  key={svc.slug}
-                  type="button"
-                  onClick={() => handleFilterChange('service', filters.service === svc.slug ? 'all' : svc.slug)}
-                  className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
-                    filters.service === svc.slug
-                      ? 'bg-accent text-accent-foreground border-accent'
-                      : 'border-border text-muted-foreground hover:border-accent/50'
-                  }`}
-                >
-                  <Icon name={svc.icon} size={14} />
-                  {svc.label}
-                </button>
-              ))}
-            </div>
+          <InsuranceSegmentBar activeSegment={filters.segment} onSegmentChange={handleSegmentChange} />
+          <InsuranceCategoryBar
+            activeSegment={filters.segment}
+            activeCategory={filters.category}
+            onCategoryChange={(slug) => handleFilterChange('category', slug)}
+          />
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
-              <div className="lg:col-span-1">
-                <InsuranceFilterPanel
-                  filters={filters}
-                  onFilterChange={handleFilterChange}
-                  onReset={() => setFilters(resetInsuranceFilters())}
-                  isOpen={isFilterOpen}
-                  onToggle={() => setIsFilterOpen(!isFilterOpen)}
-                  resultCount={products.length}
-                />
-              </div>
+          <div className="flex flex-wrap gap-2 my-4">
+            {INSURANCE_SERVICES.map((svc) => (
+              <button
+                key={svc.slug}
+                type="button"
+                onClick={() => handleFilterChange('service', filters.service === svc.slug ? 'all' : svc.slug)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border ${
+                  filters.service === svc.slug
+                    ? 'bg-[var(--color-brand-green)] text-white border-[var(--color-brand-green)]'
+                    : 'border-border text-muted-foreground hover:border-[var(--color-brand-green)]/50'
+                }`}
+              >
+                <Icon name={svc.icon} size={14} />
+                {svc.label}
+              </button>
+            ))}
+          </div>
 
-              <div className="lg:col-span-3 space-y-6">
-                {loading ? (
-                  <div className="text-center py-16 text-muted-foreground">Loading insurance plans…</div>
-                ) : (
-                  <MarketplaceCompareBoard
+          {loading ? (
+            <div className="text-center py-16 text-muted-foreground">Loading insurance plans…</div>
+          ) : (
+            <MarketplaceCompareBoard
                     type="insurance"
                     products={products}
                     selectedIds={selected}
@@ -340,47 +337,15 @@ const InsuranceMarketplacePage = () => {
                       );
                     }}
                   />
-                )}
-                {latestPurchase ? (
-                  <div className={`rounded-xl border p-4 ${latestPurchase.paymentStatus === 'paid' ? 'border-emerald-300 bg-emerald-50' : 'border-border bg-card'}`}>
-                    {latestPurchase.isDemo ? (
-                      <p className="text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-200 rounded-lg px-3 py-2 mb-3">
-                        Sandbox purchase — no real policy will be issued.
-                      </p>
-                    ) : null}
-                    <p className="font-semibold flex items-center gap-2">
-                      {latestPurchase.paymentStatus === 'paid' ? (
-                        <Icon name="CheckCircle2" size={18} className="text-emerald-600" />
-                      ) : null}
-                      {latestPurchase.paymentStatus === 'paid' ? 'Purchase successful' : 'Latest purchase update'}
-                    </p>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {latestPurchase.productName || purchaseProduct?.name || 'Insurance plan'} · Payment {latestPurchase.paymentStatus}
-                      {' '}· Insurer {latestPurchase.insurerPushStatus}
-                    </p>
-                    {latestPurchase.insurerPolicyNumber ? (
-                      <p className="text-sm text-emerald-700 mt-2 font-medium">Policy number: {latestPurchase.insurerPolicyNumber}</p>
-                    ) : null}
-                    {latestPurchase.failureReason ? (
-                      <p className="text-sm text-destructive mt-2">{latestPurchase.failureReason}</p>
-                    ) : null}
-                    {latestPurchase.paymentStatus === 'paid' ? (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="mt-3"
-                        onClick={() => window.location.href = '/customer-dashboard?tab=portfolio'}
-                      >
-                        View in dashboard
-                      </Button>
-                    ) : null}
-                  </div>
-                ) : null}
-              </div>
+          )}
+          {latestPurchase ? (
+            <div className={`rounded-xl border p-4 mt-4 ${latestPurchase.paymentStatus === 'paid' ? 'border-emerald-300 bg-emerald-50' : 'border-border bg-card'}`}>
+              <p className="font-semibold">{latestPurchase.paymentStatus === 'paid' ? 'Purchase successful' : 'Latest purchase update'}</p>
+              <p className="text-sm text-muted-foreground mt-1">{latestPurchase.productName || 'Insurance plan'}</p>
             </div>
-          </>
-        )}
-      </div>
+          ) : null}
+        </MarketplacePageShell>
+      )}
 
       <MarketplaceLeadWizard
         open={wizardOpen}
@@ -398,7 +363,7 @@ const InsuranceMarketplacePage = () => {
         onClose={() => setPurchaseProduct(null)}
         onPurchaseComplete={(purchase) => setLatestPurchase(purchase)}
       />
-    </div>
+    </>
   );
 };
 

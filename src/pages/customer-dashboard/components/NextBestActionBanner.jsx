@@ -9,7 +9,7 @@ const NextBestActionBanner = ({ action, loading }) => {
   if (loading || !action) return null;
 
   return (
-    <div className="rounded-2xl border border-primary/30 bg-gradient-to-r from-primary/10 via-primary/5 to-transparent p-5 md:p-6">
+    <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5 md:p-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-start gap-4">
           <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center shrink-0">

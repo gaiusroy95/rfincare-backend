@@ -16,10 +16,10 @@ const PlanningHubLayout = ({ hub, relatedCalculators = [] }) => {
   const navigate = useNavigate();
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f8faf9]">
       <Header />
       <main>
-        <section className={`bg-gradient-to-br ${hub.gradient} text-white py-14 md:py-20`}>
+        <section className="bg-[var(--color-brand-green-dark)] text-white py-14 md:py-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <div className="max-w-3xl">
               <div className="inline-flex items-center gap-2 bg-white/15 rounded-full px-4 py-1.5 text-sm mb-4">
@@ -58,10 +58,10 @@ const PlanningHubLayout = ({ hub, relatedCalculators = [] }) => {
                   key={product.id}
                   type="button"
                   onClick={() => navigate(product.path)}
-                  className="text-left bg-card border border-border rounded-2xl p-6 hover:border-primary/40 hover:shadow-lg transition-all group"
+                  className="text-left rf-sidebar-widget hover:shadow-lg transition-all group"
                 >
                   <div className="flex items-start justify-between gap-3 mb-4">
-                    <div className="p-3 rounded-xl bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                    <div className="p-3 rounded-xl bg-emerald-50 text-[var(--color-brand-green)] group-hover:bg-[var(--color-brand-green)] group-hover:text-white transition-colors">
                       <Icon name={product.icon} size={24} />
                     </div>
                     <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-1 rounded-full border ${TYPE_STYLES[product.type] || TYPE_STYLES.calculator}`}>
@@ -70,7 +70,7 @@ const PlanningHubLayout = ({ hub, relatedCalculators = [] }) => {
                   </div>
                   <h3 className="text-lg font-bold text-foreground mb-2">{product.title}</h3>
                   <p className="text-sm text-muted-foreground leading-relaxed">{product.description}</p>
-                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary mt-4">
+                  <span className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--color-brand-green)] mt-4">
                     Explore <Icon name="ArrowRight" size={14} />
                   </span>
                 </button>

@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
+import MarketplacePageShell from '../../components/layout/MarketplacePageShell';
+import { MarketplaceFilterSidebar, MarketplaceSearchInput } from '../../components/marketplace/MarketplacePageHelpers';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import Header from '../../components/ui/Header';
 import GuestResumeBanner from '../../components/GuestResumeBanner';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
@@ -140,57 +141,34 @@ const GovernmentSchemesMarketplacePage = () => {
     }
   }, [pendingScheme]);
 
+  const filterSidebar = (
+    <MarketplaceFilterSidebar resultCount={filteredSchemes.length} onClear={() => setFilters(resetGovernmentSchemeFilters())}>
+      <MarketplaceSearchInput
+        value={filters.search}
+        onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
+        placeholder="Search scheme or ministry…"
+      />
+    </MarketplaceFilterSidebar>
+  );
+
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
-        {resumeSessions.length > 0 ? (
-          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
-        ) : null}
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="space-y-1">
-            <h1 className="text-2xl md:text-3xl font-bold text-foreground">Government Schemes Marketplace</h1>
-            <p className="text-sm text-muted-foreground">
-              Compare central and state government schemes for loans, subsidies, pensions, and insurance. Select up to {MAX_COMPARE} to compare side by side.
-            </p>
-            {profile?.fullName ? (
-              <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                <Icon name="CheckCircle2" size={14} />
-                Verified: {profile.phone} · {profile.email}
-              </p>
-            ) : null}
-          </div>
-          <Button variant="outline" onClick={() => navigate('/product-comparison')}>
-            <Icon name="GitCompare" size={16} />
-            Compare other products
-          </Button>
-        </div>
-
-        <div className="rounded-2xl border border-border bg-card p-4 md:p-5 flex flex-col md:flex-row gap-3 md:items-center md:justify-between">
-          <div className="flex items-center gap-2">
-            <div className="relative w-full md:w-[360px]">
-              <Icon name="Search" size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-              <input
-                value={filters.search}
-                onChange={(e) => setFilters((prev) => ({ ...prev, search: e.target.value }))}
-                placeholder="Search scheme or ministry…"
-                className="w-full rounded-xl border border-border bg-background pl-9 pr-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/30"
-              />
-            </div>
-            <Button variant="ghost" onClick={() => setFilters(resetGovernmentSchemeFilters())}>
-              Reset
-            </Button>
-          </div>
-
-          <div className="text-xs text-muted-foreground">
-            {filters.category !== 'all' ? (
-              <>Showing <span className="font-semibold text-foreground">{getCategoryLabel(filters.category)}</span> · {filteredSchemes.length} options</>
-            ) : (
-              <>{filteredSchemes.length} options</>
-            )}
-          </div>
-        </div>
-
+    <>
+    <MarketplacePageShell
+      breadcrumbs={[{ label: 'Home', path: '/homepage' }, { label: 'Government Schemes' }]}
+      title="Government Schemes"
+      subtitle="Compare central and state government schemes for loans, subsidies, pensions, and insurance."
+      benefits={[
+        { icon: 'Landmark', label: 'Govt. Backed', sub: 'Official programs' },
+        { icon: 'IndianRupee', label: 'Subsidies & Loans', sub: 'Financial support' },
+        { icon: 'Users', label: 'For All Citizens', sub: 'Wide eligibility' },
+        { icon: 'ShieldCheck', label: 'Trusted Schemes', sub: 'Verified listings' },
+      ]}
+      resultCount={`${filteredSchemes.length} Government Schemes`}
+      filterSidebar={filterSidebar}
+      ctaTitle="Need help finding the right government scheme?"
+      ctaButtonLabel="Get Free Guidance"
+    >
+        {resumeSessions.length > 0 ? <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} /> : null}
         <MarketplaceProductGrid
           items={[
             { slug: 'all', label: 'All', icon: 'LayoutGrid' },
@@ -243,7 +221,7 @@ const GovernmentSchemesMarketplacePage = () => {
             </div>
           )}
         />
-      </div>
+    </MarketplacePageShell>
 
       <MarketplaceLeadWizard
         open={wizardOpen}
@@ -253,7 +231,7 @@ const GovernmentSchemesMarketplacePage = () => {
         productLabel={pendingScheme?.name}
         productCategory={pendingScheme?.categories?.[0]}
       />
-    </div>
+    </>
   );
 };
 

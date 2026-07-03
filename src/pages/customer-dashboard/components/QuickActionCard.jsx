@@ -4,12 +4,12 @@ import Icon from '../../../components/AppIcon';
 const QuickActionCard = ({ action, onClick }) => {
   const getActionColor = (type) => {
     const colors = {
-      'apply': 'from-blue-500 to-blue-600',
+      'apply': 'from-emerald-600 to-[var(--color-brand-green-dark)]',
       'upload': 'from-orange-500 to-orange-600',
       'track': 'from-purple-500 to-purple-600',
       'support': 'from-green-500 to-green-600',
       'profile': 'from-pink-500 to-pink-600',
-      'marketplace': 'from-indigo-500 to-indigo-600'
+      'marketplace': 'from-emerald-500 to-teal-600'
     };
     return colors?.[type] || 'from-gray-500 to-gray-600';
   };

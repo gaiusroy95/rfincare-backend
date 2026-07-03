@@ -24,7 +24,7 @@ export default function AgentReferralBanner({ attribution }) {
   };
 
   return (
-    <div className="bg-gradient-to-r from-primary/10 to-transparent border border-primary/20 rounded-xl p-5">
+    <div className="bg-emerald-50 border border-emerald-200 rounded-xl p-5">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <p className="text-xs font-semibold text-primary uppercase tracking-wide">Referral links</p>

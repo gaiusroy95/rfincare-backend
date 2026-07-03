@@ -127,12 +127,14 @@ export default function CustomerRegistrationPortal() {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-[#f8faf9]">
+      <Header />
+      <main className="py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-gray-900 mb-2">Customer Registration Portal</h1>
-          <p className="text-lg text-gray-600">Complete your profile to access loan services</p>
+          <h1 className="text-4xl font-bold text-foreground mb-2">Customer Registration Portal</h1>
+          <p className="text-lg text-muted-foreground">Complete your profile to access loan services</p>
         </div>
 
         {/* Progress Steps */}
@@ -150,16 +152,16 @@ export default function CustomerRegistrationPortal() {
                       <div
                         className={`w-12 h-12 rounded-full flex items-center justify-center transition-all ${
                           isCompleted
-                            ? 'bg-green-500 text-white'
+                            ? 'bg-[var(--color-brand-green)] text-white'
                             : isActive
-                            ? 'bg-blue-600 text-white' :'bg-gray-200 text-gray-500'
+                            ? 'bg-[var(--color-brand-green-dark)] text-white' :'bg-gray-200 text-gray-500'
                         }`}
                       >
                         {isCompleted ? <CheckCircle className="w-6 h-6" /> : <Icon className="w-6 h-6" />}
                       </div>
                       <span
                         className={`mt-2 text-sm font-medium ${
-                          isActive ? 'text-blue-600' : isCompleted ? 'text-green-600' : 'text-gray-500'
+                          isActive ? 'text-[var(--color-brand-green-dark)]' : isCompleted ? 'text-[var(--color-brand-green)]' : 'text-gray-500'
                         }`}
                       >
                         {step?.title}
@@ -168,7 +170,7 @@ export default function CustomerRegistrationPortal() {
                     {index < steps?.length - 1 && (
                       <div
                         className={`flex-1 h-1 mx-4 rounded transition-all ${
-                          currentStep > step?.number ? 'bg-green-500' : 'bg-gray-200'
+                          currentStep > step?.number ? 'bg-[var(--color-brand-green)]' : 'bg-gray-200'
                         }`}
                       />
                     )}
@@ -188,7 +190,7 @@ export default function CustomerRegistrationPortal() {
         )}
 
         {/* Step Content */}
-        <div className="bg-white rounded-2xl shadow-xl p-8">
+        <div className="rf-filter-card">
           {currentStep === 1 && (
             <OAuthProviderButtons
               formData={formData}
@@ -232,17 +234,18 @@ export default function CustomerRegistrationPortal() {
         </div>
 
         {/* Footer */}
-        <div className="mt-8 text-center text-sm text-gray-600">
+        <div className="mt-8 text-center text-sm text-muted-foreground">
           <p>Already have an account?{' '}
             <button
               onClick={() => navigate('/authentication-management-center')}
-              className="text-blue-600 hover:text-blue-700 font-medium"
+              className="text-[var(--color-brand-green)] hover:underline font-medium"
             >
               Sign In
             </button>
           </p>
         </div>
       </div>
+      </main>
     </div>
   );
 }

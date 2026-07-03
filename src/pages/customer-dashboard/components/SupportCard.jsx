@@ -10,7 +10,7 @@ const SupportCard = () => {
       title: 'Live Chat',
       description: 'Chat with our support team',
       availability: 'Available 24/7',
-      color: 'from-blue-500 to-blue-600'
+      color: 'from-emerald-600 to-[var(--color-brand-green-dark)]'
     },
     {
       id: 2,
@@ -70,7 +70,7 @@ const SupportCard = () => {
           </button>
         ))}
       </div>
-      <div className="mt-6 bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg p-4 border border-primary/20">
+      <div className="mt-6 bg-emerald-50 rounded-lg p-4 border border-emerald-200">
         <div className="flex items-start gap-3">
           <Icon name="Info" size={20} color="var(--color-primary)" className="flex-shrink-0 mt-0.5" />
           <div className="flex-1 min-w-0">

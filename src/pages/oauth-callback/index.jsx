@@ -1,7 +1,9 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { apiClient, setAccessToken } from '../../lib/apiClient';
 import { OAUTH_RETURN_PATH_KEY } from '../../services/authService';
+import LoadingPageShell from '../../components/layout/LoadingPageShell';
 
 const OAUTH_ERROR_MESSAGES = {
   invalid_state: 'Sign-in was interrupted. Please try again.',
@@ -73,11 +75,7 @@ const OAuthCallback = () => {
     finish();
   }, [params, navigate]);
 
-  return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-muted-foreground">{message}</p>
-    </div>
-  );
+  return <LoadingPageShell message={message} />;
 };
 
 export default OAuthCallback;

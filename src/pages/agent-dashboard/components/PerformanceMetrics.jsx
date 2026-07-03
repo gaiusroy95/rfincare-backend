@@ -14,7 +14,7 @@ const PerformanceMetrics = ({ metrics }) => {
 
   const getMetricColor = (type) => {
     const colors = {
-      customers: 'from-blue-500 to-blue-600',
+      customers: 'from-emerald-600 to-[var(--color-brand-green-dark)]',
       conversions: 'from-green-500 to-green-600',
       earnings: 'from-purple-500 to-purple-600',
       satisfaction: 'from-amber-500 to-amber-600'

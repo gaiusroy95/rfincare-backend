@@ -13,8 +13,8 @@ const OTP_LEN = 6;
 const Section = ({ title, description, icon, children }) => (
   <section className="bg-card border border-border rounded-lg p-4 md:p-6 space-y-4">
     <div className="flex items-start gap-3">
-      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-        <Icon name={icon} size={20} className="text-primary" />
+      <div className="w-10 h-10 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+        <Icon name={icon} size={20} className="text-[var(--color-brand-green)]" />
       </div>
       <div>
         <h2 className="text-lg font-semibold text-foreground">{title}</h2>
@@ -220,7 +220,7 @@ const AgentSettingsPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f8faf9]">
       <Header />
       <main className="max-w-3xl mx-auto px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">

@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import PortalShell from '../../components/layout/PortalShell';
+import DashboardKpiCard from '../../components/dashboard/DashboardKpiCard';
+import { CUSTOMER_NAV_ITEMS } from '../../constants/portalNavigation';
 import ApplicationStatusCard from './components/ApplicationStatusCard';
 import DocumentCard from './components/DocumentCard';
 import NotificationCard from './components/NotificationCard';
@@ -238,13 +240,18 @@ const CustomerDashboard = () => {
     primaryApp?.journey_mode === 'document_only' ||
     (primaryApp?.status === 'submitted' && primaryApp?.submittedAt);
 
-  const tabs = [
-    { id: 'overview', label: 'Overview', icon: 'LayoutDashboard' },
-    { id: 'portfolio', label: 'My Portfolio', icon: 'PieChart' },
-    { id: 'applications', label: 'Applications', icon: 'FileText' },
-    { id: 'documents', label: 'Documents', icon: 'FolderOpen' },
-    { id: 'notifications', label: 'Notifications', icon: 'Bell', badge: unreadNotifications?.length },
-  ];
+  const navItems = CUSTOMER_NAV_ITEMS.map((item) => ({
+    ...item,
+    badge: item.badgeKey === 'notifications' ? unreadNotifications?.length || 0 : 0,
+  }));
+
+  const handleNavSelect = (item) => {
+    if (item.path) {
+      navigate(item.path);
+      return;
+    }
+    if (item.tab) handleTabChange(item.tab);
+  };
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
@@ -255,56 +262,104 @@ const CustomerDashboard = () => {
     }
   };
 
+  const formatCurrency = (n) => {
+    if (n == null || Number.isNaN(Number(n))) return '—';
+    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
+  };
+
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center h-screen">
-          <div className="text-center">
-            <Icon name="Loader" size={48} className="animate-spin mx-auto mb-4" />
-            <p className="text-muted-foreground">Loading dashboard...</p>
-          </div>
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Icon name="Loader" size={48} className="animate-spin mx-auto mb-4" />
+          <p className="text-muted-foreground">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
+  const sidebarActiveId = navItems.find((n) => n.tab === activeTab)?.id || 'overview';
+
   return (
-    <div className="min-h-screen bg-background">
-      <Header>
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-4">
-            <div className="bg-gradient-to-br from-primary to-secondary p-3 rounded-lg">
-              <Icon name="User" className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h2 className="text-lg font-semibold text-foreground">Customer Dashboard</h2>
-              <p className="text-sm text-gray-600">Track loans, investments, insurance and your financial health</p>
-            </div>
-          </div>
-          <Button
-            onClick={handleLogout}
-            variant="outline"
-            className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50"
-          >
-            <Icon name="LogOut" className="w-4 h-4" />
-            Logout
+    <PortalShell
+      portalLabel="Customer Dashboard"
+      navItems={navItems}
+      activeId={sidebarActiveId}
+      onNavSelect={handleNavSelect}
+      userName={profileData?.name}
+      userRole="Customer"
+      userId={userProfile?.customerCode ? `Customer ID: ${userProfile.customerCode}` : ''}
+      avatarUrl={profileData?.avatar}
+      notificationCount={unreadNotifications?.length || 0}
+      onLogout={handleLogout}
+      promoCard={(
+        <div>
+          <p className="text-sm font-bold text-foreground mb-1">Refer &amp; Earn</p>
+          <p className="text-xs text-muted-foreground mb-3">Invite friends and earn rewards</p>
+          <Button className="rf-btn-primary w-full" size="sm" onClick={() => navigate('/share-your-story')}>
+            Refer Now
           </Button>
         </div>
-      </Header>
-
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        {/* Welcome Section */}
+      )}
+      headerActions={(
+        <>
+          <Button variant="outline" size="sm" onClick={() => navigate('/product-comparison')}>Explore Products</Button>
+          <Button className="rf-btn-primary" size="sm" onClick={() => openAssessmentOrEligibilityFirst(navigate)}>Apply for Loan</Button>
+        </>
+      )}
+    >
         <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Welcome back, {profileData?.name?.split(' ')?.[0]}!
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+            Welcome back, {profileData?.name?.split(' ')?.[0]}! 👋
           </h1>
           <p className="text-sm md:text-base text-muted-foreground">
             {documentOnlyMode
               ? 'Your application is submitted. Upload documents and view your read-only application summary below.'
-              : 'Track your loan applications and manage your documents'}
+              : "Here's your financial overview for today."}
           </p>
         </div>
+
+        {activeTab === 'overview' && financialSnapshot?.summary ? (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+            <DashboardKpiCard
+              title="Total Investments"
+              value={formatCurrency(financialSnapshot.summary.totalInvestments)}
+              change="+12.45% 1Y Returns"
+              icon="TrendingUp"
+            />
+            <DashboardKpiCard
+              title="Total Loans"
+              value={formatCurrency(financialSnapshot.summary.totalLoansOutstanding)}
+              subtitle="Outstanding Amount"
+              icon="Wallet"
+              iconBg="bg-orange-50"
+              iconColor="text-orange-600"
+            />
+            <DashboardKpiCard
+              title="Active Insurance"
+              value={formatCurrency(financialSnapshot.summary.totalInsuranceCover)}
+              subtitle="Total Sum Assured"
+              icon="Shield"
+              iconBg="bg-sky-50"
+              iconColor="text-sky-600"
+            />
+            <DashboardKpiCard
+              title="Monthly Savings"
+              value={formatCurrency(financialSnapshot.summary.monthlySavings)}
+              subtitle="Your SIP & RD Amount"
+              icon="PiggyBank"
+              iconBg="bg-violet-50"
+              iconColor="text-violet-600"
+            />
+            <DashboardKpiCard
+              title="Credit Score"
+              value={`${financialSnapshot.summary.creditScore ?? '—'} / 900`}
+              subtitle={financialSnapshot.summary.creditScoreBand || 'Pull score to update'}
+              icon="Gauge"
+              iconBg="bg-emerald-50"
+            />
+          </div>
+        ) : null}
 
         {documentOnlyMode && primaryApp?.id && (
           <div className="mb-6 p-4 rounded-lg border border-amber-200 bg-amber-50 text-amber-950 text-sm space-y-2">
@@ -325,30 +380,6 @@ const CustomerDashboard = () => {
             </Button>
           </div>
         )}
-
-        {/* Tabs */}
-        <div className="mb-6 border-b border-border overflow-x-auto">
-          <div className="flex gap-4 min-w-max">
-            {tabs?.map((tab) => (
-              <button
-                key={tab?.id}
-                onClick={() => handleTabChange(tab?.id)}
-                className={`flex items-center gap-2 px-4 py-3 border-b-2 transition-colors whitespace-nowrap ${
-                  activeTab === tab?.id
-                    ? 'border-primary text-primary font-semibold' :'border-transparent text-muted-foreground hover:text-foreground'
-                }`}
-              >
-                <Icon name={tab?.icon} size={18} />
-                <span>{tab?.label}</span>
-                {tab?.badge > 0 && (
-                  <span className="bg-primary text-white text-xs font-bold px-2 py-0.5 rounded-full">
-                    {tab?.badge}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
 
         {/* Overview Tab */}
         {activeTab === 'overview' && (
@@ -637,7 +668,6 @@ const CustomerDashboard = () => {
             </div>
           </div>
         )}
-      </main>
 
       <DocumentUploadModal
         isOpen={isUploadModalOpen}
@@ -655,7 +685,7 @@ const CustomerDashboard = () => {
           setDetailApplication(null);
         }}
       />
-    </div>
+    </PortalShell>
   );
 };
 

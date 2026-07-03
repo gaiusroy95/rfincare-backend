@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/ui/Header';
-import Footer from '../homepage/components/Footer';
+import MarketingPageShell from '../../components/layout/MarketingPageShell';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
@@ -17,138 +16,84 @@ const AboutUs = () => {
   }, []);
 
   const values = aboutContent?.values || [
-    {
-      id: 'mission',
-      icon: 'Target',
-      title: 'Our Mission',
-      description:
-        'To simplify the loan application process and make financial services accessible to everyone across India.',
-    },
-    {
-      id: 'vision',
-      icon: 'Eye',
-      title: 'Our Vision',
-      description:
-        "To become India's most trusted digital platform for loan comparison and application processing.",
-    },
-    {
-      id: 'values',
-      icon: 'Heart',
-      title: 'Our Values',
-      description:
-        'Transparency, customer-first approach, innovation, and commitment to financial inclusion.',
-    },
-    {
-      id: 'promise',
-      icon: 'Shield',
-      title: 'Our Promise',
-      description:
-        'Secure, fast, and reliable loan processing with complete transparency at every step.',
-    },
+    { id: 'mission', icon: 'Target', title: 'Our Mission', description: 'To simplify financial services and make loans, insurance, and investments accessible to everyone across India.' },
+    { id: 'vision', icon: 'Eye', title: 'Our Vision', description: "To become India's most trusted financial marketplace for comparison and application processing." },
+    { id: 'values', icon: 'Heart', title: 'Our Values', description: 'Transparency, customer-first approach, innovation, and commitment to financial inclusion.' },
+    { id: 'promise', icon: 'Shield', title: 'Our Promise', description: 'Secure, fast, and reliable processing with complete transparency at every step.' },
   ];
 
   const stats = aboutContent?.stats || [
-    { value: '50,000+', label: 'Happy Customers' },
-    { value: '100+', label: 'Partner Banks' },
-    { value: '₹500Cr+', label: 'Loans Processed' },
-    { value: '98%', label: 'Satisfaction Rate' }
+    { value: '10L+', label: 'Happy Customers' },
+    { value: '50+', label: 'Partner Institutions' },
+    { value: '₹50,000Cr+', label: 'Loans Disbursed' },
+    { value: '4.8/5', label: 'Customer Rating' },
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <main>
-        {/* Hero Section */}
-        <section className="bg-gradient-to-br from-primary via-secondary to-accent text-white py-16 md:py-24">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-              {aboutContent?.heroTitle || 'About Rfincare'}
-            </h1>
-            <p className="text-lg md:text-xl text-white/90 max-w-3xl mx-auto">
-              {aboutContent?.heroSubtitle ||
-                'Empowering Indians with smart financial solutions through technology and transparency'}
-            </p>
+    <MarketingPageShell
+      title={aboutContent?.heroTitle || 'About RFINCARE'}
+      subtitle={aboutContent?.heroSubtitle || "India's financial supermarket — compare, invest, insure & grow your wealth in one place."}
+    >
+      <section className="py-10 bg-white border-b border-border">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+            {stats.map((stat, index) => (
+              <div key={stat?.id || index} className="text-center">
+                <div className="text-2xl md:text-3xl font-bold text-[var(--color-brand-green)] mb-1">{stat?.value}</div>
+                <div className="text-sm text-muted-foreground">{stat?.label}</div>
+              </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Stats Section */}
-        <section className="py-12 bg-white">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
-              {stats?.map((stat, index) => (
-                <div key={stat?.id || index} className="text-center">
-                  <div className="text-3xl md:text-4xl font-bold text-primary mb-2">{stat?.value}</div>
-                  <div className="text-sm md:text-base text-gray-600">{stat?.label}</div>
+      <section className="py-14 md:py-16">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-10">What Drives Us</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {values.map((value, index) => (
+              <div key={value?.id || index} className="rf-why-card bg-white">
+                <div className="w-12 h-12 bg-emerald-50 rounded-xl flex items-center justify-center mb-4">
+                  <Icon name={value?.icon} size={24} className="text-[var(--color-brand-green)]" />
                 </div>
-              ))}
-            </div>
+                <h3 className="text-lg font-semibold mb-2">{value?.title}</h3>
+                <p className="text-sm text-muted-foreground">{value?.description}</p>
+              </div>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Values Section */}
-        <section className="py-16 md:py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-12">What Drives Us</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {values?.map((value, index) => (
-                <div key={value?.id || index} className="bg-white rounded-xl p-6 shadow-md hover:shadow-xl transition-shadow">
-                  <div className="w-14 h-14 bg-primary/10 rounded-full flex items-center justify-center mb-4">
-                    <Icon name={value?.icon} size={28} color="#6366f1" />
-                  </div>
-                  <h3 className="text-xl font-semibold mb-3">{value?.title}</h3>
-                  <p className="text-gray-600">{value?.description}</p>
-                </div>
-              ))}
-            </div>
+      <section className="py-14 md:py-16 bg-white">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-2xl md:text-3xl font-bold text-center mb-8">{aboutContent?.storyHeading || 'Our Story'}</h2>
+          <div className="space-y-5 text-muted-foreground leading-relaxed">
+            {(aboutContent?.storyParagraphs || [
+              'RFINCARE was built on a simple idea: every Indian deserves one trusted place to compare loans, insurance, mutual funds, and more — without confusion or hidden terms.',
+              'We partner with RBI-registered banks and insurers to bring you the best prices, expert guidance, and a seamless digital experience from comparison to application.',
+              'Today, thousands of customers and agents use RFINCARE every day to plan smarter and achieve their financial goals.',
+            ]).map((paragraph, idx) => (
+              <p key={idx}>{paragraph}</p>
+            ))}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* Story Section */}
-        <section className="py-16 md:py-20 bg-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-3xl md:text-4xl font-bold text-center mb-8">{aboutContent?.storyHeading || 'Our Story'}</h2>
-            <div className="space-y-6 text-gray-700 leading-relaxed">
-              {(aboutContent?.storyParagraphs || [
-                'Founded in 2020, Rfincare emerged from a simple observation: getting a loan in India was unnecessarily complicated. Multiple bank visits, endless paperwork, and lack of transparency made the process frustrating for millions.',
-                'We set out to change this. By leveraging technology and building strong partnerships with leading financial institutions, we created a platform that puts customers first. Today, we help thousands of Indians find the right loan products, compare options transparently, and complete applications digitally.',
-                'Our team of financial experts, technology professionals, and customer service specialists work tirelessly to ensure every customer gets personalized guidance and the best possible loan terms for their unique situation.',
-              ]).map((paragraph, idx) => (
-                <p key={idx}>{paragraph}</p>
-              ))}
-            </div>
+      <section className="py-14 bg-[var(--color-brand-green-dark)] text-white">
+        <div className="max-w-4xl mx-auto px-4 text-center">
+          <h2 className="text-2xl md:text-3xl font-bold mb-4">Ready to Get Started?</h2>
+          <p className="text-white/90 mb-8">Join millions of Indians who trust RFINCARE for their financial journey</p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Button size="lg" className="bg-white text-[var(--color-brand-green)] hover:bg-white/90" onClick={() => openAssessmentOrEligibilityFirst(navigate)}>
+              Check Eligibility
+            </Button>
+            <Button size="lg" variant="outline" className="border-2 border-white text-white hover:bg-white/10" onClick={() => navigate('/contact-us')}>
+              Contact Us
+            </Button>
           </div>
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-16 bg-gradient-to-r from-primary to-secondary text-white">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h2 className="text-3xl md:text-4xl font-bold mb-6">Ready to Get Started?</h2>
-            <p className="text-lg mb-8">Join thousands of satisfied customers who found their perfect loan with us</p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button
-                variant="default"
-                size="lg"
-                className="bg-white text-primary hover:bg-white/90"
-                onClick={() => openAssessmentOrEligibilityFirst(navigate)}
-              >
-                Check Eligibility
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="border-2 border-white text-white hover:bg-white/10"
-                onClick={() => navigate('/contact-us')}
-              >
-                Contact Us
-              </Button>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <Footer />
-    </div>
+        </div>
+      </section>
+    </MarketingPageShell>
   );
 };
 

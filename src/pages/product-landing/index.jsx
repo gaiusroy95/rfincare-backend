@@ -1,9 +1,8 @@
-import React, { useEffect, useMemo } from 'react';
-import { useNavigate, useParams, Link } from 'react-router-dom';
-import Header from '../../components/ui/Header';
-import Footer from '../homepage/components/Footer';
+import React, { useEffect, useMemo, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import MarketplacePageShell from '../../components/layout/MarketplacePageShell';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
 import { useMarketplaceVisibility } from '../../contexts/MarketplaceVisibilityContext';
@@ -12,11 +11,27 @@ import NotFound from '../NotFound';
 import BankOffersSection from './components/BankOffersSection';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 
+const LOAN_BENEFITS = {
+  home_loan: [
+    { icon: 'Percent', label: 'Lowest Interest Rates', sub: 'Starting from 8.25% p.a.' },
+    { icon: 'FileText', label: 'Minimal Documentation', sub: 'Easy & quick process' },
+    { icon: 'Clock', label: 'Quick Approval', sub: 'Get approval in 24-48 hrs' },
+    { icon: 'Home', label: 'Top-up Loan Facility', sub: 'Available with select lenders' },
+  ],
+  default: [
+    { icon: 'Percent', label: 'Competitive Rates', sub: 'Best offers from 50+ partners' },
+    { icon: 'FileText', label: 'Easy Application', sub: 'Minimal documentation' },
+    { icon: 'Clock', label: 'Fast Processing', sub: 'Quick approval turnaround' },
+    { icon: 'ShieldCheck', label: '100% Secure', sub: 'RBI registered partners' },
+  ],
+};
+
 const ProductLanding = () => {
   const { loanType } = useParams();
   const navigate = useNavigate();
   const { products, loading } = useLoanProducts();
   const { visibility } = useMarketplaceVisibility();
+  const [loanAmount, setLoanAmount] = useState(1000000);
   const product = useMemo(() => getLoanProductBySlug(loanType), [loanType, products]);
   const catalogChips = useMemo(
     () => buildProductCatalogChips(products, visibility),
@@ -39,105 +54,105 @@ const ProductLanding = () => {
     return <NotFound />;
   }
 
-  const qs = `loanType=${product.slug}`;
+  const benefits = LOAN_BENEFITS[product.slug] || LOAN_BENEFITS.default;
   const otherProducts = catalogChips.filter((p) => p.slug !== product.slug);
 
-  return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <main>
-        <section className="bg-gradient-to-br from-primary via-secondary to-accent text-white py-14 md:py-20">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex items-center gap-2 text-sm text-white/80 mb-4">
-              <button type="button" onClick={() => navigate('/homepage')} className="hover:text-white">
-                Home
-              </button>
-              <Icon name="ChevronRight" size={14} />
-              <span>{product.label}</span>
-            </div>
-            <div className="flex flex-col md:flex-row md:items-center gap-6">
-              <div
-                className="w-16 h-16 rounded-xl flex items-center justify-center flex-shrink-0"
-                style={{ backgroundColor: product.color }}
-              >
-                <Icon name={product.icon} size={32} color="white" />
-              </div>
-              <div>
-                <h1 className="text-3xl md:text-4xl font-bold mb-3">{product.label}</h1>
-                <p className="text-lg text-white/90 max-w-2xl">{product.description}</p>
-                <p className="mt-2 text-sm text-white/80">Typical rates: {product.interestRange}</p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <section className="py-10 bg-muted">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-              <div className="lg:col-span-2 bg-card rounded-xl border border-border p-6 shadow-sm">
-                <h2 className="text-xl font-semibold mb-4">Key features</h2>
-                <ul className="grid sm:grid-cols-2 gap-3">
-                  {product.features.map((feature) => (
-                    <li key={feature} className="flex items-start gap-2 text-sm text-muted-foreground">
-                      <Icon name="Check" size={18} style={{ color: product.color }} className="mt-0.5 flex-shrink-0" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              <div className="bg-card rounded-xl border border-border p-6 shadow-sm space-y-3">
-                <h2 className="text-lg font-semibold mb-2">Next steps</h2>
-                <Button className="w-full" onClick={() => navigate(`/eligibility-assessment?${qs}`)}>
-                  Check eligibility
-                </Button>
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => navigate(`/product-comparison?loanType=${product.slug}#bank-comparison`)}
-                >
-                  Compare bank offers
-                </Button>
-                <Button variant="outline" className="w-full" onClick={() => navigate(`/product-comparison?${qs}`)}>
-                  Compare product types
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="w-full"
-                  onClick={() =>
-                    openAssessmentOrEligibilityFirst(navigate, {
-                      slug: product.slug,
-                      state: { quickCheck: { loanType: product.apiKey } },
-                    })
-                  }
-                >
-                  Apply now
-                </Button>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <BankOffersSection product={product} />
-
-        <section className="py-10 bg-background border-t border-border">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-lg font-semibold mb-4">Other products</h2>
-            <div className="flex flex-wrap gap-2">
-              {otherProducts.map((p) => (
-                <Link
-                  key={p.slug}
-                  to={p.route || `/products/${p.slug}`}
-                  className="px-4 py-2 rounded-full text-sm border border-border hover:bg-muted transition-colors"
-                >
-                  {p.shortLabel || p.label}
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      </main>
-      <Footer />
+  const filterSidebar = (
+    <div className="space-y-5">
+      <h3 className="font-bold text-foreground">Customize Your Search</h3>
+      <div>
+        <label className="text-sm font-medium text-foreground">Loan Amount</label>
+        <p className="text-lg font-bold text-[var(--color-brand-green)] mt-1">
+          ₹{loanAmount.toLocaleString('en-IN')}
+        </p>
+        <input
+          type="range"
+          min={100000}
+          max={50000000}
+          step={100000}
+          value={loanAmount}
+          onChange={(e) => setLoanAmount(Number(e.target.value))}
+          className="w-full mt-2 accent-[var(--color-brand-green)]"
+        />
+        <div className="flex justify-between text-xs text-muted-foreground mt-1">
+          <span>₹1 Lakh</span>
+          <span>₹5 Crore</span>
+        </div>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground">Interest Rate (%)</label>
+        <select className="w-full mt-1 rounded-lg border border-border px-3 py-2 text-sm bg-white">
+          <option>Any</option>
+          <option>Below 9%</option>
+          <option>9% - 12%</option>
+        </select>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground">Loan Tenure</label>
+        <select className="w-full mt-1 rounded-lg border border-border px-3 py-2 text-sm bg-white">
+          <option>20 Years</option>
+          <option>15 Years</option>
+          <option>10 Years</option>
+          <option>5 Years</option>
+        </select>
+      </div>
+      <div>
+        <label className="text-sm font-medium text-foreground">Processing Fee</label>
+        <select className="w-full mt-1 rounded-lg border border-border px-3 py-2 text-sm bg-white">
+          <option>Any</option>
+          <option>Zero</option>
+          <option>Below 1%</option>
+        </select>
+      </div>
+      <Button className="rf-btn-primary w-full">Show Results</Button>
+      <button type="button" className="text-sm text-muted-foreground hover:text-foreground w-full text-center">
+        Clear All Filters
+      </button>
     </div>
+  );
+
+  return (
+    <MarketplacePageShell
+      breadcrumbs={[
+        { label: 'Home', path: '/homepage' },
+        { label: 'Loans', path: '/product-comparison' },
+        { label: product.label },
+      ]}
+      title={product.label}
+      subtitle={`Compare ${product.label} offers from 50+ Banks & NBFCs`}
+      benefits={benefits}
+      filterSidebar={filterSidebar}
+      ctaTitle="Check Your Home Loan Eligibility"
+      ctaDescription="Get instant eligibility check without affecting your credit score."
+      ctaButtonLabel="Check Eligibility Now"
+      onCtaClick={() => navigate(`/eligibility-assessment?loanType=${product.slug}`)}
+    >
+      <BankOffersSection product={product} />
+
+      <section className="mt-8 pt-8 border-t border-border">
+        <h2 className="text-lg font-semibold mb-4">Other loan products</h2>
+        <div className="flex flex-wrap gap-2">
+          {otherProducts.map((p) => (
+            <button
+              key={p.slug}
+              type="button"
+              onClick={() => navigate(p.route || `/products/${p.slug}`)}
+              className="px-4 py-2 rounded-full text-sm border border-border hover:border-[var(--color-brand-green)] hover:bg-emerald-50 transition-colors"
+            >
+              {p.shortLabel || p.label}
+            </button>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-3 mt-6">
+          <Button className="rf-btn-primary" onClick={() => openAssessmentOrEligibilityFirst(navigate, { slug: product.slug })}>
+            Apply Now
+          </Button>
+          <Button variant="outline" className="rf-btn-outline-green" onClick={() => navigate(`/product-comparison?loanType=${product.slug}`)}>
+            Compare Products
+          </Button>
+        </div>
+      </section>
+    </MarketplacePageShell>
   );
 };
 

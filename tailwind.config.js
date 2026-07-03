@@ -16,7 +16,11 @@ module.exports = {
       },
     },
     extend: {
-      colors: {
+        colors: {
+        brand: {
+          green: 'var(--color-brand-green)',
+          orange: 'var(--color-brand-orange)',
+        },
         border: 'var(--color-border)', // gray-300
         input: 'var(--color-input)', // gray-300
         ring: 'var(--color-ring)', // blue-900

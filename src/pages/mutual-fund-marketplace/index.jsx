@@ -1,8 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import MarketplacePageShell from '../../components/layout/MarketplacePageShell';
+import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import Header from '../../components/ui/Header';
 import MutualFundCategoryBar from '../../components/mutual-funds/MutualFundCategoryBar';
 import MutualFundFilterPanel from '../../components/mutual-funds/MutualFundFilterPanel';
 import MutualFundSipModal from '../../components/mutual-funds/MutualFundSipModal';
@@ -197,14 +198,14 @@ const MutualFundMarketplacePage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
-        {resumeSessions.length > 0 ? (
-          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
-        ) : null}
-        {!showCatalog ? (
-          <>
+    <>
+      {!showCatalog ? (
+        <div className="min-h-screen bg-[#f8faf9]">
+          <Header />
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
+            {resumeSessions.length > 0 ? (
+              <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
+            ) : null}
             <MarketplaceHero type="mutual_funds" onCtaClick={() => handleProductSelect(MUTUAL_FUND_PRODUCT_GRID[0])} />
             <div id="mf-calculator-landing">
               <MutualFundCalculatorPanel />
@@ -226,73 +227,69 @@ const MutualFundMarketplacePage = () => {
                 View all funds
               </Button>
             </div>
-          </>
-        ) : (
-          <>
-            <div className="flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold">Mutual Fund Marketplace</h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  {profile?.productLabel
-                    ? `Showing funds for ${profile.productLabel}`
-                    : 'Compare SIP, ELSS, debt, equity, index, ETF & international funds.'}
-                </p>
-                {latestSipOrder && (
-                  <p className={`text-xs mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 border ${
-                    latestSipOrder.status === 'active'
-                      ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                      : latestSipOrder.status === 'mandate_pending'
-                        ? 'text-amber-700 bg-amber-50 border-amber-200'
-                        : 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                  }`}>
-                    <Icon name={latestSipOrder.status === 'mandate_pending' ? 'Clock' : 'CheckCircle2'} size={14} />
-                    {latestSipOrder.status === 'mandate_pending'
-                      ? `Waiting for mandate confirmation · ₹${Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · ${latestSipOrder.fundName}`
-                      : latestSipOrder.status === 'active'
-                        ? `SIP active: ₹${Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · ${latestSipOrder.fundName}`
-                        : `SIP started: ₹${Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · ${latestSipOrder.fundName}`}
-                  </p>
-                )}
-                {profile?.fullName ? (
-                  <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                    <Icon name="CheckCircle2" size={14} />
-                    Verified: {profile.phone} · {profile.email}
-                  </p>
-                ) : null}
-              </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" onClick={() => setShowCatalog(false)}>
-                  <Icon name="LayoutGrid" size={16} className="mr-1" /> Browse categories
-                </Button>
-                <Button variant="outline" size="sm" onClick={() => document.getElementById('mf-calculator')?.scrollIntoView({ behavior: 'smooth' })}>
-                  <Icon name="Calculator" size={16} className="mr-1" /> Calculator
-                </Button>
-              </div>
+          </div>
+        </div>
+      ) : (
+          <MarketplacePageShell
+            breadcrumbs={[
+              { label: 'Home', path: '/homepage' },
+              { label: 'Investments', path: '/investment-marketplace' },
+              { label: 'Mutual Funds' },
+            ]}
+            title="Mutual Funds"
+            subtitle="Invest in the right mutual funds and grow your wealth"
+            benefits={[
+              { icon: 'Star', label: 'Expert Curated Funds', sub: 'Top-rated picks' },
+              { icon: 'GitCompare', label: 'Compare & Invest', sub: 'Side-by-side analysis' },
+              { icon: 'TrendingUp', label: 'High Returns Potential', sub: 'Equity & hybrid funds' },
+              { icon: 'ShieldCheck', label: 'Safe & Secure', sub: 'SEBI registered AMCs' },
+            ]}
+            resultCount={`${funds.length} Mutual Funds`}
+            sortControl={(
+              <select className="text-sm border border-border rounded-lg px-3 py-1.5 bg-white">
+                <option>3Y Returns (High to Low)</option>
+                <option>Expense Ratio (Low to High)</option>
+              </select>
+            )}
+            filterSidebar={(
+              <MutualFundFilterPanel
+                filters={filters}
+                onFilterChange={(key, value) => setFilters((p) => ({ ...p, [key]: value }))}
+                onReset={() => setFilters(resetMutualFundFilters())}
+                isOpen={isFilterOpen}
+                onToggle={() => setIsFilterOpen(!isFilterOpen)}
+                resultCount={funds.length}
+              />
+            )}
+            footer={false}
+          >
+            {latestSipOrder && (
+              <p className={`text-xs mb-4 inline-flex items-center gap-1 rounded-full px-3 py-1 border ${
+                latestSipOrder.status === 'mandate_pending'
+                  ? 'text-amber-700 bg-amber-50 border-amber-200'
+                  : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+              }`}>
+                <Icon name={latestSipOrder.status === 'mandate_pending' ? 'Clock' : 'CheckCircle2'} size={14} />
+                SIP: ₹{Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · {latestSipOrder.fundName}
+              </p>
+            )}
+
+            <div className="flex flex-wrap gap-2 mb-4">
+              <Button variant="outline" size="sm" onClick={() => setShowCatalog(false)}>
+                <Icon name="LayoutGrid" size={16} className="mr-1" /> Browse categories
+              </Button>
             </div>
 
-            <div id="mf-calculator">
+            <div id="mf-calculator" className="mb-6">
               <MutualFundCalculatorPanel />
             </div>
 
             <MutualFundCategoryBar activeCategory={filters.category} onCategoryChange={(slug) => setFilters((p) => ({ ...p, category: slug }))} />
 
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 md:gap-6">
-              <div className="lg:col-span-1">
-                <MutualFundFilterPanel
-                  filters={filters}
-                  onFilterChange={(key, value) => setFilters((p) => ({ ...p, [key]: value }))}
-                  onReset={() => setFilters(resetMutualFundFilters())}
-                  isOpen={isFilterOpen}
-                  onToggle={() => setIsFilterOpen(!isFilterOpen)}
-                  resultCount={funds.length}
-                />
-              </div>
-
-              <div className="lg:col-span-3 space-y-6">
-                {loading ? (
-                  <div className="text-center py-16 text-muted-foreground">Loading mutual funds…</div>
-                ) : (
-                  <MarketplaceCompareBoard
+            {loading ? (
+              <div className="text-center py-16 text-muted-foreground">Loading mutual funds…</div>
+            ) : (
+              <MarketplaceCompareBoard
                     type="mutual_fund"
                     products={funds}
                     selectedIds={selected}
@@ -315,7 +312,7 @@ const MutualFundMarketplacePage = () => {
                         </div>
                         {fund.returns3y != null ? <span className="text-xs">3Y: <strong className="text-success">{formatPercent(fund.returns3y)}</strong></span> : null}
                         <Button
-                          className="mt-auto w-full"
+                          className="mt-auto w-full rf-btn-primary"
                           onClick={() => handleStartSip(fund)}
                         >
                           Start SIP
@@ -329,12 +326,9 @@ const MutualFundMarketplacePage = () => {
                       </div>
                     )}
                   />
-                )}
-              </div>
-            </div>
-          </>
-        )}
-      </div>
+            )}
+          </MarketplacePageShell>
+      )}
 
       <MarketplaceLeadWizard
         open={wizardOpen}
@@ -353,7 +347,7 @@ const MutualFundMarketplacePage = () => {
         initialSipAmount={initialSipAmount}
         onComplete={handleSipComplete}
       />
-    </div>
+    </>
   );
 };
 

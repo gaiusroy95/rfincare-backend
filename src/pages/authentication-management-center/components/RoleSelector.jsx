@@ -6,9 +6,9 @@ import Icon from '../../../components/AppIcon';
 export default function RoleSelector({ selectedRole, onRoleChange }) {
   const roles = [
     { id: 'admin', label: 'Admin', icon: Shield, color: 'bg-red-100 text-red-700 border-red-300', activeColor: 'bg-red-600 text-white border-red-600' },
-    { id: 'agent', label: 'Agent', icon: Users, color: 'bg-blue-100 text-blue-700 border-blue-300', activeColor: 'bg-blue-600 text-white border-blue-600' },
-    { id: 'employee', label: 'Employee', icon: Briefcase, color: 'bg-green-100 text-green-700 border-green-300', activeColor: 'bg-green-600 text-white border-green-600' },
-    { id: 'customer', label: 'Customer', icon: UserCheck, color: 'bg-purple-100 text-purple-700 border-purple-300', activeColor: 'bg-purple-600 text-white border-purple-600' }
+    { id: 'agent', label: 'Agent', icon: Users, color: 'bg-emerald-50 text-emerald-800 border-emerald-200', activeColor: 'bg-[var(--color-brand-green-dark)] text-white border-[var(--color-brand-green-dark)]' },
+    { id: 'employee', label: 'Employee', icon: Briefcase, color: 'bg-emerald-50 text-emerald-700 border-emerald-200', activeColor: 'bg-[var(--color-brand-green)] text-white border-[var(--color-brand-green)]' },
+    { id: 'customer', label: 'Customer', icon: UserCheck, color: 'bg-orange-50 text-orange-800 border-orange-200', activeColor: 'bg-[var(--color-brand-orange)] text-white border-[var(--color-brand-orange)]' }
   ];
 
   return (

@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, User, Eye, EyeOff, Shield, AlertCircle } from 'lucide-react';
+import { Lock, User, Eye, EyeOff, AlertCircle } from 'lucide-react';
 import { authService } from '../../services/authService';
 import { useAuth } from '../../contexts/AuthContext';
 import RoleSelector from './components/RoleSelector';
 import PasswordChangeModal from './components/PasswordChangeModal';
 import OAuthProviderButtons from '../customer-registration-portal/components/OAuthProviderButtons';
 
-import Header from '../../components/ui/Header';
+import PortalLoginLayout from '../../components/layout/PortalLoginLayout';
 
 export default function AuthenticationManagementCenter() {
   const navigate = useNavigate();
@@ -152,25 +152,18 @@ export default function AuthenticationManagementCenter() {
   const currentDemo = demoCredentials?.[selectedRole];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-900 via-blue-800 to-purple-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center">
-              <Shield className="w-10 h-10 text-blue-600" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">
-            {mode === 'login' ? 'Authentication Management Center' : 'Customer Sign Up'}
-          </h1>
-          <p className="text-blue-200">
-            {mode === 'login' ? 'Secure multi-level access control' : 'Create your customer account'}
-          </p>
-        </div>
-
-        {/* Main Card */}
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
+    <>
+    <PortalLoginLayout
+      title={mode === 'login' ? 'Authentication Management Center' : 'Customer Sign Up'}
+      subtitle={mode === 'login' ? 'Secure multi-level access control' : 'Create your customer account'}
+      accent="customer"
+      footer={(
+        <p className="flex items-center justify-center gap-1">
+          <Lock className="w-4 h-4" />
+          Secured with enterprise-grade encryption
+        </p>
+      )}
+    >
           {/* Mode Toggle for Customer */}
           {selectedRole === 'customer' && (
             <div className="mb-6 flex gap-2 bg-gray-100 p-1 rounded-lg">
@@ -178,7 +171,7 @@ export default function AuthenticationManagementCenter() {
                 type="button"
                 onClick={() => setMode('login')}
                 className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                  mode === 'login' ?'bg-white text-blue-600 shadow-sm' :'text-gray-600 hover:text-gray-900'
+                  mode === 'login' ?'bg-white text-[var(--color-brand-green-dark)] shadow-sm' :'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Login
@@ -187,7 +180,7 @@ export default function AuthenticationManagementCenter() {
                 type="button"
                 onClick={() => setMode('signup')}
                 className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-                  mode === 'signup' ?'bg-white text-blue-600 shadow-sm' :'text-gray-600 hover:text-gray-900'
+                  mode === 'signup' ?'bg-white text-[var(--color-brand-green-dark)] shadow-sm' :'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 Sign Up
@@ -226,7 +219,7 @@ export default function AuthenticationManagementCenter() {
                     placeholder={
                       selectedRole === 'customer' ?'Enter your user ID or email' :'Enter username or email'
                     }
-                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-brand-green)]/30 focus:border-transparent"
                     required
                   />
                 </div>
@@ -243,7 +236,7 @@ export default function AuthenticationManagementCenter() {
                     value={password}
                     onChange={(e) => setPassword(e?.target?.value)}
                     placeholder="Enter your password"
-                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full pl-10 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-brand-green)]/30 focus:border-transparent"
                     required
                   />
                   <button
@@ -263,7 +256,7 @@ export default function AuthenticationManagementCenter() {
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="w-full rf-btn-primary font-medium py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {loading ? (
                   <>
@@ -312,7 +305,7 @@ export default function AuthenticationManagementCenter() {
                     value={fullName}
                     onChange={(e) => setFullName(e?.target?.value)}
                     placeholder="Enter your full name"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-brand-green)]/30 focus:border-transparent"
                     required
                   />
                 </div>
@@ -324,7 +317,7 @@ export default function AuthenticationManagementCenter() {
                     value={phone}
                     onChange={(e) => setPhone(e?.target?.value)}
                     placeholder="+91 XXXXX XXXXX"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-brand-green)]/30 focus:border-transparent"
                     required
                   />
                 </div>
@@ -336,7 +329,7 @@ export default function AuthenticationManagementCenter() {
                     value={email}
                     onChange={(e) => setEmail(e?.target?.value)}
                     placeholder="your.email@example.com"
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-brand-green)]/30 focus:border-transparent"
                     required
                   />
                 </div>
@@ -349,7 +342,7 @@ export default function AuthenticationManagementCenter() {
                       value={password}
                       onChange={(e) => setPassword(e?.target?.value)}
                       placeholder="Create a strong password"
-                      className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      className="w-full pl-4 pr-12 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[var(--color-brand-green)]/30 focus:border-transparent"
                       required
                       minLength={8}
                     />
@@ -371,7 +364,7 @@ export default function AuthenticationManagementCenter() {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  className="w-full rf-btn-primary font-medium py-3 px-6 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                 >
                   {loading ? (
                     <>
@@ -392,20 +385,20 @@ export default function AuthenticationManagementCenter() {
 
           {/* Demo Credentials - Only show in login mode */}
           {mode === 'login' && (
-            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <p className="text-sm font-semibold text-blue-900 mb-2">Demo Credentials for {selectedRole?.charAt(0)?.toUpperCase() + selectedRole?.slice(1)}:</p>
+            <div className="mt-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg">
+              <p className="text-sm font-semibold text-emerald-900 mb-2">Demo Credentials for {selectedRole?.charAt(0)?.toUpperCase() + selectedRole?.slice(1)}:</p>
               {currentDemo?.username && (
-                <p className="text-sm text-blue-800 mb-1">
+                <p className="text-sm text-emerald-800 mb-1">
                   <strong>Username:</strong> {currentDemo?.username}
                 </p>
               )}
               {currentDemo?.email && (
-                <p className="text-sm text-blue-800 mb-1">
+                <p className="text-sm text-emerald-800 mb-1">
                   <strong>Email:</strong> {currentDemo?.email}
                 </p>
               )}
               {currentDemo?.password && (
-                <p className="text-sm text-blue-800">
+                <p className="text-sm text-emerald-800">
                   <strong>Password:</strong> {currentDemo?.password}
                 </p>
               )}
@@ -415,7 +408,7 @@ export default function AuthenticationManagementCenter() {
                 </p>
               )}
               {(selectedRole === 'admin' || selectedRole === 'agent' || selectedRole === 'employee') && (
-                <p className="text-xs text-blue-600 mt-2">
+                <p className="text-xs text-[var(--color-brand-green)] mt-2">
                   You can sign in using either username or email
                 </p>
               )}
@@ -429,23 +422,14 @@ export default function AuthenticationManagementCenter() {
                 Need more options?{' '}
                 <button
                   onClick={() => navigate('/customer-registration-portal')}
-                  className="text-blue-600 hover:text-blue-700 font-medium"
+                  className="text-[var(--color-brand-green)] hover:underline font-medium"
                 >
                   Full Registration Portal
                 </button>
               </p>
             </div>
           )}
-        </div>
-
-        {/* Security Note */}
-        <div className="mt-6 text-center">
-          <p className="text-sm text-blue-200">
-            <Lock className="w-4 h-4 inline mr-1" />
-            Secured with enterprise-grade encryption
-          </p>
-        </div>
-      </div>
+    </PortalLoginLayout>
 
       {/* Password Change Modal */}
       {showPasswordChange && (
@@ -455,6 +439,6 @@ export default function AuthenticationManagementCenter() {
           onSuccess={handlePasswordChangeSuccess}
         />
       )}
-    </div>
+    </>
   );
 }

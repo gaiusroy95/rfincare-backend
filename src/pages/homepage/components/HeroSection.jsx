@@ -1,171 +1,135 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
-import CustomerStatusCheckModal from './CustomerStatusCheckModal';
+import HomeSidebarWidgets from './HomeSidebarWidgets';
+
+const TRUST_ITEMS = [
+  { icon: 'Shield', label: '100% Secure' },
+  { icon: 'BadgeIndianRupee', label: 'Best Prices' },
+  { icon: 'Building2', label: '50+ Partners' },
+  { icon: 'Users', label: '10L+ Users' },
+];
 
 const HeroSection = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const heroSlides = [
-    {
-      title: t('hero.slide1Title'),
-      subtitle: t('hero.slide1Subtitle'),
-      cta: t('hero.slide1CTA'),
-      icon: "TrendingUp"
-    },
-    {
-      title: t('hero.slide2Title'),
-      subtitle: t('hero.slide2Subtitle'),
-      cta: t('hero.slide2CTA'),
-      icon: "Shield"
-    },
-    {
-      title: t('hero.slide3Title'),
-      subtitle: t('hero.slide3Subtitle'),
-      cta: t('hero.slide3CTA'),
-      icon: "Target"
-    }
-  ];
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentSlide((prev) => (prev + 1) % heroSlides?.length);
-    }, 5000);
-    return () => clearInterval(timer);
-  }, []);
+  const handleSearch = (e) => {
+    e.preventDefault();
+    const q = searchQuery.trim();
+    if (q) navigate(`/product-comparison?search=${encodeURIComponent(q)}`);
+    else navigate('/product-comparison');
+  };
 
   return (
-    <>
-      <section className="relative bg-gradient-to-br from-primary via-secondary to-accent text-white overflow-hidden">
-        <div className="absolute inset-0 opacity-10">
-          <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-          <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl"></div>
-        </div>
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 lg:py-32">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12 items-center">
-            <div className="text-center lg:text-left space-y-6 md:space-y-8">
-              <div className="inline-flex items-center justify-center lg:justify-start space-x-3 mb-4">
-                <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm animate-scale-in">
-                  <Icon name={heroSlides?.[currentSlide]?.icon} size={32} color="white" />
-                </div>
-              </div>
-
-              <h1 className="text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold leading-tight animate-fade-in">
-                {heroSlides?.[currentSlide]?.title}
+    <section className="rf-home-hero">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+          <div className="xl:col-span-5 space-y-6">
+            <div>
+              <h1 className="text-3xl md:text-4xl lg:text-[2.65rem] font-bold text-foreground leading-tight">
+                Everything You Need. One Place. For Your Financial Freedom.
               </h1>
-
-              <p className="text-base md:text-lg lg:text-xl text-white/90 max-w-2xl mx-auto lg:mx-0 animate-fade-in">
-                {heroSlides?.[currentSlide]?.subtitle}
+              <p className="text-base md:text-lg text-muted-foreground mt-4 max-w-xl">
+                Compare, Invest, Insure &amp; Grow your wealth with India&apos;s most trusted financial marketplace.
               </p>
-
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start pt-4">
-                <Button
-                  variant="default"
-                  size="lg"
-                  className="bg-white text-primary hover:bg-white/90 shadow-lg"
-                  iconName="ArrowRight"
-                  iconPosition="right"
-                  onClick={() => navigate('/eligibility-assessment')}
-                >
-                  Check Eligibility
-                </Button>
-
-                <Button
-                  variant="outline"
-                  size="lg"
-                  className="border-2 border-white text-white hover:bg-white/10"
-                  iconName="Search"
-                  iconPosition="left"
-                  onClick={() => setIsStatusModalOpen(true)}
-                >
-                  Check Status
-                </Button>
-              </div>
-
-              <div className="flex flex-wrap gap-3 justify-center lg:justify-start pt-4">
-                <button
-                  onClick={() => navigate('/about-us')}
-                  className="text-sm text-white/80 hover:text-white underline transition-colors"
-                >
-                  About Us
-                </button>
-                <span className="text-white/40">•</span>
-                <button
-                  onClick={() => navigate('/contact-us')}
-                  className="text-sm text-white/80 hover:text-white underline transition-colors"
-                >
-                  Contact Us
-                </button>
-                <span className="text-white/40">•</span>
-                <button
-                  onClick={() => navigate('/customer-login')}
-                  className="text-sm text-white/80 hover:text-white underline transition-colors"
-                >
-                  Login
-                </button>
-              </div>
-
-              <div className="flex items-center justify-center lg:justify-start space-x-2 pt-6">
-                {heroSlides?.map((_, index) => (
-                  <button
-                    key={index}
-                    onClick={() => setCurrentSlide(index)}
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      index === currentSlide ? 'w-8 bg-white' : 'w-2 bg-white/40'
-                    }`}
-                    aria-label={`Go to slide ${index + 1}`}
-                  />
-                ))}
-              </div>
             </div>
 
-            <div className="hidden lg:block">
-              <div className="relative">
-                <div className="absolute inset-0 bg-gradient-to-tr from-white/20 to-transparent rounded-2xl blur-xl"></div>
-                <div className="relative bg-white/10 backdrop-blur-md rounded-2xl p-6 md:p-8 border border-white/20 shadow-2xl">
-                  <div className="space-y-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center">
-                        <Icon name="Check" size={20} color="white" />
-                      </div>
-                      <span className="text-sm md:text-base">{t('hero.instantEligibility')}</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center">
-                        <Icon name="Check" size={20} color="white" />
-                      </div>
-                      <span className="text-sm md:text-base">{t('hero.compareMultiple')}</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center">
-                        <Icon name="Check" size={20} color="white" />
-                      </div>
-                      <span className="text-sm md:text-base">{t('hero.secureDocuments')}</span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-success rounded-full flex items-center justify-center">
-                        <Icon name="Check" size={20} color="white" />
-                      </div>
-                      <span className="text-sm md:text-base">{t('hero.realtimeTracking')}</span>
-                    </div>
+            <div className="flex flex-wrap gap-4">
+              {TRUST_ITEMS.map((item) => (
+                <div key={item.label} className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Icon name={item.icon} size={16} className="text-[var(--color-brand-green)]" />
+                  <span className="font-medium">{item.label}</span>
+                </div>
+              ))}
+            </div>
+
+            <form onSubmit={handleSearch} className="flex gap-0 max-w-xl shadow-md rounded-xl overflow-hidden border border-border">
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="What are you looking for?"
+                className="flex-1 px-4 py-3.5 text-sm outline-none bg-white"
+              />
+              <button
+                type="submit"
+                className="px-6 py-3.5 text-sm font-semibold text-white bg-[var(--color-brand-green)] hover:bg-[var(--color-brand-green-dark)] transition-colors"
+              >
+                Search
+              </button>
+            </form>
+
+            <div className="flex flex-wrap gap-3">
+              <Button
+                className="rf-btn-primary"
+                iconName="ArrowRight"
+                iconPosition="right"
+                onClick={() => navigate('/product-comparison')}
+              >
+                Explore Products
+              </Button>
+              <Button
+                variant="outline"
+                className="rf-btn-outline-green"
+                iconName="Phone"
+                iconPosition="left"
+                onClick={() => navigate('/contact-us')}
+              >
+                Talk to Expert
+              </Button>
+            </div>
+          </div>
+
+          <div className="xl:col-span-4 relative">
+            <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[4/3] bg-gradient-to-br from-emerald-50 to-orange-50">
+              <img
+                src="https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800&q=80"
+                alt="Happy family planning their finances"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute bottom-4 right-4 left-4 sm:left-auto sm:w-56 bg-white rounded-xl shadow-xl p-4 border border-border">
+                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Financial Health Score</p>
+                <div className="flex items-center gap-3 mt-2">
+                  <div className="relative w-16 h-16">
+                    <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
+                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="#e2e8f0" strokeWidth="3" />
+                      <circle
+                        cx="18"
+                        cy="18"
+                        r="15.5"
+                        fill="none"
+                        stroke="var(--color-brand-green)"
+                        strokeWidth="3"
+                        strokeDasharray={`${(728 / 900) * 97.4} 97.4`}
+                        strokeLinecap="round"
+                      />
+                    </svg>
+                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">728</span>
+                  </div>
+                  <div>
+                    <p className="text-lg font-bold text-foreground">728<span className="text-sm font-normal text-muted-foreground">/900</span></p>
+                    <span className="inline-block text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Good</span>
                   </div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => navigate('/eligibility-assessment')}
+                  className="mt-3 text-xs font-semibold text-[var(--color-brand-green)] hover:underline"
+                >
+                  Improve Score →
+                </button>
               </div>
             </div>
           </div>
-        </div>
-      </section>
 
-      <CustomerStatusCheckModal 
-        isOpen={isStatusModalOpen} 
-        onClose={() => setIsStatusModalOpen(false)} 
-      />
-    </>
+          <div className="xl:col-span-3 space-y-4">
+            <HomeSidebarWidgets />
+          </div>
+        </div>
+      </div>
+    </section>
   );
 };
 

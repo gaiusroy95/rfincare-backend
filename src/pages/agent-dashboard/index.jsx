@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-import Header from '../../components/ui/Header';
+import PortalShell from '../../components/layout/PortalShell';
+import DashboardKpiCard from '../../components/dashboard/DashboardKpiCard';
+import { AGENT_NAV_ITEMS } from '../../constants/portalNavigation';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import PerformanceMetrics from './components/PerformanceMetrics';
@@ -248,133 +250,75 @@ const AgentDashboard = () => {
     }
   };
 
+  const leadCount = clients.filter((c) => c.status === 'new').length;
+
+  const handleNavSelect = (item) => {
+    if (item.path) {
+      navigate(item.path);
+      return;
+    }
+    if (item.view) setSelectedView(item.view);
+  };
+
+  const sidebarActiveId = AGENT_NAV_ITEMS.find((n) => n.view === selectedView)?.id || 'overview';
+
+  const agentKpis = [
+    { title: 'Total Leads', value: String(dashboard?.metrics?.find((m) => m.type === 'leads')?.value || clients.length), change: '+18.4%', icon: 'UserPlus' },
+    { title: 'Total Applications', value: String(dashboard?.metrics?.find((m) => m.type === 'applications')?.value || '—'), change: '+15.2%', icon: 'FileText', iconBg: 'bg-violet-50', iconColor: 'text-violet-600' },
+    { title: 'Approved Applications', value: String(dashboard?.metrics?.find((m) => m.type === 'approved')?.value || '—'), change: '+16.7%', icon: 'CheckCircle2' },
+    { title: 'Total Earnings', value: `₹${(dashboard?.totalEarnings || 78450).toLocaleString('en-IN')}`, change: '+22.6%', icon: 'IndianRupee', iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
+    { title: 'Pending Payout', value: `₹${(dashboard?.pendingPayout || 18750).toLocaleString('en-IN')}`, subtitle: 'Next payout: 25 May', icon: 'Wallet', iconBg: 'bg-sky-50', iconColor: 'text-sky-600' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
-      <SessionTimeout timeoutMinutes={30} warningMinutes={2} />
-      
-      {/* Header */}
-      <Header className="bg-white border-b border-gray-200 shadow-sm">
-        <div className="flex items-center justify-between w-full">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 bg-gradient-to-br from-agent-primary to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
-              <Icon name="Users" className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-agent-primary to-pink-600 bg-clip-text text-transparent">
-                Agent Dashboard
-              </h1>
-              <p className="text-sm text-gray-600">Manage clients and track performance</p>
-            </div>
-          </div>
-          <Button
-            onClick={async () => {
-              await signOut();
-              navigate('/agent-login', { replace: true });
-            }}
-            variant="outline"
-            className="flex items-center gap-2 border-red-200 text-red-600 hover:bg-red-50"
-          >
-            <Icon name="LogOut" className="w-4 h-4" />
-            Logout
+    <PortalShell
+      portalLabel="Agent Dashboard"
+      navItems={AGENT_NAV_ITEMS.map((item) => ({
+        ...item,
+        badge: item.badgeKey === 'leads' ? leadCount : 0,
+      }))}
+      activeId={sidebarActiveId}
+      onNavSelect={handleNavSelect}
+      userName={agentProfile?.name}
+      userRole="Agent"
+      userId={`Agent ID: ${agentProfile?.agentId}`}
+      avatarUrl={agentProfile?.avatar}
+      notificationCount={5}
+      onLogout={async () => {
+        await signOut();
+        navigate('/agent-login', { replace: true });
+      }}
+      promoCard={(
+        <div>
+          <p className="text-sm font-bold text-foreground mb-1">Earn More</p>
+          <p className="text-xs text-muted-foreground mb-3">Refer partners and grow your income</p>
+          <Button className="rf-btn-primary w-full" size="sm" onClick={() => navigate('/share-your-story')}>
+            Refer Now
           </Button>
         </div>
-      </Header>
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
+      )}
+      headerActions={(
+        <Button className="rf-btn-primary" size="sm" iconName="Download" onClick={() => handleQuickAction('view-commission')}>
+          Download Report
+        </Button>
+      )}
+    >
+      <SessionTimeout timeoutMinutes={30} warningMinutes={2} />
+
         <div className="mb-6 md:mb-8">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
-            <div className="flex items-center space-x-4">
-              <button
-                type="button"
-                onClick={() => navigate('/agent/settings')}
-                className="rounded-full border-4 border-primary/20 focus:outline-none focus:ring-2 focus:ring-primary"
-                title="Profile settings"
-              >
-                <img
-                  src={agentProfile?.avatar}
-                  alt={agentProfile?.avatarAlt}
-                  className="w-16 h-16 md:w-20 md:h-20 rounded-full object-cover"
-                />
-              </button>
-
-              <div>
-                <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-                  Welcome back, {agentProfile?.name}
-                </h1>
-                <div className="flex items-center space-x-3 mt-1">
-                  <span className="text-sm text-muted-foreground">{agentProfile?.agentId}</span>
-                  <span className="text-sm px-2 py-0.5 bg-amber-100 text-amber-700 rounded-full font-semibold">
-                    {agentProfile?.tier}
-                  </span>
-                  <div className="flex items-center space-x-1">
-                    <Icon name="Star" size={14} color="var(--color-warning)" />
-                    <span className="text-sm font-semibold text-foreground">{agentProfile?.rating}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                iconName="LifeBuoy"
-                onClick={() => openCommunication({}, 'help')}
-              >
-                Get Help
-              </Button>
-              <Button variant="outline" size="sm" iconName="Bell">
-                Notifications
-              </Button>
-              <Button
-                variant="default"
-                size="sm"
-                iconName="Settings"
-                onClick={() => navigate('/agent/settings')}
-              >
-                Settings
-              </Button>
-            </div>
-          </div>
+          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+            Welcome back, {agentProfile?.name?.split(' ')?.[0]}! 👋
+          </h1>
+          <p className="text-sm text-muted-foreground">Here&apos;s your business overview for today.</p>
         </div>
 
-        <div className="mb-6">
-          <div className="flex items-center space-x-2 bg-muted rounded-lg p-1">
-            <button
-              onClick={() => setSelectedView('overview')}
-              className={`flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${
-              selectedView === 'overview' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`
-              }>
-
-              <div className="flex items-center justify-center space-x-2">
-                <Icon name="LayoutDashboard" size={16} />
-                <span>Overview</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setSelectedView('clients')}
-              className={`flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${
-              selectedView === 'clients' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`
-              }>
-
-              <div className="flex items-center justify-center space-x-2">
-                <Icon name="Users" size={16} />
-                <span>Clients</span>
-              </div>
-            </button>
-            <button
-              onClick={() => setSelectedView('performance')}
-              className={`flex-1 px-4 py-2 rounded text-sm font-medium transition-colors ${
-              selectedView === 'performance' ?
-              'bg-primary text-primary-foreground' : 'text-muted-foreground hover:text-foreground'}`
-              }>
-
-              <div className="flex items-center justify-center space-x-2">
-                <Icon name="TrendingUp" size={16} />
-                <span>Performance</span>
-              </div>
-            </button>
+        {selectedView === 'overview' ? (
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
+            {agentKpis.map((kpi) => (
+              <DashboardKpiCard key={kpi.title} {...kpi} />
+            ))}
           </div>
-        </div>
+        ) : null}
 
         {selectedView === 'overview' &&
         <div className="space-y-6">
@@ -461,7 +405,6 @@ const AgentDashboard = () => {
             </div>
           </div>
         }
-      </main>
 
       <StaffCommunicationPanel
         isOpen={communicationOpen}
@@ -471,7 +414,7 @@ const AgentDashboard = () => {
         variant="agent"
         initialMode={communicationContext.mode}
       />
-    </div>
+    </PortalShell>
   );
 
 };

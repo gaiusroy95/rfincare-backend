@@ -28,7 +28,7 @@ const MarketplaceHero = ({ type = 'insurance', onCtaClick }) => {
   const isInsurance = type === 'insurance';
 
   return (
-    <section className="rounded-2xl border border-border bg-gradient-to-br from-slate-50 via-white to-blue-50/50 p-6 md:p-10">
+    <section className="rounded-2xl border border-border bg-[#f8faf9] p-6 md:p-10">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
         <div className="space-y-5">
           <h1 className="text-2xl md:text-4xl font-bold text-slate-900 leading-tight">
@@ -55,7 +55,7 @@ const MarketplaceHero = ({ type = 'insurance', onCtaClick }) => {
         </div>
 
         <div className="relative">
-          <div className="rounded-2xl bg-gradient-to-br from-slate-800 to-blue-900 text-white p-6 md:p-8 shadow-xl min-h-[200px] flex flex-col justify-between">
+          <div className="rounded-2xl bg-[var(--color-brand-green-dark)] text-white p-6 md:p-8 shadow-xl min-h-[200px] flex flex-col justify-between">
             <div className="space-y-2">
               <p className="text-lg md:text-xl font-semibold">{current.title}</p>
               <p className="text-amber-300 font-bold text-sm md:text-base">{current.highlight}</p>

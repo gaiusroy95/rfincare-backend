@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '../../components/ui/Header';
+import MarketingPageShell from '../../components/layout/MarketingPageShell';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -189,42 +189,33 @@ const CustomerProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background">
-        <Header />
-        <div className="flex items-center justify-center h-screen">
+      <MarketingPageShell title="My Profile" subtitle="Loading your profile…">
+        <div className="flex items-center justify-center py-20">
           <div className="text-center">
-            <Icon name="Loader" size={48} className="animate-spin mx-auto mb-4" />
+            <Icon name="Loader" size={48} className="animate-spin mx-auto mb-4 text-[var(--color-brand-green)]" />
             <p className="text-muted-foreground">Loading profile...</p>
           </div>
         </div>
-      </div>
+      </MarketingPageShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-
-      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8">
-        {/* Header */}
-        <div className="mb-6 md:mb-8">
+    <MarketingPageShell title="My Profile" subtitle="Update your personal information and contact details">
+      <section className="py-10">
+      <main className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-6">
           <button
             onClick={handleCancel}
-            className="flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4 transition-colors"
+            className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
           >
             <Icon name="ArrowLeft" size={20} />
             <span>Back to Dashboard</span>
           </button>
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-2">
-            Edit Profile
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground">
-            Update your personal information
-          </p>
         </div>
 
         {/* Profile Form */}
-        <div className="bg-card border border-border rounded-lg p-6 md:p-8">
+        <div className="rf-filter-card">
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Avatar Preview */}
             {formData?.avatarUrl && !fieldErrors?.avatarUrl && (
@@ -427,7 +418,7 @@ const CustomerProfile = () => {
               <Button
                 type="submit"
                 variant="default"
-                className="flex-1"
+                className="flex-1 rf-btn-primary"
                 disabled={saving}
               >
                 {saving ? (
@@ -456,10 +447,10 @@ const CustomerProfile = () => {
         </div>
 
         {/* Additional Info */}
-        <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="mt-6 bg-emerald-50 border border-emerald-200 rounded-lg p-4">
           <div className="flex items-start gap-3">
-            <Icon name="Info" size={20} className="text-blue-600 flex-shrink-0 mt-0.5" />
-            <div className="text-sm text-blue-700">
+            <Icon name="Info" size={20} className="text-[var(--color-brand-green)] flex-shrink-0 mt-0.5" />
+            <div className="text-sm text-emerald-900">
               <p className="font-medium mb-1">Profile Information</p>
               <ul className="list-disc list-inside space-y-1 text-xs">
                 <li>Your email address is linked to your account and cannot be changed</li>
@@ -471,7 +462,8 @@ const CustomerProfile = () => {
           </div>
         </div>
       </main>
-    </div>
+      </section>
+    </MarketingPageShell>
   );
 };
 

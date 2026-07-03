@@ -10,7 +10,7 @@ const ProgressIndicator = ({ currentStep, totalSteps, steps, onStepClick }) => {
       {/* Progress Bar */}
       <div className="relative w-full h-2 bg-muted rounded-full overflow-hidden mb-6 md:mb-8">
         <div
-          className="absolute top-0 left-0 h-full bg-gradient-to-r from-primary to-secondary transition-all duration-500 ease-out"
+          className="absolute top-0 left-0 h-full bg-[var(--color-brand-green)] transition-all duration-500 ease-out"
           style={{ width: `${progressPercentage}%` }}
         />
       </div>

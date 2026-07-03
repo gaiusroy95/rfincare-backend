@@ -3,7 +3,7 @@ import Icon from '../../../components/AppIcon';
 
 const ContextBanner = ({ loanType, loanAmount }) => {
   return (
-    <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
+    <div className="bg-emerald-50 border border-emerald-200 rounded-lg p-4 md:p-6 mb-4 md:mb-6">
       <div className="flex items-start space-x-3">
         <div className="w-10 h-10 md:w-12 md:h-12 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
           <Icon name="Info" size={20} color="var(--color-primary)" />

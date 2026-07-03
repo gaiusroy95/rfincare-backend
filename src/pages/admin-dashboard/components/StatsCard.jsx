@@ -15,7 +15,7 @@ const StatsCard = ({ title, value, change, changeType, icon, iconBg, trend }) =>
   };
 
   return (
-    <div className="bg-card rounded-lg border border-border p-4 md:p-6 hover:shadow-md transition-all duration-300">
+    <div className="rf-kpi-card hover:shadow-md transition-all duration-300">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <p className="text-sm md:text-base text-muted-foreground mb-2">{title}</p>

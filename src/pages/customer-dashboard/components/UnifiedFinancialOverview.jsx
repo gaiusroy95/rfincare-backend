@@ -79,7 +79,7 @@ const UnifiedFinancialOverview = ({ snapshot, loading, onRefresh }) => {
           )}
         </div>
 
-        <div className="bg-gradient-to-br from-primary/10 to-secondary/10 border border-primary/20 rounded-2xl p-6">
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-6">
           <h3 className="text-lg font-bold mb-2">Financial Health Score</h3>
           <p className="text-4xl font-bold text-primary mb-2">{summary.financialHealthScore ?? 0}</p>
           <p className="text-sm text-muted-foreground">

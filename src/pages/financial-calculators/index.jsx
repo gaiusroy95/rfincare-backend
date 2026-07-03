@@ -65,7 +65,7 @@ const FinancialCalculatorsHub = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <main>
-        <section className="bg-gradient-to-br from-slate-800 via-slate-900 to-primary text-white py-14 md:py-18">
+        <section className="bg-[var(--color-brand-green-dark)] text-white py-14 md:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
             <Icon name="Calculator" size={44} className="mx-auto mb-4 opacity-90" />
             <h1 className="text-3xl md:text-5xl font-bold mb-3">Financial Calculators</h1>
@@ -94,7 +94,7 @@ const FinancialCalculatorsHub = () => {
                   type="button"
                   onClick={() => navigate('/resources/calculators')}
                   className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                    activeCategory === 'all' ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:border-primary'
+                    activeCategory === 'all' ? 'bg-[var(--color-brand-green-dark)] text-white border-[var(--color-brand-green-dark)]' : 'border-border hover:border-[var(--color-brand-green)]'
                   }`}
                 >
                   All
@@ -105,7 +105,7 @@ const FinancialCalculatorsHub = () => {
                     type="button"
                     onClick={() => navigate(`/resources/calculators?category=${cat.id}`)}
                     className={`px-4 py-2 rounded-full text-sm font-medium border transition-colors ${
-                      activeCategory === cat.id ? 'bg-primary text-primary-foreground border-primary' : 'border-border hover:border-primary'
+                      activeCategory === cat.id ? 'bg-[var(--color-brand-green-dark)] text-white border-[var(--color-brand-green-dark)]' : 'border-border hover:border-[var(--color-brand-green)]'
                     }`}
                   >
                     {cat.label}

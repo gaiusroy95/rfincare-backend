@@ -1,25 +1,55 @@
-import React from 'react';
+import React, { useState } from 'react';
+
+const LOGO_SRC = '/assets/images/logo.png';
+const LOGO_SRC_ALT = '/assets/images/Logo_-_Copy_-_Copy-1771484476490.jpg';
 
 /**
- * Theme-aligned Rfincare mark (Milestone 1 logo update).
+ * RFINCARE logo — image from public/assets with text wordmark fallback.
  */
-const BrandLogo = ({ size = 'md', showText = true, className = '' }) => {
-  const sizes = {
-    sm: { box: 'w-8 h-8', text: 'text-base', letter: 'text-sm' },
-    md: { box: 'w-10 h-10', text: 'text-xl', letter: 'text-lg' },
-    lg: { box: 'w-12 h-12', text: 'text-2xl', letter: 'text-xl' },
-  };
-  const s = sizes[size] || sizes.md;
+const BrandLogo = ({ size = 'md', showTagline = true, className = '' }) => {
+  const [imgFailed, setImgFailed] = useState(false);
+
+  const heights = { sm: 'h-8', md: 'h-10', lg: 'h-12' };
+  const heightClass = heights[size] || heights.md;
+
+  if (!imgFailed) {
+    return (
+      <div className={`flex flex-col leading-none ${className}`}>
+        <img
+          src={LOGO_SRC}
+          alt="RFINCARE — Your Financial Supermarket"
+          className={`${heightClass} w-auto object-contain object-left`}
+          onError={(e) => {
+            if (e.currentTarget.src.includes(LOGO_SRC_ALT)) {
+              setImgFailed(true);
+            } else {
+              e.currentTarget.src = LOGO_SRC_ALT;
+            }
+          }}
+        />
+        {showTagline ? (
+          <span className="text-[10px] font-semibold text-[var(--color-brand-green)] mt-0.5 tracking-wide uppercase">
+            Your Financial Supermarket
+          </span>
+        ) : null}
+      </div>
+    );
+  }
+
+  const textSizes = { sm: 'text-lg', md: 'text-2xl', lg: 'text-3xl' };
+  const tagSizes = { sm: 'text-[9px]', md: 'text-[10px]', lg: 'text-xs' };
 
   return (
-    <div className={`flex items-center space-x-3 ${className}`}>
-      <div
-        className={`${s.box} rounded-lg flex items-center justify-center bg-primary shadow-sm`}
-        aria-hidden
-      >
-        <span className={`${s.letter} font-bold text-primary-foreground`}>R</span>
+    <div className={`flex flex-col leading-none ${className}`}>
+      <div className={`font-extrabold tracking-tight ${textSizes[size] || textSizes.md}`} style={{ fontFamily: 'var(--font-headline)' }}>
+        <span className="text-[var(--color-brand-green)]">R</span>
+        <span className="text-[var(--color-brand-orange)]">FINCARE</span>
       </div>
-      {showText && <span className={`${s.text} font-bold text-foreground`}>Rfincare</span>}
+      {showTagline ? (
+        <span className={`${tagSizes[size] || tagSizes.md} font-semibold text-[var(--color-brand-green)] mt-0.5 tracking-wide uppercase`}>
+          Your Financial Supermarket
+        </span>
+      ) : null}
     </div>
   );
 };

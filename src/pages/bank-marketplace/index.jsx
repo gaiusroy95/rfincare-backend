@@ -308,7 +308,7 @@ const BankMarketplace = () => {
   );
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#f8faf9]">
       <Header />
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 lg:py-12">
         <MarketplaceEligibilityBanner loanTypeSlug={loanTypeSlug} />
@@ -387,35 +387,23 @@ const BankMarketplace = () => {
           </div>
         ) : null}
 
-        {/* Trust Indicators */}
+        {/* Trust / benefit indicators */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
-          <div className="bg-card rounded-lg border border-border p-3 md:p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Icon name="Shield" size={24} className="text-success" />
-            </div>
-            <div className="text-lg md:text-xl font-bold text-foreground">100%</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Secure Process</div>
+          <div className="rf-benefit-pill">
+            <div className="rf-benefit-pill-icon"><Icon name="Shield" size={18} className="text-[var(--color-brand-green)]" /></div>
+            <div><p className="text-sm font-semibold">100% Secure</p><p className="text-xs text-muted-foreground">Bank-grade security</p></div>
           </div>
-          <div className="bg-card rounded-lg border border-border p-3 md:p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Icon name="Building2" size={24} className="text-primary" />
-            </div>
-            <div className="text-lg md:text-xl font-bold text-foreground">25+</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Partner Banks</div>
+          <div className="rf-benefit-pill">
+            <div className="rf-benefit-pill-icon"><Icon name="Building2" size={18} className="text-[var(--color-brand-green)]" /></div>
+            <div><p className="text-sm font-semibold">50+ Partners</p><p className="text-xs text-muted-foreground">RBI registered</p></div>
           </div>
-          <div className="bg-card rounded-lg border border-border p-3 md:p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Icon name="Users" size={24} className="text-secondary" />
-            </div>
-            <div className="text-lg md:text-xl font-bold text-foreground">50K+</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Happy Customers</div>
+          <div className="rf-benefit-pill">
+            <div className="rf-benefit-pill-icon"><Icon name="Percent" size={18} className="text-[var(--color-brand-green)]" /></div>
+            <div><p className="text-sm font-semibold">Best Rates</p><p className="text-xs text-muted-foreground">Lowest interest</p></div>
           </div>
-          <div className="bg-card rounded-lg border border-border p-3 md:p-4 text-center">
-            <div className="flex items-center justify-center mb-2">
-              <Icon name="Clock" size={24} className="text-accent" />
-            </div>
-            <div className="text-lg md:text-xl font-bold text-foreground">48hrs</div>
-            <div className="text-xs md:text-sm text-muted-foreground">Avg. Approval</div>
+          <div className="rf-benefit-pill">
+            <div className="rf-benefit-pill-icon"><Icon name="Zap" size={18} className="text-[var(--color-brand-green)]" /></div>
+            <div><p className="text-sm font-semibold">Quick Approval</p><p className="text-xs text-muted-foreground">24-48 hours</p></div>
           </div>
         </div>
 
