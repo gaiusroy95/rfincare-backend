@@ -5,6 +5,7 @@ import {
   getMarketplaceCompareConfig,
   sortCompareProducts,
 } from '../../../constants/marketplaceCompareConfig';
+import { saveCompareBasket } from '../../../utils/guestSessionResume';
 import MarketplaceProductRowCard from './MarketplaceProductRowCard';
 import MarketplaceSideBySideCompare from './MarketplaceSideBySideCompare';
 
@@ -37,6 +38,15 @@ const MarketplaceCompareBoard = ({
       compareRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   }, [showCompare, compareProducts.length]);
+
+  useEffect(() => {
+    if (!selectedIds.length) return;
+    const labels = compareProducts.map((p) => config.getName(p)).filter(Boolean);
+    saveCompareBasket(type === 'mutual_fund' ? 'mutual_funds' : type, {
+      selectedIds,
+      productLabels: labels,
+    });
+  }, [selectedIds, compareProducts, config, type]);
 
   if (!products.length) {
     return (

@@ -2,6 +2,8 @@ import React, { useEffect } from 'react';
 import Header from '../../components/ui/Header';
 import SEO from '../../components/SEO';
 import HeroSection from './components/HeroSection';
+import FinancialPillarsSection from './components/FinancialPillarsSection';
+import PopularCalculatorsSection from './components/PopularCalculatorsSection';
 import QuickEligibilityCheck from './components/QuickEligibilityCheck';
 import LoanTypesShowcase from './components/LoanTypesShowcase';
 import TrustSignals from './components/TrustSignals';
@@ -26,6 +28,8 @@ const Homepage = () => {
       
       <main>
         <HeroSection />
+        <FinancialPillarsSection />
+        <PopularCalculatorsSection />
         <QuickEligibilityCheck />
         <NewsSection />
         <VideosSection />

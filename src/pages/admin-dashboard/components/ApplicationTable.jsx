@@ -45,6 +45,8 @@ const ApplicationTable = ({
       .replace(/_/g, ' ')
       .replace(/\b\w/g, (c) => c.toUpperCase());
 
+  const isMarketplaceEnquiry = (app) => app?.recordType === 'marketplace_enquiry';
+
   const getPriorityBadge = (priority) => {
     const priorityConfig = {
       high: { bg: 'bg-destructive/10', text: 'text-destructive', icon: 'AlertCircle' },
@@ -136,7 +138,14 @@ const ApplicationTable = ({
                   </div>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-sm md:text-base text-foreground">{app?.loanType}</span>
+                  <span className="text-sm md:text-base text-foreground">
+                    {app?.loanType}
+                    {isMarketplaceEnquiry(app) && (
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
+                        Enquiry
+                      </span>
+                    )}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-sm md:text-base font-semibold text-foreground whitespace-nowrap">
@@ -147,11 +156,17 @@ const ApplicationTable = ({
                 </td>
                 <td className="px-4 py-3">
                   <div className="flex items-center space-x-2">
-                    <Image
-                      src={app?.bankLogo}
-                      alt={app?.bankLogoAlt}
-                      className="w-6 h-6 rounded object-contain"
-                    />
+                    {app?.bankLogo ? (
+                      <Image
+                        src={app?.bankLogo}
+                        alt={app?.bankLogoAlt}
+                        className="w-6 h-6 rounded object-contain"
+                      />
+                    ) : (
+                      <div className="w-6 h-6 rounded bg-muted flex items-center justify-center shrink-0">
+                        <Icon name={isMarketplaceEnquiry(app) ? 'Shield' : 'Building2'} size={14} className="text-muted-foreground" />
+                      </div>
+                    )}
                     <span className="text-sm text-foreground">{app?.bankName}</span>
                   </div>
                 </td>
@@ -159,10 +174,14 @@ const ApplicationTable = ({
                   {getStatusBadge(app?.status)}
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs md:text-sm text-foreground">{prettifyStage(app?.documentStageStatus)}</span>
+                  <span className="text-xs md:text-sm text-foreground">
+                    {prettifyStage(app?.documentStageStatus)}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
-                  <span className="text-xs md:text-sm text-foreground">{prettifyStage(app?.bankApprovalStatus)}</span>
+                  <span className="text-xs md:text-sm text-foreground">
+                    {isMarketplaceEnquiry(app) ? '—' : prettifyStage(app?.bankApprovalStatus)}
+                  </span>
                 </td>
                 <td className="px-4 py-3">
                   <span className="text-xs md:text-sm font-medium text-foreground">{app?.agentCode || '—'}</span>
@@ -183,7 +202,7 @@ const ApplicationTable = ({
                     >
                       <Icon name="Eye" size={16} />
                     </Button>
-                    {app?.status === 'pending' && (
+                    {app?.status === 'pending' && !isMarketplaceEnquiry(app) && (
                       <>
                         <Button
                           variant="ghost"

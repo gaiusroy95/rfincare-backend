@@ -4,8 +4,10 @@ import Header from '../../components/ui/Header';
 import Footer from '../homepage/components/Footer';
 import Icon from '../../components/AppIcon';
 import Input from '../../components/ui/Input';
+import GuestResumeBanner from '../../components/GuestResumeBanner';
 import { calculatorService } from '../../services/calculatorService';
 import { PLANNING_HUBS } from '../../constants/planningHubs';
+import { listGuestResumeSessions } from '../../utils/guestSessionResume';
 
 const CATEGORY_ICONS = {
   loans: 'Landmark',
@@ -23,6 +25,7 @@ const FinancialCalculatorsHub = () => {
   const [data, setData] = useState({ calculators: [], categories: [] });
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [resumeSessions, setResumeSessions] = useState(() => listGuestResumeSessions());
   const activeCategory = searchParams.get('category') || 'all';
 
   useEffect(() => {
@@ -71,6 +74,17 @@ const FinancialCalculatorsHub = () => {
             </p>
           </div>
         </section>
+
+        {resumeSessions.length > 0 && (
+          <section className="py-6 border-b border-border bg-muted/20">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <GuestResumeBanner
+                sessions={resumeSessions}
+                onDismiss={() => setResumeSessions(listGuestResumeSessions())}
+              />
+            </div>
+          </section>
+        )}
 
         <section className="py-8 border-b border-border bg-card/50 sticky top-16 z-20 backdrop-blur">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-4">

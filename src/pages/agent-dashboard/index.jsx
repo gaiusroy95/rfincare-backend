@@ -16,6 +16,7 @@ import TrainingResources from './components/TrainingResources';
 import CreditCardsQuickApply from '../../components/credit-cards/CreditCardsQuickApply';
 import RecentActivity from './components/RecentActivity';
 import QuickActions from './components/QuickActions';
+import AgentReferralBanner from '../../components/agent/AgentReferralBanner';
 import SessionTimeout from '../../components/SessionTimeout';
 import { agentService } from '../../services/agentService';
 import {
@@ -377,6 +378,8 @@ const AgentDashboard = () => {
 
         {selectedView === 'overview' &&
         <div className="space-y-6">
+            <AgentReferralBanner attribution={dashboard?.attribution} />
+
             <PerformanceMetrics metrics={performanceMetrics} />
 
             <CreditCardsQuickApply />

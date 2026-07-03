@@ -27,6 +27,7 @@ import AgentCommissionCsvUploadModal from './components/AgentCommissionCsvUpload
 import AccessControlModal from './components/AccessControlModal';
 import StaffManageModal from './components/StaffManageModal';
 import DocumentVerificationModal from './components/DocumentVerificationModal';
+import MarketplaceEnquiryDetailModal from './components/MarketplaceEnquiryDetailModal';
 import ApplicationDeleteModal from './components/ApplicationDeleteModal';
 import { adminService } from '../../services/adminService';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
@@ -40,6 +41,7 @@ import GovernmentSchemesTab from './components/GovernmentSchemesTab';
 import InvestmentProductsTab from './components/InvestmentProductsTab';
 import HomepageCmsTab from './components/HomepageCmsTab';
 import MarketingSeoTab from './components/MarketingSeoTab';
+import ConversionFunnelTab from './components/ConversionFunnelTab';
 import LeadsTab from './components/LeadsTab';
 import StatusCheckAdminTab from './components/StatusCheckAdminTab';
 import OtpProviderSettingsForm from './components/OtpProviderSettingsForm';
@@ -88,6 +90,7 @@ const AdminDashboard = () => {
   const [staffManageType, setStaffManageType] = useState('agent');
   const [staffManageTab, setStaffManageTab] = useState('details');
   const [showDocVerificationModal, setShowDocVerificationModal] = useState(false);
+  const [showEnquiryModal, setShowEnquiryModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteApplicationIds, setDeleteApplicationIds] = useState([]);
   const [tableSelectionResetKey, setTableSelectionResetKey] = useState(0);
@@ -166,7 +169,8 @@ const AdminDashboard = () => {
 
   const resolveLoanTypeLabel = (app) => {
     if (app?.loanTypeLabel) return app.loanTypeLabel;
-    const raw = app?.loanType || app?.data?.loanPurpose || app?.data?.loan_purpose;
+    if (app?.loan_type_label) return app.loan_type_label;
+    const raw = app?.loanType || app?.loan_type || app?.data?.loanPurpose || app?.data?.loan_purpose;
     const product = getLoanProductBySlug(raw);
     if (product) return product.label;
     if (raw) {
@@ -187,28 +191,35 @@ const AdminDashboard = () => {
     return Number.isFinite(num) ? num : 0;
   };
 
-  const mapApplicationRow = (app, customerImage = null) => ({
-    id: app?.id,
-    rawApplication: app,
-    applicationNumber: app?.applicationNumber || app?.application_number || app?.id,
-    customerName: app?.customer?.fullName || 'Unknown',
-    customerEmail: app?.customer?.email || '',
-    customerImage,
-    customerImageAlt: customerImage
-      ? `Photo of ${app?.customer?.fullName || 'customer'}`
-      : `Profile of ${app?.customer?.fullName || 'customer'}`,
-    loanType: resolveLoanTypeLabel(app),
-    amount: resolveLoanAmount(app),
-    bankName: app?.bank?.name || 'Not selected',
-    bankLogo: app?.bank?.logoUrl || '',
-    bankLogoAlt: app?.bank?.name ? `${app.bank.name} logo` : 'Bank',
-    status: app?.status || 'pending',
-    documentStageStatus: app?.documentStageStatus || 'documents_pending',
-    bankApprovalStatus: app?.bankApprovalStatus || 'submitted_to_bank',
-    agentCode: app?.sourcedAgentCode || app?.agentCode || '—',
-    priority: app?.adminPriority || 'medium',
-    date: new Date(app?.createdAt || app?.submittedAt)?.toISOString()?.split('T')?.[0] || '',
-  });
+  const mapApplicationRow = (app, customerImage = null) => {
+    const isEnquiry =
+      app?.recordType === 'marketplace_enquiry' || app?.record_type === 'marketplace_enquiry';
+    return {
+      id: app?.id,
+      recordType: isEnquiry ? 'marketplace_enquiry' : 'loan_application',
+      rawApplication: app,
+      applicationNumber: app?.applicationNumber || app?.application_number || app?.id,
+      customerName: app?.customer?.fullName || app?.customer?.full_name || 'Unknown',
+      customerEmail: app?.customer?.email || '',
+      customerImage,
+      customerImageAlt: customerImage
+        ? `Photo of ${app?.customer?.fullName || app?.customer?.full_name || 'customer'}`
+        : `Profile of ${app?.customer?.fullName || app?.customer?.full_name || 'customer'}`,
+      loanType: resolveLoanTypeLabel(app),
+      amount: isEnquiry ? Number(app?.loanAmount ?? app?.loan_amount ?? 0) : resolveLoanAmount(app),
+      bankName: isEnquiry ? 'Not applicable' : (app?.bank?.name || 'Not selected'),
+      bankLogo: isEnquiry ? '' : (app?.bank?.logoUrl || app?.bank?.logo_url || ''),
+      bankLogoAlt: isEnquiry ? 'N/A' : (app?.bank?.name ? `${app.bank.name} logo` : 'Bank'),
+      status: app?.status || 'pending',
+      documentStageStatus: app?.documentStageStatus || app?.document_stage_status || 'documents_pending',
+      bankApprovalStatus: app?.bankApprovalStatus || app?.bank_approval_status || 'submitted_to_bank',
+      agentCode: app?.sourcedAgentCode || app?.sourced_agent_code || app?.agentCode || '—',
+      priority: app?.adminPriority || app?.admin_priority || 'medium',
+      date: new Date(app?.createdAt || app?.created_at || app?.submittedAt || app?.submitted_at)
+        ?.toISOString()
+        ?.split('T')?.[0] || '',
+    };
+  };
 
   const enrichApplicationsWithPhotos = (apps) =>
     apps.map((app) => {
@@ -220,8 +231,9 @@ const AdminDashboard = () => {
     const { data: apps, error } = await adminService.getAllApplications({
       ...filterState,
       page: 1,
-      pageSize: 50,
+      pageSize: 100,
       includePhotos: true,
+      includeMarketplaceEnquiries: true,
     });
     if (error) {
       setApplicationsData([]);
@@ -419,35 +431,64 @@ const AdminDashboard = () => {
     }
   };
 
+  const filterLoanApplicationIds = (applicationIds) =>
+    (applicationIds || []).filter((id) => {
+      const row = applicationsData.find((app) => app.id === id);
+      return row?.recordType !== 'marketplace_enquiry';
+    });
+
   const handleBulkApproveApplications = async (applicationIds) => {
-    if (!applicationIds?.length) return;
+    const loanIds = filterLoanApplicationIds(applicationIds);
+    if (!loanIds.length) {
+      alert('Bulk approve applies to loan applications only. Marketplace enquiries cannot be approved this way.');
+      return;
+    }
+    if (loanIds.length < applicationIds.length) {
+      alert('Note: marketplace enquiries were skipped. Only loan applications will be approved.');
+    }
     const notes = prompt('Optional review notes for bulk approval:') || '';
-    const { data, error } = await adminService.bulkUpdateApplicationStatus(applicationIds, 'approved', notes);
+    const { data, error } = await adminService.bulkUpdateApplicationStatus(loanIds, 'approved', notes);
     if (error) {
       alert(error.message);
       return;
     }
     setTableSelectionResetKey((k) => k + 1);
     await refreshCurrentTab();
-    alert(`Approved ${data?.updated ?? applicationIds.length} application(s).`);
+    alert(`Approved ${data?.updated ?? loanIds.length} application(s).`);
   };
 
   const handleBulkRejectApplications = async (applicationIds) => {
-    if (!applicationIds?.length) return;
+    const loanIds = filterLoanApplicationIds(applicationIds);
+    if (!loanIds.length) {
+      alert('Bulk reject applies to loan applications only.');
+      return;
+    }
+    if (loanIds.length < applicationIds.length) {
+      alert('Note: marketplace enquiries were skipped.');
+    }
+    if (!loanIds?.length) return;
     const reason = prompt('Rejection reason (required):');
     if (!reason?.trim()) return;
-    const { data, error } = await adminService.bulkUpdateApplicationStatus(applicationIds, 'rejected', reason);
+    const { data, error } = await adminService.bulkUpdateApplicationStatus(loanIds, 'rejected', reason);
     if (error) {
       alert(error.message);
       return;
     }
     setTableSelectionResetKey((k) => k + 1);
     await refreshCurrentTab();
-    alert(`Rejected ${data?.updated ?? applicationIds.length} application(s).`);
+    alert(`Rejected ${data?.updated ?? loanIds.length} application(s).`);
   };
 
   const handleBulkDeleteApplications = (applicationIds) => {
-    setDeleteApplicationIds(applicationIds);
+    const loanIds = filterLoanApplicationIds(applicationIds);
+    if (!loanIds.length) {
+      alert('Bulk delete applies to loan applications only.');
+      return;
+    }
+    if (loanIds.length < applicationIds.length) {
+      alert('Note: marketplace enquiries were skipped.');
+    }
+    setDeleteApplicationIds(loanIds);
     setShowDeleteModal(true);
   };
 
@@ -460,6 +501,10 @@ const AdminDashboard = () => {
 
   const handleViewApplicationDetails = (application) => {
     setSelectedApplication(application);
+    if (application?.recordType === 'marketplace_enquiry') {
+      setShowEnquiryModal(true);
+      return;
+    }
     setShowDocVerificationModal(true);
   };
 
@@ -801,6 +846,8 @@ const AdminDashboard = () => {
 
                 {activeTab === 'leads' && <LeadsTab />}
 
+                {activeTab === 'conversion-funnel' && <ConversionFunnelTab />}
+
                 {activeTab === 'hierarchy' && <HierarchyMappingTab />}
 
                 {activeTab === 'agent-learning' && <AgentLearningTab />}
@@ -871,6 +918,11 @@ const AdminDashboard = () => {
         onClose={() => setShowDocVerificationModal(false)}
         onApprove={handleApproveApplication}
         onReject={handleRejectApplication}
+      />
+      <MarketplaceEnquiryDetailModal
+        application={selectedApplication}
+        isOpen={showEnquiryModal}
+        onClose={() => setShowEnquiryModal(false)}
       />
       <ApplicationDeleteModal
         isOpen={showDeleteModal}

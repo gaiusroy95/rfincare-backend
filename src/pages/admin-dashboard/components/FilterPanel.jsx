@@ -22,11 +22,13 @@ const FilterPanel = ({ filters, onFilterChange, onReset }) => {
   ];
 
   const loanTypeOptions = [
-    { value: 'all', label: 'All Loan Types' },
+    { value: 'all', label: 'All Product Types' },
     { value: 'personal', label: 'Personal Loan' },
     { value: 'home', label: 'Home Loan' },
     { value: 'business', label: 'Business Loan' },
-    { value: 'auto', label: 'Auto Loan' }
+    { value: 'auto', label: 'Auto Loan' },
+    { value: 'insurance', label: 'Insurance' },
+    { value: 'mutual_funds', label: 'Mutual Fund' },
   ];
 
   return (
@@ -69,7 +71,7 @@ const FilterPanel = ({ filters, onFilterChange, onReset }) => {
           options={loanTypeOptions}
           value={filters?.loanType}
           onChange={(value) => onFilterChange('loanType', value)}
-          placeholder="Select loan type"
+          placeholder="Select product type"
         />
       </div>
     </div>

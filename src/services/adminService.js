@@ -22,6 +22,7 @@ export const adminService = {
         page: filters.page || 1,
         pageSize: filters.pageSize || 50,
         includePhotos: filters.includePhotos !== false ? 'true' : undefined,
+        includeMarketplaceEnquiries: filters.includeMarketplaceEnquiries !== false ? 'true' : undefined,
       };
       const res = await apiClient.get('/loan-applications', { params });
       const data = toCamelCase(res.data);
@@ -587,6 +588,15 @@ export const adminService = {
       return { error: null };
     } catch (error) {
       return { error: apiError(error, 'Failed to export CSV') };
+    }
+  },
+
+  async getFunnelAnalytics(days = 30) {
+    try {
+      const res = await apiClient.get('/admin/funnel-analytics', { params: { days } });
+      return { data: toCamelCase(res.data), error: null };
+    } catch (error) {
+      return { data: null, error: apiError(error, 'Failed to load funnel analytics') };
     }
   },
 };

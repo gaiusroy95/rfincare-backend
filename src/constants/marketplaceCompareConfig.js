@@ -297,3 +297,30 @@ export function getMarketplaceCompareConfig(type) {
     default: return INSURANCE_CONFIG;
   }
 }
+
+const LOWER_IS_BETTER_TYPES = new Set(['insurance', 'credit_card', 'loan', 'fixed_income', 'post_office']);
+
+/** Pick best-value product id for compare winner badge (price-asc for premiums/fees, rating-desc for investments). */
+export function pickCompareWinner(products, type, sortBy = 'recommended') {
+  if (!products?.length) return null;
+  const config = getMarketplaceCompareConfig(type);
+  const sorted = sortCompareProducts(products, sortBy, type);
+  if (LOWER_IS_BETTER_TYPES.has(type)) {
+    return config.getId(sorted[0]);
+  }
+  if (type === 'mutual_fund' || type === 'investment' || type === 'government_scheme') {
+    const byRating = [...products].sort(
+      (a, b) => Number(b?.rating ?? b?.returns3y ?? 0) - Number(a?.rating ?? a?.returns3y ?? 0),
+    );
+    return config.getId(byRating[0]);
+  }
+  return config.getId(sorted[0]);
+}
+
+export function getCompareWinnerLabel(type) {
+  if (type === 'insurance') return 'Lowest premium';
+  if (type === 'mutual_fund' || type === 'investment') return 'Top rated';
+  if (type === 'credit_card') return 'Best value';
+  if (type === 'loan') return 'Lowest rate';
+  return 'Best value';
+}

@@ -24,6 +24,7 @@ import {
   resetInsuranceFilters,
 } from '../../utils/insuranceFilters';
 import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
+import { loadCompareBasket } from '../../utils/guestSessionResume';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 const MAX_COMPARE = 3;
@@ -57,6 +58,29 @@ const InsuranceMarketplacePage = () => {
 
   const debouncedFilters = useDebouncedValue(filters, 350);
 
+  useEffect(() => {
+    const purchaseId = searchParams.get('purchaseId');
+    const purchaseToken = searchParams.get('purchaseToken');
+    if (!purchaseId || !purchaseToken) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        const status = await insuranceService.getPurchaseStatus(purchaseId, purchaseToken);
+        if (!cancelled) {
+          setLatestPurchase(status);
+          setShowCatalog(true);
+        }
+      } catch {
+        /* ignore invalid return params */
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [searchParams]);
+
   const loadProducts = useCallback(async () => {
     if (!showCatalog) return;
     setLoading(true);
@@ -72,6 +96,17 @@ const InsuranceMarketplacePage = () => {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    if (!showCatalog || products.length === 0) return;
+    const saved = loadCompareBasket('insurance');
+    if (!saved?.selectedIds?.length) return;
+    const validIds = saved.selectedIds.filter((id) => products.some((p) => p.id === id));
+    if (validIds.length >= 2) {
+      setSelected(validIds);
+      setShowCompare(true);
+    }
+  }, [showCatalog, products]);
 
   useEffect(() => {
     if (!showCatalog) return;
@@ -298,17 +333,32 @@ const InsuranceMarketplacePage = () => {
                   />
                 )}
                 {latestPurchase ? (
-                  <div className="rounded-xl border border-border bg-card p-4">
-                    <p className="font-semibold">Latest purchase update</p>
+                  <div className={`rounded-xl border p-4 ${latestPurchase.paymentStatus === 'paid' ? 'border-emerald-300 bg-emerald-50' : 'border-border bg-card'}`}>
+                    <p className="font-semibold flex items-center gap-2">
+                      {latestPurchase.paymentStatus === 'paid' ? (
+                        <Icon name="CheckCircle2" size={18} className="text-emerald-600" />
+                      ) : null}
+                      {latestPurchase.paymentStatus === 'paid' ? 'Purchase successful' : 'Latest purchase update'}
+                    </p>
                     <p className="text-sm text-muted-foreground mt-1">
                       {latestPurchase.productName || purchaseProduct?.name || 'Insurance plan'} · Payment {latestPurchase.paymentStatus}
                       {' '}· Insurer {latestPurchase.insurerPushStatus}
                     </p>
                     {latestPurchase.insurerPolicyNumber ? (
-                      <p className="text-sm text-emerald-700 mt-2">Policy number: {latestPurchase.insurerPolicyNumber}</p>
+                      <p className="text-sm text-emerald-700 mt-2 font-medium">Policy number: {latestPurchase.insurerPolicyNumber}</p>
                     ) : null}
                     {latestPurchase.failureReason ? (
                       <p className="text-sm text-destructive mt-2">{latestPurchase.failureReason}</p>
+                    ) : null}
+                    {latestPurchase.paymentStatus === 'paid' ? (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="mt-3"
+                        onClick={() => window.location.href = '/customer-dashboard?tab=portfolio'}
+                      >
+                        View in dashboard
+                      </Button>
                     ) : null}
                   </div>
                 ) : null}

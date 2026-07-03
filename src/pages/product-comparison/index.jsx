@@ -4,6 +4,7 @@ import Header from '../../components/ui/Header';
 import Footer from '../homepage/components/Footer';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import GuestResumeBanner from '../../components/GuestResumeBanner';
 import { getLoanProductBySlug } from '../../constants/loanProducts';
 import { useLoanProducts } from '../../contexts/LoanProductsContext';
 import { useMarketplaceVisibility } from '../../contexts/MarketplaceVisibilityContext';
@@ -11,6 +12,11 @@ import { buildProductCatalogChips, filterMarketplaceShowcase } from '../../utils
 import BankOffersSection from '../product-landing/components/BankOffersSection';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 import { ADVANCED_COMPARE_DIMENSIONS, COMPARE_BUNDLES } from '../../constants/advancedCompareDimensions';
+import {
+  loadProductComparisonSelection,
+  saveProductComparisonSelection,
+  listGuestResumeSessions,
+} from '../../utils/guestSessionResume';
 
 const MARKETPLACE_COMPARE_LINKS = [
   { slug: 'insurance', label: 'Insurance plans', path: '/insurance-marketplace', icon: 'Shield', visibilityKey: 'insuranceMarketplace' },
@@ -37,7 +43,9 @@ const ProductComparison = () => {
   const { visibility } = useMarketplaceVisibility();
   const filterSlug = searchParams.get('loanType');
   const activeProduct = filterSlug ? getLoanProductBySlug(filterSlug) : null;
-  const [selectedSlugs, setSelectedSlugs] = useState([]);
+  const [selectedSlugs, setSelectedSlugs] = useState(() => loadProductComparisonSelection());
+  const [resumeSessions, setResumeSessions] = useState(() => listGuestResumeSessions());
+  const refreshResumeSessions = () => setResumeSessions(listGuestResumeSessions());
 
   const scrollToBankComparison = () => {
     document.getElementById('bank-comparison')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -117,6 +125,10 @@ const ProductComparison = () => {
     }
   }, [filterSlug, visibleProducts]);
 
+  useEffect(() => {
+    saveProductComparisonSelection(selectedSlugs);
+  }, [selectedSlugs]);
+
   const toggleProduct = (slug) => {
     if (selectedSlugs.includes(slug)) {
       setSelectedSlugs(selectedSlugs.filter((s) => s !== slug));
@@ -126,6 +138,17 @@ const ProductComparison = () => {
   };
 
   const selectedProductDetails = catalog.filter((p) => selectedSlugs.includes(p.slug));
+
+  const bestLoanSlug = useMemo(() => {
+    if (!selectedProductDetails.length) return null;
+    const loans = selectedProductDetails.filter((p) => p.kind !== 'marketplace');
+    if (!loans.length) return null;
+    const parseRate = (s) => {
+      const m = String(s || '').match(/[\d.]+/);
+      return m ? Number(m[0]) : 999;
+    };
+    return loans.reduce((best, p) => (parseRate(p.interestRate) < parseRate(best.interestRate) ? p : best)).slug;
+  }, [selectedProductDetails]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -140,6 +163,14 @@ const ProductComparison = () => {
             </p>
           </div>
         </section>
+
+        {!activeProduct && resumeSessions.length > 0 && (
+          <section className="py-6 bg-muted/20 border-b border-border">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+              <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
+            </div>
+          </section>
+        )}
 
         {activeProduct && (
           <section className="py-3 bg-card border-b border-border">
@@ -322,10 +353,15 @@ const ProductComparison = () => {
                     <tr className="bg-gray-100">
                       <th className="p-4 text-left font-semibold">Feature</th>
                       {selectedProductDetails.map((product) => (
-                        <th key={product.slug} className="p-4 text-left font-semibold">
+                        <th key={product.slug} className={`p-4 text-left font-semibold ${product.slug === bestLoanSlug ? 'bg-emerald-50' : ''}`}>
                           <div className="flex items-center space-x-2">
                             <Icon name={product.icon} size={20} color="#6366f1" />
                             <span>{product.name}</span>
+                            {product.slug === bestLoanSlug && (
+                              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white ml-1">
+                                Best rate
+                              </span>
+                            )}
                           </div>
                         </th>
                       ))}
@@ -384,8 +420,8 @@ const ProductComparison = () => {
                           )}
                           <Button
                             size="sm"
-                            variant="outline"
-                            className="w-full"
+                            className={`w-full ${product.slug === bestLoanSlug ? '' : ''}`}
+                            variant={product.slug === bestLoanSlug ? 'default' : 'outline'}
                             onClick={() => {
                               if (product.kind === 'marketplace') {
                                 navigate(product.route);
@@ -398,7 +434,7 @@ const ProductComparison = () => {
                               openAssessmentOrEligibilityFirst(navigate, { slug: product.slug });
                             }}
                           >
-                            {product.kind === 'marketplace' ? 'Explore' : 'Apply now'}
+                            {product.slug === bestLoanSlug ? 'Apply — best rate' : product.kind === 'marketplace' ? 'Explore' : 'Apply now'}
                           </Button>
                         </td>
                       ))}

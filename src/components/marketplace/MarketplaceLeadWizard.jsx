@@ -3,6 +3,7 @@ import Icon from '../AppIcon';
 import Input from '../ui/Input';
 import Button from '../ui/Button';
 import { leadService } from '../../services/leadService';
+import { getAgentAttributionPayload } from '../../utils/agentAttribution';
 import { getApiErrorMessage } from '../../lib/apiErrors';
 import {
   EDUCATION_OPTIONS,
@@ -153,6 +154,7 @@ const MarketplaceLeadWizard = ({
         loanType,
         source: `${marketplaceType}_marketplace`,
         consentAccepted: true,
+        ...getAgentAttributionPayload(),
       });
       setLeadId(res?.lead?.id || res?.id || null);
       if (res?.requireMobileOtp !== undefined || res?.requireEmailOtp !== undefined) {

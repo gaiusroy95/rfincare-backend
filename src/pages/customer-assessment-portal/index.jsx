@@ -38,6 +38,7 @@ import {
   isFinancialHistoryYes,
 } from '../../constants/assessmentFinancialHistory';
 import { agentApplicationService } from '../../services/agentApplicationService';
+import { getAgentAttributionPayload } from '../../utils/agentAttribution';
 import AgentAssistedBanner from './components/AgentAssistedBanner';
 import ApplicationConfirmation from './components/ApplicationConfirmation';
 import {
@@ -854,7 +855,10 @@ const CustomerAssessmentPortal = ({ assistedByAgent = false } = {}) => {
         await applicationService.updateApplication(applicationId, payload);
         return applicationId;
       }
-      const app = await applicationService.createApplication(payload);
+      const app = await applicationService.createApplication({
+        ...payload,
+        ...getAgentAttributionPayload(),
+      });
       const id = app?.id;
       if (!id) {
         throw new Error('Could not create your application draft. Please try again.');

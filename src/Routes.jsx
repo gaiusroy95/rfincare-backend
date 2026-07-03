@@ -11,6 +11,7 @@ import { MarketplaceVisibilityProvider } from './contexts/MarketplaceVisibilityC
 import { SiteContactProvider } from './contexts/SiteContactContext';
 import { MarketingProvider } from './contexts/MarketingContext';
 import { useMarketingTags } from './hooks/useMarketingTags';
+import { initAgentAttribution } from './utils/agentAttribution';
 
 const lazyPage = (factory) => lazy(factory);
 
@@ -81,6 +82,9 @@ function SuspenseRoute({ children }) {
 
 const MarketingTracker = () => {
   useMarketingTags();
+  React.useEffect(() => {
+    initAgentAttribution();
+  }, []);
   return null;
 };
 

@@ -12,6 +12,7 @@ export const ADMIN_NAV_ITEMS = [
   { label: 'Agent learning', tab: 'agent-learning', icon: 'GraduationCap' },
   { label: 'Employee learning', tab: 'employee-learning', icon: 'BookOpen' },
   { label: 'Leads', tab: 'leads', icon: 'UserCheck' },
+  { label: 'Conversion funnel', tab: 'conversion-funnel', icon: 'Filter' },
   { label: 'Status check', tab: 'status-check', icon: 'Search' },
   { label: 'OTP settings', tab: 'otp', icon: 'MessageSquare' },
   { label: 'Loan products', tab: 'loan-products', icon: 'Package' },

@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Icon from '../../AppIcon';
 import Button from '../../ui/Button';
-import { COMPARE_SORT_OPTIONS, getMarketplaceCompareConfig, sortCompareProducts } from '../../../constants/marketplaceCompareConfig';
+import { COMPARE_SORT_OPTIONS, getMarketplaceCompareConfig, sortCompareProducts, pickCompareWinner, getCompareWinnerLabel } from '../../../constants/marketplaceCompareConfig';
 
 function FeatureList({ items, included = true }) {
   if (!items?.length) return <span className="text-xs text-muted-foreground">—</span>;
@@ -33,6 +33,8 @@ const MarketplaceSideBySideCompare = ({
   const config = getMarketplaceCompareConfig(type);
   const [sortBy, setSortBy] = useState('recommended');
   const sorted = useMemo(() => sortCompareProducts(products, sortBy, type), [products, sortBy, type]);
+  const winnerId = useMemo(() => pickCompareWinner(sorted, type, sortBy), [sorted, type, sortBy]);
+  const winnerLabel = getCompareWinnerLabel(type);
 
   if (sorted.length < 2) return null;
 
@@ -81,8 +83,9 @@ const MarketplaceSideBySideCompare = ({
               {sorted.map((product) => {
                 const id = config.getId(product);
                 const badge = config.getBadge(product);
+                const isWinner = id === winnerId;
                 return (
-                  <th key={id} className="min-w-[220px] p-4 align-top bg-card border-l border-border/60">
+                  <th key={id} className={`min-w-[220px] p-4 align-top border-l border-border/60 ${isWinner ? 'bg-emerald-50/80' : 'bg-card'}`}>
                     <div className="flex flex-col items-center text-center gap-2">
                       {onRemove ? (
                         <button
@@ -105,7 +108,11 @@ const MarketplaceSideBySideCompare = ({
                         <p className="text-[10px] font-bold uppercase tracking-wide text-primary">{config.getProvider(product)}</p>
                         <p className="text-sm font-bold text-foreground leading-snug">{config.getName(product)}</p>
                       </div>
-                      {badge ? (
+                      {isWinner ? (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-600 text-white">
+                          {winnerLabel}
+                        </span>
+                      ) : badge ? (
                         <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200">
                           {badge}
                         </span>
@@ -160,11 +167,13 @@ const MarketplaceSideBySideCompare = ({
             <tr className="bg-gradient-to-r from-orange-50/80 to-amber-50/50 border-t-2 border-orange-200">
               <td className="sticky left-0 z-10 bg-orange-50/80 p-4 text-sm font-bold text-foreground">Best offer</td>
               {sorted.map((product) => {
+                const id = config.getId(product);
                 const ctaUrl = config.getCtaUrl(product, context);
                 const savings = config.getSavingsText(product);
                 const original = config.getOriginalPrice?.(product);
+                const isWinner = id === winnerId;
                 return (
-                  <td key={config.getId(product)} className="p-4 border-l border-border/40 align-top text-center">
+                  <td key={id} className={`p-4 border-l border-border/40 align-top text-center ${isWinner ? 'bg-emerald-50/50' : ''}`}>
                     <div className="space-y-2">
                       {savings ? (
                         <p className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 rounded-full px-2 py-0.5 inline-block">
@@ -183,17 +192,19 @@ const MarketplaceSideBySideCompare = ({
                           href={ctaUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center justify-center gap-1.5 w-full py-3 px-4 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-sm font-bold shadow-md transition-colors"
+                          className={`inline-flex items-center justify-center gap-1.5 w-full py-3 px-4 rounded-xl text-sm font-bold shadow-md transition-colors text-white ${
+                            isWinner ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-orange-500 hover:bg-orange-600'
+                          }`}
                         >
-                          {config.getCtaLabel(product, context)}
+                          {isWinner ? `Apply — ${winnerLabel}` : config.getCtaLabel(product, context)}
                           <Icon name="ExternalLink" size={14} />
                         </a>
                       ) : onApply ? (
                         <Button
-                          className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold"
+                          className={`w-full font-bold ${isWinner ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : 'bg-orange-500 hover:bg-orange-600 text-white'}`}
                           onClick={() => onApply(product)}
                         >
-                          {config.getCtaLabel(product, context)}
+                          {isWinner ? `Apply — ${winnerLabel}` : config.getCtaLabel(product, context)}
                         </Button>
                       ) : (
                         <span className="text-xs text-muted-foreground">Link unavailable</span>

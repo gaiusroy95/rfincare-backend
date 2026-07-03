@@ -11,6 +11,9 @@ import ProfileSummaryCard from './components/ProfileSummaryCard';
 
 import SupportCard from './components/SupportCard';
 import UnifiedFinancialOverview from './components/UnifiedFinancialOverview';
+import FinancialHealthCard from './components/FinancialHealthCard';
+import CreditScoreCard from './components/CreditScoreCard';
+import NextBestActionBanner from './components/NextBestActionBanner';
 import DocumentUploadModal from './components/DocumentUploadModal';
 import ApplicationDetailModal from './components/ApplicationDetailModal';
 import { useAuth } from '../../contexts/AuthContext';
@@ -186,7 +189,7 @@ const CustomerDashboard = () => {
     completionPercentage: 85,
     activeApplications: applications?.filter(a => ['submitted', 'under_review', 'documents_pending']?.includes(a?.status))?.length || 0,
     documentsUploaded: documents?.filter(d => d?.status === 'verified')?.length || 0,
-    creditScore: 720,
+    creditScore: financialSnapshot?.summary?.creditScore ?? financialSnapshot?.creditProfile?.score ?? null,
     memberSince: new Date(userProfile?.createdAt || Date.now())?.getFullYear()?.toString()
   };
 
@@ -317,6 +320,27 @@ const CustomerDashboard = () => {
             <ProfileSummaryCard 
               profile={profileData} 
               onEditProfile={() => navigate('/profile')} 
+            />
+
+            <NextBestActionBanner
+              action={financialSnapshot?.nextBestAction}
+              loading={snapshotLoading}
+            />
+
+            <FinancialHealthCard
+              snapshot={financialSnapshot}
+              loading={snapshotLoading}
+              onViewPortfolio={() => handleTabChange('portfolio')}
+            />
+
+            <CreditScoreCard
+              creditProfile={financialSnapshot?.creditProfile || {
+                score: financialSnapshot?.summary?.creditScore,
+                band: financialSnapshot?.summary?.creditScoreBand,
+                source: financialSnapshot?.summary?.creditScoreSource,
+              }}
+              loading={snapshotLoading}
+              onImprove={() => handleTabChange('portfolio')}
             />
 
             {financialSnapshot?.summary && (

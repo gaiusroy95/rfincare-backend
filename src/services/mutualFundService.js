@@ -60,4 +60,14 @@ export const mutualFundService = {
     const res = await apiClient.post('/mutual-funds/calculate', payload);
     return res.data;
   },
+
+  async startSipCheckout(payload) {
+    const res = await apiClient.post('/mutual-fund-sips/checkout', payload);
+    return res.data;
+  },
+
+  async getSipOrder(id, token) {
+    const res = await apiClient.get(`/mutual-fund-sips/${id}`, { params: { token } });
+    return res.data;
+  },
 };

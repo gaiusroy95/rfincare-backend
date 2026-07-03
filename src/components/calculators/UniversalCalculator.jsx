@@ -10,6 +10,9 @@ import {
   getFieldsForEngine,
   RESULT_HIGHLIGHT_KEYS,
 } from '../../constants/calculatorFieldSchemas';
+import { getCalculatorProductBridge } from '../../constants/calculatorProductBridges';
+import { saveCalculatorSession, loadCalculatorSession } from '../../utils/guestSessionResume';
+import CalculatorProductCTA from './CalculatorProductCTA';
 
 function formatInr(value) {
   const n = Number(value);
@@ -53,6 +56,8 @@ const UniversalCalculator = ({ slug, title, description, engine, defaults = {} }
   const [output, setOutput] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [resumed, setResumed] = useState(false);
+  const savedSession = useMemo(() => loadCalculatorSession(slug), [slug]);
 
   const runCalculation = useCallback(async (formValues) => {
     setError('');
@@ -66,13 +71,25 @@ const UniversalCalculator = ({ slug, title, description, engine, defaults = {} }
       }
       const data = await calculatorService.calculate(slug, payload);
       setOutput(data);
+      saveCalculatorSession(slug, { form: formValues, result: data?.result, title });
     } catch (err) {
       setError(getApiErrorMessage(err, 'Calculation failed'));
       setOutput(null);
     } finally {
       setLoading(false);
     }
-  }, [slug, fields]);
+  }, [slug, fields, title]);
+
+  const handleResumeSession = () => {
+    if (!savedSession?.form) return;
+    setForm(savedSession.form);
+    if (savedSession.result) {
+      setOutput({ result: savedSession.result });
+    } else {
+      runCalculation(savedSession.form);
+    }
+    setResumed(true);
+  };
 
   useEffect(() => {
     if (!fields.length) return;
@@ -104,6 +121,11 @@ const UniversalCalculator = ({ slug, title, description, engine, defaults = {} }
 
   const detailRows = useMemo(() => flattenResults(result).filter((r) => !RESULT_HIGHLIGHT_KEYS.includes(r.key)), [result]);
 
+  const productBridge = useMemo(
+    () => (result ? getCalculatorProductBridge(slug, result) : null),
+    [slug, result],
+  );
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
       <div className="bg-card border border-border rounded-2xl p-6 md:p-8 shadow-sm space-y-5">
@@ -111,6 +133,17 @@ const UniversalCalculator = ({ slug, title, description, engine, defaults = {} }
           <h2 className="text-lg font-bold text-foreground">{title || 'Calculator'}</h2>
           {description && <p className="text-sm text-muted-foreground mt-1">{description}</p>}
         </div>
+
+        {savedSession && !resumed && (
+          <div className="rounded-lg border border-primary/30 bg-primary/5 p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <p className="text-sm text-foreground">
+              You have a saved calculation for this tool.
+            </p>
+            <Button type="button" size="sm" variant="outline" onClick={handleResumeSession}>
+              Resume
+            </Button>
+          </div>
+        )}
 
         {fields.map((field) => {
           if (field.type === 'select') {
@@ -181,6 +214,8 @@ const UniversalCalculator = ({ slug, title, description, engine, defaults = {} }
             </dl>
           </div>
         )}
+
+        {productBridge && <CalculatorProductCTA bridge={productBridge} />}
 
         {!result && !loading && !error && (
           <div className="text-center py-12 text-muted-foreground text-sm">
