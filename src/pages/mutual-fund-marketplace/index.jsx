@@ -23,7 +23,12 @@ import {
   resetMutualFundFilters,
 } from '../../utils/mutualFundFilters';
 import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
-import { loadCompareBasket, loadCalculatorSession } from '../../utils/guestSessionResume';
+import GuestResumeBanner from '../../components/GuestResumeBanner';
+import {
+  listMarketplaceResumeSessions,
+  loadCompareBasket,
+  loadCalculatorSession,
+} from '../../utils/guestSessionResume';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 const MAX_COMPARE = 3;
@@ -42,6 +47,8 @@ const MutualFundMarketplacePage = () => {
   const [sipFund, setSipFund] = useState(null);
   const [initialSipAmount, setInitialSipAmount] = useState(null);
   const [latestSipOrder, setLatestSipOrder] = useState(null);
+  const [resumeSessions, setResumeSessions] = useState(() => listMarketplaceResumeSessions('mutual_funds'));
+  const refreshResumeSessions = () => setResumeSessions(listMarketplaceResumeSessions('mutual_funds'));
   const [filters, setFilters] = useState(() => {
     const saved = loadMarketplaceProfile('mutual_funds');
     return {
@@ -86,7 +93,14 @@ const MutualFundMarketplacePage = () => {
     let cancelled = false;
     (async () => {
       try {
-        const order = await mutualFundService.getSipOrder(sipId, sipToken);
+        let order = await mutualFundService.getSipOrder(sipId, sipToken);
+        if (order?.status === 'created') {
+          try {
+            order = await mutualFundService.confirmSipMandate(sipId, sipToken);
+          } catch {
+            /* best-effort */
+          }
+        }
         if (!cancelled) {
           setLatestSipOrder(order);
           setShowCatalog(true);
@@ -186,6 +200,9 @@ const MutualFundMarketplacePage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
+        {resumeSessions.length > 0 ? (
+          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
+        ) : null}
         {!showCatalog ? (
           <>
             <MarketplaceHero type="mutual_funds" onCtaClick={() => handleProductSelect(MUTUAL_FUND_PRODUCT_GRID[0])} />
@@ -221,9 +238,19 @@ const MutualFundMarketplacePage = () => {
                     : 'Compare SIP, ELSS, debt, equity, index, ETF & international funds.'}
                 </p>
                 {latestSipOrder && (
-                  <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
-                    <Icon name="CheckCircle2" size={14} />
-                    SIP started: ₹{Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · {latestSipOrder.fundName}
+                  <p className={`text-xs mt-2 inline-flex items-center gap-1 rounded-full px-3 py-1 border ${
+                    latestSipOrder.status === 'active'
+                      ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                      : latestSipOrder.status === 'mandate_pending'
+                        ? 'text-amber-700 bg-amber-50 border-amber-200'
+                        : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                  }`}>
+                    <Icon name={latestSipOrder.status === 'mandate_pending' ? 'Clock' : 'CheckCircle2'} size={14} />
+                    {latestSipOrder.status === 'mandate_pending'
+                      ? `Waiting for mandate confirmation · ₹${Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · ${latestSipOrder.fundName}`
+                      : latestSipOrder.status === 'active'
+                        ? `SIP active: ₹${Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · ${latestSipOrder.fundName}`
+                        : `SIP started: ₹${Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · ${latestSipOrder.fundName}`}
                   </p>
                 )}
                 {profile?.fullName ? (

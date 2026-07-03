@@ -430,7 +430,14 @@ const InsuranceTab = () => {
               {providers.map((provider) => (
                 <div key={provider.id} className="border rounded-lg p-3 flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className="font-medium truncate">{provider.providerName}</p>
+                    <p className="font-medium truncate flex items-center gap-2 flex-wrap">
+                      {provider.providerName}
+                      {provider.integrationMode === 'demo' ? (
+                        <span className="text-[10px] font-semibold uppercase px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                          Sandbox only
+                        </span>
+                      ) : null}
+                    </p>
                     <p className="text-xs text-muted-foreground truncate">
                       {provider.providerCode} · {provider.integrationMode} · {provider.authType}
                     </p>

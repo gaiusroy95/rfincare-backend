@@ -1,4 +1,5 @@
 import { apiClient } from '../lib/apiClient';
+import { getAgentAttributionPayload } from '../utils/agentAttribution';
 
 export const leadService = {
   async downloadLeadsCsv() {
@@ -7,13 +8,19 @@ export const leadService = {
   },
 
   async createLead(payload) {
-    const res = await apiClient.post('/leads', payload);
+    const res = await apiClient.post('/leads', {
+      ...getAgentAttributionPayload(),
+      ...payload,
+    });
     return res.data;
   },
 
   /** Create lead + send mobile/email OTP in one API call (eligibility gate). */
   async startVerification(payload) {
-    const res = await apiClient.post('/leads/start-verification', payload);
+    const res = await apiClient.post('/leads/start-verification', {
+      ...getAgentAttributionPayload(),
+      ...payload,
+    });
     return res.data;
   },
 
@@ -53,8 +60,14 @@ export const leadService = {
     return res.data;
   },
 
-  async listLeads() {
-    const res = await apiClient.get('/leads');
+  async listLeads({ assignedTo } = {}) {
+    const params = assignedTo ? { assignedTo } : {};
+    const res = await apiClient.get('/leads', { params });
+    return res.data;
+  },
+
+  async updateLeadStatus(leadId, status) {
+    const res = await apiClient.patch(`/leads/${leadId}/status`, { status });
     return res.data;
   },
 

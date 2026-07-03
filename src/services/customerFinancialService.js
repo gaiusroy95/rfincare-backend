@@ -15,4 +15,9 @@ export const customerFinancialService = {
     const res = await apiClient.get('/portal/customer/credit-score');
     return res.data;
   },
+
+  async pullCreditScore() {
+    const res = await apiClient.post('/portal/customer/credit-score/pull');
+    return res.data;
+  },
 };

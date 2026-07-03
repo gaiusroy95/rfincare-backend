@@ -24,7 +24,11 @@ import {
   resetInsuranceFilters,
 } from '../../utils/insuranceFilters';
 import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
-import { loadCompareBasket } from '../../utils/guestSessionResume';
+import GuestResumeBanner from '../../components/GuestResumeBanner';
+import {
+  listMarketplaceResumeSessions,
+  loadCompareBasket,
+} from '../../utils/guestSessionResume';
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 const MAX_COMPARE = 3;
@@ -46,6 +50,8 @@ const InsuranceMarketplacePage = () => {
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [purchaseProduct, setPurchaseProduct] = useState(null);
   const [latestPurchase, setLatestPurchase] = useState(null);
+  const [resumeSessions, setResumeSessions] = useState(() => listMarketplaceResumeSessions('insurance'));
+  const refreshResumeSessions = () => setResumeSessions(listMarketplaceResumeSessions('insurance'));
   const [filters, setFilters] = useState(() => {
     const saved = loadMarketplaceProfile('insurance');
     return {
@@ -183,6 +189,9 @@ const InsuranceMarketplacePage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-8">
+        {resumeSessions.length > 0 ? (
+          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
+        ) : null}
         {!showCatalog ? (
           <>
             <MarketplaceHero type="insurance" onCtaClick={() => handleProductSelect(INSURANCE_PRODUCT_GRID[1])} />
@@ -334,6 +343,11 @@ const InsuranceMarketplacePage = () => {
                 )}
                 {latestPurchase ? (
                   <div className={`rounded-xl border p-4 ${latestPurchase.paymentStatus === 'paid' ? 'border-emerald-300 bg-emerald-50' : 'border-border bg-card'}`}>
+                    {latestPurchase.isDemo ? (
+                      <p className="text-xs font-semibold text-amber-800 bg-amber-100 border border-amber-200 rounded-lg px-3 py-2 mb-3">
+                        Sandbox purchase — no real policy will be issued.
+                      </p>
+                    ) : null}
                     <p className="font-semibold flex items-center gap-2">
                       {latestPurchase.paymentStatus === 'paid' ? (
                         <Icon name="CheckCircle2" size={18} className="text-emerald-600" />

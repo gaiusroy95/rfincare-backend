@@ -29,7 +29,7 @@ function getDefaultInputs(product) {
   };
 }
 
-export default function InvestmentCalculatorModal({ open, onClose, product }) {
+export default function InvestmentCalculatorModal({ open, onClose, product, onApply }) {
   const [inputs, setInputs] = useState(() => getDefaultInputs(product));
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -179,6 +179,14 @@ export default function InvestmentCalculatorModal({ open, onClose, product }) {
               <p className="text-xs text-muted-foreground">
                 Illustrative estimate only. Actual returns depend on market conditions, issuer performance, and taxes.
               </p>
+              {product && onApply ? (
+                <Button
+                  className="w-full"
+                  onClick={() => onApply(product, { inputs, result })}
+                >
+                  Apply for {product.name}
+                </Button>
+              ) : null}
             </div>
           ) : null}
         </div>

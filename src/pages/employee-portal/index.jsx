@@ -11,6 +11,7 @@ import DocumentViewer from './components/DocumentViewer';
 import PerformanceMetrics from './components/PerformanceMetrics';
 import ActivityLog from './components/ActivityLog';
 import TrainingResources from './components/TrainingResources';
+import EmployeeLeadsTab from './components/EmployeeLeadsTab';
 import LearningResourceModal from '../../components/learning/LearningResourceModal';
 import AgentVerificationModal from './components/AgentVerificationModal';
 import ApplicationWorkspaceModal from './components/ApplicationWorkspaceModal';
@@ -286,6 +287,7 @@ const EmployeePortal = () => {
 
   const allTabs = [
     { id: 'applications', label: 'Applications', icon: 'FileText', count: assignedApplications?.length, module: 'applications' },
+    { id: 'leads', label: 'Leads', icon: 'UserPlus', module: 'leads' },
     { id: 'agents', label: 'Agent Verification', icon: 'UserCheck', count: pendingAgents?.length, module: 'agents' },
     { id: 'documents', label: 'Pending documents', icon: 'FolderOpen', count: pendingDocuments?.length, module: 'documents' },
     { id: 'activity', label: 'Activity Log', icon: 'Activity', module: 'reports' },
@@ -557,6 +559,10 @@ const EmployeePortal = () => {
               </div>
             )}
           </div>
+        )}
+
+        {activeTab === 'leads' && employeeCan(effectiveAccess, 'leads', 'read') && (
+          <EmployeeLeadsTab />
         )}
 
         {activeTab === 'agents' && (

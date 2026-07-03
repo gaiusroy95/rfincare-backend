@@ -7,6 +7,7 @@ const MODULE_LABELS = {
   documents: 'Document Management',
   approval_matrix: 'Approval Matrix',
   system_config: 'System Configuration',
+  leads: 'Marketing Leads',
 };
 
 /** Routes in the main header → required module (any listed module grants portal). */
@@ -19,6 +20,7 @@ export const EMPLOYEE_NAV_MODULE_MAP = {
     'banks',
     'approval_matrix',
     'reports',
+    'leads',
   ],
   '/document-management-center': ['documents'],
   '/reports-and-analytics': ['reports'],

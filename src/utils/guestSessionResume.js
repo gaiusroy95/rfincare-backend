@@ -36,6 +36,18 @@ export function loadCalculatorSession(slug) {
   return safeParse(localStorage.getItem(`${CALC_PREFIX}${slug}`));
 }
 
+const MARKETPLACE_RESUME_PATHS = {
+  insurance: '/insurance-marketplace',
+  mutual_funds: '/mutual-fund-marketplace',
+  post_office: '/post-office-marketplace',
+  government_scheme: '/government-schemes-marketplace',
+  investment: '/investment-marketplace',
+};
+
+export function marketplaceResumePath(marketplaceType) {
+  return MARKETPLACE_RESUME_PATHS[marketplaceType] || '/product-comparison';
+}
+
 export function saveCompareBasket(marketplaceType, { selectedIds = [], productLabels = [] } = {}) {
   if (!marketplaceType) return;
   const key = `${COMPARE_PREFIX}${marketplaceType}`;
@@ -51,12 +63,7 @@ export function saveCompareBasket(marketplaceType, { selectedIds = [], productLa
     type: 'compare',
     slug: marketplaceType,
     title: `${productLabels.length || selectedIds.length} products compared`,
-    path:
-      marketplaceType === 'insurance'
-        ? '/insurance-marketplace'
-        : marketplaceType === 'mutual_funds'
-          ? '/mutual-fund-marketplace'
-          : '/product-comparison',
+    path: marketplaceResumePath(marketplaceType),
   });
 }
 
@@ -88,6 +95,24 @@ export function loadProductComparisonSelection() {
 
 export function listGuestResumeSessions() {
   return safeParse(localStorage.getItem(SESSION_INDEX_KEY)) || [];
+}
+
+/** Filter resume sessions relevant to a marketplace page (compare basket + calculators). */
+export function listMarketplaceResumeSessions(marketplaceType, { includeCalculators = true } = {}) {
+  const compareKey = `${COMPARE_PREFIX}${marketplaceType}`;
+  const sessions = listGuestResumeSessions();
+  return sessions.filter((session) => {
+    if (session.key === compareKey) return true;
+    if (!includeCalculators) return false;
+    if (session.type !== 'calculator') return false;
+    if (marketplaceType === 'mutual_funds') {
+      return session.slug === 'sip' || session.slug === 'goal-sip';
+    }
+    if (marketplaceType === 'insurance') {
+      return session.slug === 'term-insurance' || session.slug === 'health-insurance';
+    }
+    return false;
+  });
 }
 
 export function clearGuestSession(key) {

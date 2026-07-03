@@ -30,7 +30,8 @@
     "dev": "vite",
     "build": "vite build && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
     "build:debug": "vite build --sourcemap && node -e \"require('fs').copyFileSync('dist/index.html','dist/404.html')\"",
-    "serve": "vite preview"
+    "serve": "vite preview",
+    "test": "vitest run"
   },
   "dependencies": {
     "@dhiwise/component-tagger": "^1.0.14",
@@ -70,10 +71,12 @@
   "devDependencies": {
     "@vitejs/plugin-react": "4.3.4",
     "autoprefixer": "10.4.2",
+    "jsdom": "^29.1.1",
     "postcss": "^8.5.10",
     "tailwindcss": "3.4.6",
     "vite": "^5.4.21",
-    "vite-tsconfig-paths": "3.6.0"
+    "vite-tsconfig-paths": "3.6.0",
+    "vitest": "^4.1.9"
   },
   "eslintConfig": {
     "extends": [

@@ -44,6 +44,7 @@ export default function InsurancePurchaseModal({
   const [proposal, setProposal] = useState(null);
   const [step, setStep] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
 
   const defaultPremium = useMemo(
     () => String(product?.premiumFrom || product?.premiumTo || ''),
@@ -58,6 +59,7 @@ export default function InsurancePurchaseModal({
     setProposal(null);
     setStep(0);
     setCompleted(false);
+    setIsDemoMode(false);
     setForm({
       fullName: profile?.fullName || '',
       email: profile?.email || '',
@@ -94,6 +96,7 @@ export default function InsurancePurchaseModal({
     for (let attempt = 0; attempt < 12; attempt += 1) {
       const next = await insuranceService.getPurchaseStatus(orderId, token);
       setStatus(next);
+      if (next?.isDemo) setIsDemoMode(true);
       onPurchaseComplete?.(next);
       if (next?.paymentStatus === 'paid' && ['pushed', 'push_failed'].includes(next?.insurerPushStatus)) {
         setCompleted(true);
@@ -197,6 +200,7 @@ export default function InsurancePurchaseModal({
         insurerName: product.insurerName,
         publicToken: checkout.publicToken,
       });
+      if (checkout.isDemo) setIsDemoMode(true);
 
       setProposalBusy(true);
       const prop = await insuranceService.createProposal({
@@ -272,6 +276,11 @@ export default function InsurancePurchaseModal({
 
         <div className="p-5 space-y-5">
           {error ? <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">{error}</div> : null}
+          {isDemoMode ? (
+            <div className="p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-900 text-sm">
+              Sandbox purchase — no real policy will be issued.
+            </div>
+          ) : null}
 
           {completed ? (
             <div className="text-center py-8 space-y-4">

@@ -143,6 +143,30 @@ const ConversionFunnelTab = () => {
               </div>
             </div>
           )}
+
+          {data?.topAgents?.length > 0 && (
+            <div className="bg-card border border-border rounded-xl p-5">
+              <h3 className="font-semibold mb-4">Top agents by attributed leads</h3>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-muted-foreground border-b border-border">
+                      <th className="pb-2 pr-4">Agent code</th>
+                      <th className="pb-2">Leads</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {data.topAgents.map((row) => (
+                      <tr key={row.agentCode} className="border-b border-border/60">
+                        <td className="py-2 pr-4 font-medium">{row.agentCode}</td>
+                        <td className="py-2">{row.leadCount.toLocaleString('en-IN')}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </>
       )}
     </div>

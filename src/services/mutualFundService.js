@@ -70,4 +70,11 @@ export const mutualFundService = {
     const res = await apiClient.get(`/mutual-fund-sips/${id}`, { params: { token } });
     return res.data;
   },
+
+  async confirmSipMandate(id, token) {
+    const res = await apiClient.post(`/mutual-fund-sips/${id}/confirm-mandate`, null, {
+      params: { token },
+    });
+    return res.data;
+  },
 };

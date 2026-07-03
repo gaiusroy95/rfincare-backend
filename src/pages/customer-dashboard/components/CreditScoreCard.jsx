@@ -17,7 +17,14 @@ function scoreArcColor(score) {
   return 'text-orange-500';
 }
 
-const CreditScoreCard = ({ creditProfile, loading, onImprove }) => {
+const CreditScoreCard = ({
+  creditProfile,
+  loading,
+  pulling,
+  pullError,
+  onImprove,
+  onPullScore,
+}) => {
   if (loading) {
     return <div className="bg-card border border-border rounded-2xl p-6 animate-pulse h-40" />;
   }
@@ -29,9 +36,10 @@ const CreditScoreCard = ({ creditProfile, loading, onImprove }) => {
     ? `Bureau pull${creditProfile?.bureauVendor ? ` · ${creditProfile.bureauVendor}` : ''}`
     : creditProfile?.source === 'self_reported'
       ? 'Estimated from your application'
-      : 'Add a loan application or request a bureau check';
+      : 'Request a bureau check to see your score';
 
   const arcPct = score != null ? Math.min(100, Math.max(0, ((score - 300) / 600) * 100)) : 0;
+  const showSandbox = creditProfile?.sandboxMode || creditProfile?.pullSandbox;
 
   return (
     <div className={`border rounded-2xl overflow-hidden ${meta.bg}`}>
@@ -62,9 +70,14 @@ const CreditScoreCard = ({ creditProfile, loading, onImprove }) => {
         </div>
 
         <div className="flex-1 text-center sm:text-left">
-          <div className="flex items-center justify-center sm:justify-start gap-2">
+          <div className="flex items-center justify-center sm:justify-start gap-2 flex-wrap">
             <Icon name="Gauge" size={18} className={meta.color} />
             <p className="text-sm font-semibold text-foreground">Credit score</p>
+            {showSandbox && (
+              <span className="text-[10px] font-semibold uppercase tracking-wide px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200">
+                Sandbox
+              </span>
+            )}
           </div>
           <p className={`text-lg font-bold mt-1 ${meta.color}`}>{meta.label}</p>
           <p className="text-xs text-muted-foreground mt-2">{sourceLabel}</p>
@@ -73,11 +86,21 @@ const CreditScoreCard = ({ creditProfile, loading, onImprove }) => {
               Self-reported range: {creditProfile.selfReportedRange}
             </p>
           )}
-          {score != null && score < 700 && onImprove && (
-            <Button size="sm" variant="outline" className="mt-3" onClick={onImprove}>
-              Tips to improve
-            </Button>
+          {pullError && (
+            <p className="text-xs text-destructive mt-2">{pullError}</p>
           )}
+          <div className="flex flex-wrap gap-2 mt-3 justify-center sm:justify-start">
+            {onPullScore && (
+              <Button size="sm" onClick={onPullScore} disabled={pulling}>
+                {pulling ? 'Checking…' : score == null ? 'Check my score' : 'Refresh score'}
+              </Button>
+            )}
+            {score != null && score < 700 && onImprove && (
+              <Button size="sm" variant="outline" onClick={onImprove}>
+                Tips to improve
+              </Button>
+            )}
+          </div>
         </div>
       </div>
     </div>

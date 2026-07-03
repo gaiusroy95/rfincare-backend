@@ -3,12 +3,17 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Header from '../../components/ui/Header';
+import GuestResumeBanner from '../../components/GuestResumeBanner';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
+import MarketplaceLeadWizard from '../../components/marketplace/MarketplaceLeadWizard';
 import { governmentSchemeService } from '../../services/governmentSchemeService';
 import { GOVERNMENT_SCHEME_PRODUCT_GRID } from '../../constants/governmentSchemeLeadFlow';
 import { DEFAULT_GOVERNMENT_SCHEME_FILTERS, getCategoryLabel } from '../../constants/governmentSchemeMarketplace';
 import { formatInterestRate, resetGovernmentSchemeFilters } from '../../utils/governmentSchemeFilters';
+import { completeGovernmentSchemeApply } from '../../utils/governmentSchemeApplyFlow';
+import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
+import { listMarketplaceResumeSessions, loadCompareBasket } from '../../utils/guestSessionResume';
 
 const MAX_COMPARE = 3;
 
@@ -19,6 +24,11 @@ const GovernmentSchemesMarketplacePage = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [profile, setProfile] = useState(() => loadMarketplaceProfile('government_scheme'));
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [pendingScheme, setPendingScheme] = useState(null);
+  const [resumeSessions, setResumeSessions] = useState(() => listMarketplaceResumeSessions('government_scheme', { includeCalculators: false }));
+  const refreshResumeSessions = () => setResumeSessions(listMarketplaceResumeSessions('government_scheme', { includeCalculators: false }));
   const [filters, setFilters] = useState(() => ({
     ...DEFAULT_GOVERNMENT_SCHEME_FILTERS,
     category: searchParams.get('category') || 'all',
@@ -38,6 +48,17 @@ const GovernmentSchemesMarketplacePage = () => {
   useEffect(() => {
     loadSchemes();
   }, [loadSchemes]);
+
+  useEffect(() => {
+    if (schemes.length === 0) return;
+    const saved = loadCompareBasket('government_scheme');
+    if (!saved?.selectedIds?.length) return;
+    const validIds = saved.selectedIds.filter((id) => schemes.some((s) => s.id === id));
+    if (validIds.length >= 2) {
+      setSelected(validIds);
+      setShowCompare(true);
+    }
+  }, [schemes]);
 
   useEffect(() => {
     const cat = filters.category;
@@ -94,16 +115,50 @@ const GovernmentSchemesMarketplacePage = () => {
     setShowCompare(false);
   };
 
+  const handleSchemeApply = useCallback(async (scheme) => {
+    const activeProfile = profile || loadMarketplaceProfile('government_scheme');
+    if (!activeProfile?.verifiedAt) {
+      setPendingScheme(scheme);
+      setWizardOpen(true);
+      return;
+    }
+    await completeGovernmentSchemeApply(scheme, activeProfile);
+  }, [profile]);
+
+  const handleWizardComplete = useCallback(async (completedProfile) => {
+    const saved = saveMarketplaceProfile('government_scheme', {
+      ...completedProfile,
+      productLabel: pendingScheme?.name || completedProfile.productLabel,
+      productCategory: pendingScheme?.categories?.[0] || completedProfile.productCategory,
+    });
+    setProfile(saved);
+    setWizardOpen(false);
+    const scheme = pendingScheme;
+    setPendingScheme(null);
+    if (scheme) {
+      await completeGovernmentSchemeApply(scheme, saved);
+    }
+  }, [pendingScheme]);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
+        {resumeSessions.length > 0 ? (
+          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
+        ) : null}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Government Schemes Marketplace</h1>
             <p className="text-sm text-muted-foreground">
               Compare central and state government schemes for loans, subsidies, pensions, and insurance. Select up to {MAX_COMPARE} to compare side by side.
             </p>
+            {profile?.fullName ? (
+              <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                <Icon name="CheckCircle2" size={14} />
+                Verified: {profile.phone} · {profile.email}
+              </p>
+            ) : null}
           </div>
           <Button variant="outline" onClick={() => navigate('/product-comparison')}>
             <Icon name="GitCompare" size={16} />
@@ -159,9 +214,45 @@ const GovernmentSchemesMarketplacePage = () => {
           onToggleCompare={() => setShowCompare((v) => !v)}
           onToggleSelect={toggleSelect}
           onClearSelection={onClearSelection}
+          onApply={handleSchemeApply}
           context={{}}
+          renderGridCard={(scheme, isSelected) => (
+            <div
+              key={scheme.id}
+              className={`rounded-xl border bg-card p-4 space-y-3 ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}
+            >
+              <div>
+                <p className="text-xs font-bold text-primary uppercase">{scheme.ministryName || 'Government of India'}</p>
+                <h3 className="font-bold">{scheme.name}</h3>
+                {scheme.interestRate != null ? (
+                  <p className="text-sm text-muted-foreground mt-1">{formatInterestRate(scheme.interestRate)}</p>
+                ) : null}
+              </div>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="default" onClick={() => handleSchemeApply(scheme)}>
+                  Apply / Enquire
+                </Button>
+                <Button
+                  size="sm"
+                  variant={isSelected ? 'default' : 'outline'}
+                  onClick={() => toggleSelect(scheme.id)}
+                >
+                  {isSelected ? 'Selected' : 'Compare'}
+                </Button>
+              </div>
+            </div>
+          )}
         />
       </div>
+
+      <MarketplaceLeadWizard
+        open={wizardOpen}
+        onClose={() => { setWizardOpen(false); setPendingScheme(null); }}
+        onComplete={handleWizardComplete}
+        marketplaceType="government_scheme"
+        productLabel={pendingScheme?.name}
+        productCategory={pendingScheme?.categories?.[0]}
+      />
     </div>
   );
 };

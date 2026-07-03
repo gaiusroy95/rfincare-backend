@@ -3,13 +3,18 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Header from '../../components/ui/Header';
+import GuestResumeBanner from '../../components/GuestResumeBanner';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
+import MarketplaceLeadWizard from '../../components/marketplace/MarketplaceLeadWizard';
 import InvestmentCalculatorModal from '../../components/investment/InvestmentCalculatorModal';
 import { investmentProductService } from '../../services/investmentProductService';
 import { INVESTMENT_PRODUCT_GRID } from '../../constants/investmentLeadFlow';
 import { DEFAULT_INVESTMENT_FILTERS, getCategoryLabel } from '../../constants/investmentMarketplace';
 import { formatPercent, resetInvestmentFilters } from '../../utils/investmentMarketplaceFilters';
+import { completeInvestmentApply } from '../../utils/investmentApplyFlow';
+import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
+import { listMarketplaceResumeSessions, loadCompareBasket } from '../../utils/guestSessionResume';
 
 const MAX_COMPARE = 3;
 
@@ -20,6 +25,11 @@ const InvestmentMarketplacePage = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [profile, setProfile] = useState(() => loadMarketplaceProfile('investment'));
+  const [wizardOpen, setWizardOpen] = useState(false);
+  const [pendingProduct, setPendingProduct] = useState(null);
+  const [resumeSessions, setResumeSessions] = useState(() => listMarketplaceResumeSessions('investment', { includeCalculators: false }));
+  const refreshResumeSessions = () => setResumeSessions(listMarketplaceResumeSessions('investment', { includeCalculators: false }));
   const [filters, setFilters] = useState(() => ({
     ...DEFAULT_INVESTMENT_FILTERS,
     category: searchParams.get('category') || 'all',
@@ -41,6 +51,17 @@ const InvestmentMarketplacePage = () => {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    if (products.length === 0) return;
+    const saved = loadCompareBasket('investment');
+    if (!saved?.selectedIds?.length) return;
+    const validIds = saved.selectedIds.filter((id) => products.some((p) => p.id === id));
+    if (validIds.length >= 2) {
+      setSelected(validIds);
+      setShowCompare(true);
+    }
+  }, [products]);
 
   useEffect(() => {
     const cat = filters.category;
@@ -112,16 +133,50 @@ const InvestmentMarketplacePage = () => {
     setCalculatorOpen(true);
   };
 
+  const handleInvestmentApply = useCallback(async (product, calculatorContext = {}) => {
+    const activeProfile = profile || loadMarketplaceProfile('investment');
+    if (!activeProfile?.verifiedAt) {
+      setPendingProduct(product);
+      setWizardOpen(true);
+      return;
+    }
+    await completeInvestmentApply(product, activeProfile, calculatorContext);
+  }, [profile]);
+
+  const handleWizardComplete = useCallback(async (completedProfile) => {
+    const saved = saveMarketplaceProfile('investment', {
+      ...completedProfile,
+      productLabel: pendingProduct?.name || completedProfile.productLabel,
+      productCategory: pendingProduct?.categories?.[0] || completedProfile.productCategory,
+    });
+    setProfile(saved);
+    setWizardOpen(false);
+    const product = pendingProduct;
+    setPendingProduct(null);
+    if (product) {
+      await completeInvestmentApply(product, saved);
+    }
+  }, [pendingProduct]);
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
+        {resumeSessions.length > 0 ? (
+          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
+        ) : null}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Investment Marketplace</h1>
             <p className="text-sm text-muted-foreground">
               Compare sovereign gold bonds, ETFs, bonds, REITs, and InvITs. Select up to {MAX_COMPARE} to compare side by side.
             </p>
+            {profile?.fullName ? (
+              <p className="text-xs text-emerald-700 mt-2 inline-flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-3 py-1">
+                <Icon name="CheckCircle2" size={14} />
+                Verified: {profile.phone} · {profile.email}
+              </p>
+            ) : null}
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" onClick={() => openCalculator()}>
@@ -183,10 +238,7 @@ const InvestmentMarketplacePage = () => {
           onToggleCompare={() => setShowCompare((v) => !v)}
           onToggleSelect={toggleSelect}
           onClearSelection={onClearSelection}
-          onApply={(product) => {
-            if (product?.applyUrl) window.open(product.applyUrl, '_blank', 'noopener,noreferrer');
-            else openCalculator(product);
-          }}
+          onApply={(product) => handleInvestmentApply(product)}
           context={{}}
         />
       </div>
@@ -195,6 +247,19 @@ const InvestmentMarketplacePage = () => {
         open={calculatorOpen}
         onClose={() => setCalculatorOpen(false)}
         product={calculatorProduct}
+        onApply={(product, context) => {
+          setCalculatorOpen(false);
+          handleInvestmentApply(product, context);
+        }}
+      />
+
+      <MarketplaceLeadWizard
+        open={wizardOpen}
+        onClose={() => { setWizardOpen(false); setPendingProduct(null); }}
+        onComplete={handleWizardComplete}
+        marketplaceType="investment"
+        productLabel={pendingProduct?.name}
+        productCategory={pendingProduct?.categories?.[0]}
       />
     </div>
   );

@@ -14,6 +14,7 @@ const NotificationCard = ({ notification, onMarkAsRead }) => {
       'approval': 'CheckCircle2',
       'alert': 'AlertCircle',
       'abandoned_checkout': 'ShoppingCart',
+      'abandoned_sip': 'TrendingUp',
       'renewal_reminder': 'Shield',
       'info': 'Info'
     };
@@ -29,6 +30,7 @@ const NotificationCard = ({ notification, onMarkAsRead }) => {
       'approval': 'bg-green-50 border-green-200',
       'alert': 'bg-red-50 border-red-200',
       'abandoned_checkout': 'bg-amber-50 border-amber-200',
+      'abandoned_sip': 'bg-orange-50 border-orange-200',
       'renewal_reminder': 'bg-emerald-50 border-emerald-200',
       'info': 'bg-gray-50 border-gray-200'
     };
@@ -44,6 +46,7 @@ const NotificationCard = ({ notification, onMarkAsRead }) => {
       'approval': '#10B981',
       'alert': '#EF4444',
       'abandoned_checkout': '#D97706',
+      'abandoned_sip': '#EA580C',
       'renewal_reminder': '#059669',
       'info': '#6B7280'
     };

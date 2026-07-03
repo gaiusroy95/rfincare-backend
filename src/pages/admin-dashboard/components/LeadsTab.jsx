@@ -2,14 +2,8 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { leadService } from '../../../services/leadService';
 import { adminService } from '../../../services/adminService';
 import Button from '../../../components/ui/Button';
+import LeadsTable from '../../../components/leads/LeadsTable';
 import { copyTextToClipboard } from '../../../utils/copyToClipboard';
-
-const formatProductType = (value) =>
-  value
-    ? String(value)
-      .replace(/_/g, ' ')
-      .replace(/\b\w/g, (char) => char.toUpperCase())
-    : '—';
 
 const LeadsTab = () => {
   const [leads, setLeads] = useState([]);
@@ -138,41 +132,6 @@ const LeadsTab = () => {
 
   const staffCount = employees.length + agents.length;
 
-  const renderAssignSelect = (lead) => (
-    <select
-      className="w-full border border-border rounded-md px-2 py-1.5 text-sm bg-background min-w-[220px]"
-      value={lead.assignedTo || ''}
-      disabled={assigneesLoading || staffCount === 0}
-      onChange={(e) => handleAssign(lead.id, e.target.value)}
-    >
-      <option value="">
-        {assigneesLoading
-          ? 'Loading staff…'
-          : staffCount === 0
-            ? 'No employees/agents — create staff first'
-            : 'Assign to…'}
-      </option>
-      {employees.length > 0 && (
-        <optgroup label="Employees">
-          {employees.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.label}
-            </option>
-          ))}
-        </optgroup>
-      )}
-      {agents.length > 0 && (
-        <optgroup label="Agents">
-          {agents.map((person) => (
-            <option key={person.id} value={person.id}>
-              {person.label}
-            </option>
-          ))}
-        </optgroup>
-      )}
-    </select>
-  );
-
   if (loading && leads.length === 0) {
     return <p className="text-muted-foreground p-6">Loading leads…</p>;
   }
@@ -242,87 +201,19 @@ const LeadsTab = () => {
         </div>
       )}
 
-      <div className="overflow-x-auto border border-border rounded-lg">
-        <table className="w-full text-sm min-w-[900px]">
-          <thead className="bg-muted">
-            <tr>
-              <th className="text-left p-3">Name</th>
-              <th className="text-left p-3">Contact</th>
-              <th className="text-left p-3">Product type</th>
-              <th className="text-left p-3">Status</th>
-              <th className="text-left p-3">Score</th>
-              <th className="text-left p-3">Assign</th>
-              <th className="text-left p-3">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {leads.length === 0 ? (
-              <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">
-                  No leads yet.
-                </td>
-              </tr>
-            ) : (
-              leads.map((lead) => (
-                <tr key={lead.id} className="border-t border-border align-top">
-                  <td className="p-3">{lead.fullName || '—'}</td>
-                  <td className="p-3">
-                    <div>{lead.email}</div>
-                    <div className="text-muted-foreground">{lead.phone}</div>
-                  </td>
-                  <td className="p-3">{formatProductType(lead.loanType)}</td>
-                  <td className="p-3">
-                    <span className="px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs">
-                      {lead.status}
-                    </span>
-                  </td>
-                  <td className="p-3">{lead.eligibilityScore ?? '—'}</td>
-                  <td className="p-3 min-w-[240px]">
-                    {renderAssignSelect(lead)}
-                    {lead.assignedTo && (
-                      <p className="text-xs text-muted-foreground mt-1.5">
-                        Assigned:{' '}
-                        <span className="font-medium text-foreground">
-                          {lead.assignedToCode && lead.assignedToName
-                            ? `${lead.assignedToCode} — ${lead.assignedToName}`
-                            : lead.assignedToName || lead.assignedToCode || 'Staff member'}
-                        </span>
-                        {lead.assignedToRole && (
-                          <span className="text-muted-foreground">
-                            {' '}
-                            ({lead.assignedToRole})
-                          </span>
-                        )}
-                      </p>
-                    )}
-                  </td>
-                  <td className="p-3">
-                    <div className="flex flex-col gap-1">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        loading={resumeBusyId === lead.id}
-                        onClick={() => handleResumeLink(lead, { sendNotification: false })}
-                      >
-                        Copy resume link
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        loading={resumeBusyId === lead.id}
-                        disabled={!lead.email}
-                        onClick={() => handleResumeLink(lead, { sendNotification: true })}
-                      >
-                        Email resume link
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
+      <LeadsTable
+        leads={leads}
+        loading={loading}
+        showAssign
+        showActions
+        assigneesLoading={assigneesLoading}
+        staffCount={staffCount}
+        employees={employees}
+        agents={agents}
+        resumeBusyId={resumeBusyId}
+        onAssign={handleAssign}
+        onResumeLink={handleResumeLink}
+      />
     </div>
   );
 };

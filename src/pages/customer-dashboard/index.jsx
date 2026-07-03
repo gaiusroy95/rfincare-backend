@@ -23,6 +23,7 @@ import { bankService } from '../../services/apiServices';
 import { milestone4Service } from '../../services/milestone4Service';
 import CreditCardsQuickApply from '../../components/credit-cards/CreditCardsQuickApply';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
+import { computeProfileCompletion } from '../../utils/profileCompletion';
 
 
 const CustomerDashboard = () => {
@@ -46,6 +47,8 @@ const CustomerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [financialSnapshot, setFinancialSnapshot] = useState(null);
   const [snapshotLoading, setSnapshotLoading] = useState(false);
+  const [creditPulling, setCreditPulling] = useState(false);
+  const [creditPullError, setCreditPullError] = useState('');
 
   useEffect(() => {
     const tab = searchParams.get('tab');
@@ -69,6 +72,37 @@ const CustomerDashboard = () => {
       loadFinancialSnapshot();
     }
   }, [user?.id, activeTab]);
+
+  const handlePullCreditScore = async () => {
+    setCreditPulling(true);
+    setCreditPullError('');
+    try {
+      const result = await customerFinancialService.pullCreditScore();
+      if (result?.creditProfile) {
+        setFinancialSnapshot((prev) => ({
+          ...prev,
+          creditProfile: {
+            ...result.creditProfile,
+            pullSandbox: result.pull?.sandboxMode,
+          },
+          summary: {
+            ...prev?.summary,
+            creditScore: result.creditProfile.score,
+            creditScoreBand: result.creditProfile.band,
+            creditScoreSource: result.creditProfile.source,
+          },
+        }));
+      } else {
+        await loadFinancialSnapshot();
+      }
+    } catch (err) {
+      setCreditPullError(
+        err?.response?.data?.error || err?.message || 'Could not pull credit score',
+      );
+    } finally {
+      setCreditPulling(false);
+    }
+  };
 
   useEffect(() => {
     if (!user?.id) return undefined;
@@ -186,10 +220,12 @@ const CustomerDashboard = () => {
     location: '',
     avatar: userProfile?.avatarUrl || '',
     avatarAlt: `Profile picture of ${userProfile?.fullName || 'Customer'}`,
-    completionPercentage: 85,
+    completionPercentage: computeProfileCompletion(userProfile, financialSnapshot),
     activeApplications: applications?.filter(a => ['submitted', 'under_review', 'documents_pending']?.includes(a?.status))?.length || 0,
     documentsUploaded: documents?.filter(d => d?.status === 'verified')?.length || 0,
-    creditScore: financialSnapshot?.summary?.creditScore ?? financialSnapshot?.creditProfile?.score ?? null,
+    creditScore: financialSnapshot?.summary?.creditScore
+      ?? financialSnapshot?.creditProfile?.score
+      ?? '—',
     memberSince: new Date(userProfile?.createdAt || Date.now())?.getFullYear()?.toString()
   };
 
@@ -340,6 +376,9 @@ const CustomerDashboard = () => {
                 source: financialSnapshot?.summary?.creditScoreSource,
               }}
               loading={snapshotLoading}
+              pulling={creditPulling}
+              pullError={creditPullError}
+              onPullScore={handlePullCreditScore}
               onImprove={() => handleTabChange('portfolio')}
             />
 

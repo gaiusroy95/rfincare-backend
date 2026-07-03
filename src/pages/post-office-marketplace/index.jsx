@@ -10,6 +10,8 @@ import PostOfficeCalculatorModal from '../../components/post-office/PostOfficeCa
 import { postOfficeService } from '../../services/postOfficeService';
 import { completePostOfficeApply } from '../../utils/postOfficeApplyFlow';
 import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
+import GuestResumeBanner from '../../components/GuestResumeBanner';
+import { listMarketplaceResumeSessions, loadCompareBasket } from '../../utils/guestSessionResume';
 import { POST_OFFICE_PRODUCT_GRID } from '../../constants/postOfficeLeadFlow';
 import { DEFAULT_POST_OFFICE_FILTERS, getCategoryLabel } from '../../constants/postOfficeMarketplace';
 import { formatInterestRate, resetPostOfficeFilters } from '../../utils/postOfficeFilters';
@@ -32,6 +34,8 @@ const PostOfficeMarketplacePage = () => {
   const [profile, setProfile] = useState(() => loadMarketplaceProfile('post_office'));
   const [wizardOpen, setWizardOpen] = useState(false);
   const [pendingProduct, setPendingProduct] = useState(null);
+  const [resumeSessions, setResumeSessions] = useState(() => listMarketplaceResumeSessions('post_office', { includeCalculators: false }));
+  const refreshResumeSessions = () => setResumeSessions(listMarketplaceResumeSessions('post_office', { includeCalculators: false }));
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
@@ -47,6 +51,17 @@ const PostOfficeMarketplacePage = () => {
   useEffect(() => {
     loadProducts();
   }, [loadProducts]);
+
+  useEffect(() => {
+    if (products.length === 0) return;
+    const saved = loadCompareBasket('post_office');
+    if (!saved?.selectedIds?.length) return;
+    const validIds = saved.selectedIds.filter((id) => products.some((p) => p.id === id));
+    if (validIds.length >= 2) {
+      setSelected(validIds);
+      setShowCompare(true);
+    }
+  }, [products]);
 
   useEffect(() => {
     const cat = filters.category;
@@ -154,6 +169,9 @@ const PostOfficeMarketplacePage = () => {
     <div className="min-h-screen bg-background">
       <Header />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-8 space-y-6">
+        {resumeSessions.length > 0 ? (
+          <GuestResumeBanner sessions={resumeSessions} onDismiss={refreshResumeSessions} />
+        ) : null}
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div className="space-y-1">
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">Post Office Marketplace</h1>
