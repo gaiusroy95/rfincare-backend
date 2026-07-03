@@ -3,90 +3,45 @@ import React, { useState } from 'react';
 const LOGO_SRC = '/assets/images/logo.png';
 const LOGO_SRC_ALT = '/assets/images/Logo_-_Copy_-_Copy-1771484476490.jpg';
 
-/** Visible container height per size */
-const SIZES = {
-  sm: 'h-8',
-  md: 'h-10',
-  lg: 'h-12',
-  xl: 'h-14',
-  '2xl': 'h-[4.5rem]',
-  icon: 'h-9',
-  sidebar: 'h-16',
+/** Square emblem sizes — logo.png is the RFINCARE icon mark (no baked-in wordmark). */
+const EMBLEM_CLASS = {
+  sm: 'h-8 w-8',
+  md: 'h-10 w-10',
+  lg: 'h-12 w-12',
+  xl: 'h-14 w-14',
+  '2xl': 'h-[4.5rem] w-[4.5rem]',
+  icon: 'h-10 w-10',
+  sidebar: 'h-11 w-11',
 };
-
-/** Taller image height when cropping embedded tagline from logo.png */
-const IMG_SIZES_CROP = {
-  sm: 'h-[2.75rem]',
-  md: 'h-[3.5rem]',
-  lg: 'h-[4.25rem]',
-  xl: 'h-[5.25rem]',
-  '2xl': 'h-[6.5rem]',
-  icon: 'h-9 w-9 object-contain',
-  sidebar: 'h-auto w-[220px] max-w-none',
-};
-
-/** Width-based crop — shows RFINCARE wordmark clearly in portal sidebars */
-const SIDEBAR_LOGO_WIDTH = 220;
 
 /**
- * RFINCARE logo — image from public/assets with text wordmark fallback.
- * By default shows wordmark only (no tagline text, crops tagline baked into logo.png).
+ * RFINCARE logo — emblem image with optional text wordmark fallback on load failure.
  */
 const BrandLogo = ({
   size = 'md',
   showTagline = false,
-  wordmarkOnly = true,
   className = '',
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
-
-  const containerHeight = SIZES[size] || SIZES.md;
-  const isSidebar = size === 'sidebar';
-  const isIcon = size === 'icon';
-  const imgHeight = wordmarkOnly && !isSidebar && !isIcon
-    ? IMG_SIZES_CROP[size] || IMG_SIZES_CROP.md
-    : isSidebar
-      ? IMG_SIZES_CROP.sidebar
-      : isIcon
-        ? IMG_SIZES_CROP.icon
-        : containerHeight;
+  const emblemClass = EMBLEM_CLASS[size] || EMBLEM_CLASS.md;
 
   if (!imgFailed) {
-    const img = (
-      <img
-        src={LOGO_SRC}
-        alt="RFINCARE"
-        className={
-          isSidebar
-            ? `${imgHeight} object-contain object-left object-top`
-            : `${imgHeight} w-auto object-contain object-left object-top`
-        }
-        style={isSidebar ? { width: SIDEBAR_LOGO_WIDTH } : undefined}
-        onError={(e) => {
-          if (e.currentTarget.src.includes(LOGO_SRC_ALT)) {
-            setImgFailed(true);
-          } else {
-            e.currentTarget.src = LOGO_SRC_ALT;
-          }
-        }}
-      />
-    );
-
     return (
-      <div className={`inline-flex flex-col leading-none ${className}`}>
-        {wordmarkOnly ? (
-          <div
-            className={`${containerHeight} overflow-hidden flex items-start ${
-              isSidebar ? 'w-full max-w-[220px]' : ''
-            }`}
-          >
-            {img}
-          </div>
-        ) : (
-          img
-        )}
+      <div className={`inline-flex flex-col items-start leading-none ${className}`}>
+        <img
+          src={LOGO_SRC}
+          alt="RFINCARE"
+          className={`${emblemClass} object-contain object-center shrink-0`}
+          onError={(e) => {
+            if (e.currentTarget.src.includes(LOGO_SRC_ALT)) {
+              setImgFailed(true);
+            } else {
+              e.currentTarget.src = LOGO_SRC_ALT;
+            }
+          }}
+        />
         {showTagline ? (
-          <span className="text-[10px] font-semibold text-[var(--color-brand-green)] mt-0.5 tracking-wide uppercase">
+          <span className="text-[10px] font-semibold text-[var(--color-brand-green)] mt-1 tracking-wide uppercase">
             Your Financial Supermarket
           </span>
         ) : null}
@@ -100,7 +55,8 @@ const BrandLogo = ({
     lg: 'text-3xl',
     xl: 'text-4xl',
     '2xl': 'text-5xl',
-    sidebar: 'text-3xl',
+    icon: 'text-xl',
+    sidebar: 'text-2xl',
   };
 
   return (

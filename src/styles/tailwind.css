@@ -223,7 +223,8 @@
   }
 
   .rf-logo-btn {
-    @apply text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-green)] focus-visible:ring-offset-2;
+    @apply text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-green)] focus-visible:ring-offset-2 flex items-center shrink-0;
+    line-height: 0;
   }
 
   .rf-desktop-nav {
@@ -710,13 +711,17 @@
     padding: 0.75rem 0.5rem;
     border-bottom: 1px solid var(--color-border);
     display: flex;
+    align-items: center;
     justify-content: center;
+    min-height: 3.75rem;
+    flex-shrink: 0;
   }
 
   @media (min-width: 1024px) {
     .rf-portal-sidebar-header {
-      padding: 1.25rem 1.25rem 1rem;
+      padding: 1rem 1.25rem;
       justify-content: flex-start;
+      min-height: 4.5rem;
     }
   }
 
@@ -725,18 +730,20 @@
     align-items: center;
     justify-content: center;
     width: 100%;
-    padding: 0.15rem 0;
+    padding: 0;
+    line-height: 0;
   }
 
   @media (min-width: 1024px) {
     .rf-portal-logo-btn {
-      display: block;
-      text-align: left;
+      justify-content: flex-start;
     }
   }
 
   .rf-portal-logo-icon {
     display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .rf-portal-logo-full {
@@ -749,7 +756,8 @@
     }
 
     .rf-portal-logo-full {
-      display: block;
+      display: flex;
+      align-items: center;
     }
   }
 
