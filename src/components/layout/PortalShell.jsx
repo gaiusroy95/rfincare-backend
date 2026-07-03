@@ -103,9 +103,25 @@ const PortalShell = ({
               />
               <span className="rf-portal-search-hint hidden lg:inline">Ctrl + K</span>
             </div>
+            <button
+              type="button"
+              className="rf-portal-home-btn hidden md:inline-flex"
+              onClick={() => navigate('/homepage')}
+            >
+              <Icon name="Home" size={18} />
+              <span>Back to Home</span>
+            </button>
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+            <button
+              type="button"
+              className="rf-portal-home-btn md:hidden"
+              onClick={() => navigate('/homepage')}
+              aria-label="Back to Home"
+            >
+              <Icon name="Home" size={18} />
+            </button>
             {headerActions}
             <button type="button" className="rf-portal-icon-btn hidden sm:flex" title="24x7 Support">
               <Icon name="Headphones" size={18} />

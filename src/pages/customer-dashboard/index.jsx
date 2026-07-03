@@ -12,6 +12,9 @@ import QuickActionCard from './components/QuickActionCard';
 import ProfileSummaryCard from './components/ProfileSummaryCard';
 
 import SupportCard from './components/SupportCard';
+import CustomerProfilePanel from './components/CustomerProfilePanel';
+import CustomerSupportPanel from './components/CustomerSupportPanel';
+import CustomerSettingsPanel from './components/CustomerSettingsPanel';
 import UnifiedFinancialOverview from './components/UnifiedFinancialOverview';
 import FinancialHealthCard from './components/FinancialHealthCard';
 import CreditScoreCard from './components/CreditScoreCard';
@@ -246,11 +249,8 @@ const CustomerDashboard = () => {
   }));
 
   const handleNavSelect = (item) => {
-    if (item.path) {
-      navigate(item.path);
-      return;
-    }
     if (item.tab) handleTabChange(item.tab);
+    else if (item.path) navigate(item.path);
   };
 
   const handleTabChange = (tabId) => {
@@ -279,6 +279,19 @@ const CustomerDashboard = () => {
   }
 
   const sidebarActiveId = navItems.find((n) => n.tab === activeTab)?.id || 'overview';
+
+  const TAB_HEADINGS = {
+    overview: null,
+    applications: { title: 'My Applications', subtitle: 'Track and manage all your loan applications.' },
+    portfolio: { title: 'My Investments', subtitle: 'Your unified financial portfolio and holdings.' },
+    documents: { title: 'My Documents', subtitle: 'Upload and manage verification documents.' },
+    notifications: { title: 'My Alerts', subtitle: 'Stay updated on your applications and account activity.' },
+    profile: { title: 'My Profile', subtitle: 'Update your personal information and contact details.' },
+    support: { title: 'Support Center', subtitle: 'Get help from our financial experts — we are here for you.' },
+    settings: { title: 'Settings', subtitle: 'Manage your password, sessions, and account security.' },
+  };
+
+  const tabHeading = TAB_HEADINGS[activeTab];
 
   return (
     <PortalShell
@@ -309,14 +322,23 @@ const CustomerDashboard = () => {
       )}
     >
         <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-            Welcome back, {profileData?.name?.split(' ')?.[0]}! 👋
-          </h1>
-          <p className="text-sm md:text-base text-muted-foreground">
-            {documentOnlyMode
-              ? 'Your application is submitted. Upload documents and view your read-only application summary below.'
-              : "Here's your financial overview for today."}
-          </p>
+          {tabHeading ? (
+            <>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{tabHeading.title}</h1>
+              <p className="text-sm md:text-base text-muted-foreground">{tabHeading.subtitle}</p>
+            </>
+          ) : (
+            <>
+              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
+                Welcome back, {profileData?.name?.split(' ')?.[0]}! 👋
+              </h1>
+              <p className="text-sm md:text-base text-muted-foreground">
+                {documentOnlyMode
+                  ? 'Your application is submitted. Upload documents and view your read-only application summary below.'
+                  : "Here's your financial overview for today."}
+              </p>
+            </>
+          )}
         </div>
 
         {activeTab === 'overview' && financialSnapshot?.summary ? (
@@ -386,7 +408,7 @@ const CustomerDashboard = () => {
           <div className="space-y-6">
             <ProfileSummaryCard 
               profile={profileData} 
-              onEditProfile={() => navigate('/profile')} 
+              onEditProfile={() => handleTabChange('profile')} 
             />
 
             <NextBestActionBanner
@@ -629,8 +651,7 @@ const CustomerDashboard = () => {
         {/* Notifications Tab */}
         {activeTab === 'notifications' && (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold text-foreground">Notifications</h2>
+            <div className="flex items-center justify-end">
               {unreadNotifications?.length > 0 && (
                 <Button
                   variant="outline"
@@ -668,6 +689,12 @@ const CustomerDashboard = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'profile' && <CustomerProfilePanel />}
+
+        {activeTab === 'support' && <CustomerSupportPanel />}
+
+        {activeTab === 'settings' && <CustomerSettingsPanel />}
 
       <DocumentUploadModal
         isOpen={isUploadModalOpen}

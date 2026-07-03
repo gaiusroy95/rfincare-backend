@@ -6,9 +6,9 @@ export const CUSTOMER_NAV_ITEMS = [
   { id: 'portfolio', label: 'My Investments', icon: 'TrendingUp', tab: 'portfolio' },
   { id: 'documents', label: 'My Documents', icon: 'FolderOpen', tab: 'documents' },
   { id: 'notifications', label: 'My Alerts', icon: 'Bell', tab: 'notifications', badgeKey: 'notifications' },
-  { id: 'profile', label: 'My Profile', icon: 'User', path: '/profile' },
-  { id: 'support', label: 'Support Center', icon: 'Headphones', path: '/contact-us' },
-  { id: 'settings', label: 'Settings', icon: 'Settings', path: '/profile' },
+  { id: 'profile', label: 'My Profile', icon: 'User', tab: 'profile' },
+  { id: 'support', label: 'Support Center', icon: 'Headphones', tab: 'support' },
+  { id: 'settings', label: 'Settings', icon: 'Settings', tab: 'settings' },
 ];
 
 export const AGENT_NAV_ITEMS = [
