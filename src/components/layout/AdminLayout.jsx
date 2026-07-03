@@ -45,7 +45,7 @@ const AdminLayout = () => {
             onClick={() => navigate('/admin-dashboard?tab=applications')}
             className="rf-portal-logo-btn"
           >
-            <BrandLogo size="sm" showTagline />
+            <BrandLogo size="lg" showTagline={false} />
           </button>
         </div>
 

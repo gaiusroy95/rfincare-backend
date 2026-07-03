@@ -36,7 +36,7 @@ const PortalLoginLayout = ({
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <button type="button" onClick={() => window.location.assign('/homepage')} className="inline-block mb-6">
-              <BrandLogo size="md" showTagline />
+              <BrandLogo size="2xl" showTagline={false} />
             </button>
           </div>
 

@@ -108,7 +108,7 @@ const Footer = () => {
             className={`sm:col-span-2 ${hasAdditionalOffices ? 'lg:col-span-3' : 'lg:col-span-4'}`}
           >
             <div className="mb-5">
-              <BrandLogo size="md" />
+              <BrandLogo size="lg" showTagline={false} />
             </div>
             <p className="text-sm leading-relaxed text-muted-foreground mb-6 max-w-sm">
               {contact.tagline || t('footer.tagline')}

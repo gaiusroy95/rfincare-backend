@@ -219,7 +219,7 @@
   }
 
   .rf-main-bar-inner {
-    @apply flex items-center justify-between gap-4 h-[68px] lg:h-[72px];
+    @apply flex items-center justify-between gap-4 h-[76px] lg:h-[80px];
   }
 
   .rf-logo-btn {
@@ -344,12 +344,12 @@
   }
 
   .rf-header-spacer {
-    height: calc(36px + 68px);
+    height: calc(36px + 76px);
   }
 
   @media (min-width: 1024px) {
     .rf-header-spacer {
-      height: calc(36px + 72px);
+      height: calc(36px + 80px);
     }
   }
 

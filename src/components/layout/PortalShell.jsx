@@ -47,7 +47,7 @@ const PortalShell = ({
       <aside className={`rf-portal-sidebar ${sidebarOpen ? 'rf-portal-sidebar-open' : ''}`}>
         <div className="rf-portal-sidebar-header">
           <button type="button" onClick={() => navigate('/homepage')} className="rf-portal-logo-btn">
-            <BrandLogo size="sm" showTagline />
+              <BrandLogo size="lg" showTagline={false} />
           </button>
         </div>
 

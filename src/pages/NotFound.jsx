@@ -22,7 +22,7 @@ const NotFound = () => {
       <main className="flex-1 flex flex-col items-center justify-center p-4 py-16">
         <div className="text-center max-w-2xl">
           <div className="flex justify-center mb-8">
-            <BrandLogo size="lg" showTagline />
+            <BrandLogo size="2xl" showTagline={false} />
           </div>
 
           <div className="relative mb-6">
