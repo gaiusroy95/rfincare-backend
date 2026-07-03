@@ -3,37 +3,54 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import { FINANCIAL_PILLARS } from '../../../constants/calculatorProductBridges';
 
+const PILLAR_STYLES = {
+  borrow: 'rf-pillar-card--borrow',
+  protect: 'rf-pillar-card--protect',
+  invest: 'rf-pillar-card--invest',
+  plan: 'rf-pillar-card--plan',
+};
+
 const FinancialPillarsSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="py-12 md:py-16 bg-muted/30">
+    <section className="rf-home-pillars">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-10">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">
+        <div className="text-center mb-8 md:mb-10">
+          <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-brand-green)] mb-2">
+            Your financial journey
+          </p>
+          <h2 className="text-xl md:text-2xl font-bold text-foreground">
             Plan · Protect · Invest · Borrow
           </h2>
-          <p className="text-muted-foreground mt-2 max-w-2xl mx-auto">
-            One platform for every financial goal — from loans and insurance to mutual funds and retirement planning.
+          <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
+            One platform for every financial goal — loans, insurance, mutual funds and retirement planning.
           </p>
         </div>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
           {FINANCIAL_PILLARS.map((pillar) => (
             <button
               key={pillar.id}
               type="button"
               onClick={() => navigate(pillar.path)}
-              className="group text-left bg-card border border-border rounded-2xl p-6 hover:shadow-lg hover:border-primary/30 transition-all"
+              className={`rf-pillar-card group ${PILLAR_STYLES[pillar.id] || ''}`}
             >
-              <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${pillar.gradient} flex items-center justify-center mb-4 group-hover:scale-105 transition-transform`}>
+              <div className="rf-pillar-card-icon">
                 <Icon name={pillar.icon} size={24} color="white" />
               </div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">{pillar.subtitle}</p>
-              <h3 className="text-xl font-bold text-foreground mt-1">{pillar.title}</h3>
-              <p className="text-sm text-muted-foreground mt-2 line-clamp-3">{pillar.description}</p>
-              <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary mt-4 group-hover:gap-2 transition-all">
+              <div className="min-w-0 flex-1">
+                <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                  {pillar.subtitle}
+                </p>
+                <h3 className="text-lg font-bold text-foreground mt-0.5">{pillar.title}</h3>
+                <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
+                  {pillar.description}
+                </p>
+              </div>
+              <span className="rf-pillar-card-cta">
                 {pillar.cta}
-                <Icon name="ArrowRight" size={16} />
+                <Icon name="ArrowRight" size={15} className="group-hover:translate-x-0.5 transition-transform" />
               </span>
             </button>
           ))}

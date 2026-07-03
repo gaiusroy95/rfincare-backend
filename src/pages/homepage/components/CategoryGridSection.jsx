@@ -20,19 +20,25 @@ const CategoryGridSection = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="py-12 md:py-16 bg-white">
+    <section className="rf-home-categories">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl md:text-3xl font-bold text-foreground">Explore Our Top Categories</h2>
+        <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3 mb-6 md:mb-8">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-brand-green)] mb-1">
+              Quick access
+            </p>
+            <h2 className="text-xl md:text-2xl font-bold text-foreground">Explore Our Top Categories</h2>
+          </div>
           <button
             type="button"
             onClick={() => navigate('/product-comparison')}
-            className="text-sm font-semibold text-[var(--color-brand-green)] hover:underline hidden sm:inline"
+            className="text-sm font-semibold text-[var(--color-brand-green)] hover:underline self-start sm:self-auto"
           >
-            View All Products →
+            View all products →
           </button>
         </div>
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-11 gap-3 md:gap-4">
+
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 md:gap-4">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.label}
@@ -41,12 +47,12 @@ const CategoryGridSection = () => {
               className="rf-category-tile group"
             >
               <div
-                className="w-12 h-12 rounded-xl flex items-center justify-center group-hover:scale-105 transition-transform"
-                style={{ backgroundColor: `${cat.color}18` }}
+                className="rf-category-tile-icon group-hover:scale-105 transition-transform"
+                style={{ backgroundColor: `${cat.color}14`, color: cat.color }}
               >
-                <Icon name={cat.icon} size={24} style={{ color: cat.color }} />
+                <Icon name={cat.icon} size={26} />
               </div>
-              <span className="text-xs font-semibold text-foreground leading-tight">{cat.label}</span>
+              <span className="rf-category-tile-label">{cat.label}</span>
             </button>
           ))}
         </div>
