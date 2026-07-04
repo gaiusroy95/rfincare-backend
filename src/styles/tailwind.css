@@ -1245,6 +1245,293 @@
     border: 1px solid #c8e6c9;
   }
 
+  /* ── Mutual Fund marketplace ── */
+  .rf-mf-filter {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 1.25rem;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .rf-mf-filter-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+
+  .rf-mf-filter-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-foreground);
+  }
+
+  .rf-mf-filter-clear {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-brand-green);
+  }
+
+  .rf-mf-filter-clear:hover {
+    text-decoration: underline;
+  }
+
+  .rf-mf-filter-search {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 0.875rem;
+    background: #f4f6f8;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    margin-bottom: 1.25rem;
+  }
+
+  .rf-mf-filter-search-input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 0.875rem;
+    outline: none;
+  }
+
+  .rf-mf-filter-section {
+    border: none;
+    padding: 0;
+    margin: 0 0 1.25rem;
+  }
+
+  .rf-mf-filter-label {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-foreground);
+    margin-bottom: 0.75rem;
+  }
+
+  .rf-mf-filter-check {
+    display: flex;
+    align-items: center;
+    gap: 0.625rem;
+    font-size: 0.875rem;
+    color: var(--color-foreground);
+    cursor: pointer;
+  }
+
+  .rf-mf-filter-checkbox {
+    width: 1rem;
+    height: 1rem;
+    accent-color: var(--color-brand-green);
+    cursor: pointer;
+  }
+
+  .rf-mf-results-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .rf-mf-sort-select {
+    font-size: 0.875rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    padding: 0.45rem 2rem 0.45rem 0.75rem;
+    background: #ffffff;
+    color: var(--color-foreground);
+  }
+
+  .rf-mf-fund-card {
+    background: #ffffff;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    transition: box-shadow 0.2s;
+  }
+
+  .rf-mf-fund-card:hover {
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.06);
+  }
+
+  .rf-mf-fund-card-inner {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 1rem 1.25rem;
+    padding: 1.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    .rf-mf-fund-card-inner {
+      grid-template-columns: auto minmax(180px, 1.4fr) 2fr auto;
+      align-items: start;
+    }
+  }
+
+  .rf-mf-fund-logo {
+    grid-row: span 2;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 0.25rem;
+  }
+
+  @media (min-width: 1024px) {
+    .rf-mf-fund-logo {
+      grid-row: auto;
+    }
+  }
+
+  .rf-mf-fund-info {
+    min-width: 0;
+  }
+
+  .rf-mf-fund-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--color-foreground);
+    line-height: 1.35;
+  }
+
+  .rf-mf-fund-category {
+    display: inline-flex;
+    padding: 0.2rem 0.6rem;
+    border-radius: 9999px;
+    font-size: 0.6875rem;
+    font-weight: 600;
+    background: #e8f5e9;
+    color: var(--color-brand-green-dark);
+  }
+
+  .rf-mf-fund-rating {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--color-foreground);
+  }
+
+  .rf-mf-fund-desc {
+    font-size: 0.8125rem;
+    color: var(--color-muted-foreground);
+    margin-top: 0.5rem;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .rf-mf-fund-metrics {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.75rem 1rem;
+    grid-column: 1 / -1;
+  }
+
+  @media (min-width: 640px) {
+    .rf-mf-fund-metrics {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+
+  @media (min-width: 1024px) {
+    .rf-mf-fund-metrics {
+      grid-column: auto;
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+
+  .rf-mf-fund-metric-label {
+    display: block;
+    font-size: 0.6875rem;
+    font-weight: 500;
+    color: var(--color-muted-foreground);
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+
+  .rf-mf-fund-metric-value {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 700;
+    color: var(--color-foreground);
+    margin-top: 0.15rem;
+  }
+
+  .rf-mf-fund-metric-value--green {
+    color: var(--color-brand-green);
+    font-size: 1.05rem;
+  }
+
+  .rf-mf-fund-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    grid-column: 1 / -1;
+    min-width: 140px;
+  }
+
+  @media (min-width: 1024px) {
+    .rf-mf-fund-actions {
+      grid-column: auto;
+      justify-self: end;
+    }
+  }
+
+  .rf-mf-fund-compare {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    font-size: 0.8125rem;
+    color: var(--color-muted-foreground);
+    cursor: pointer;
+    margin-top: 0.25rem;
+  }
+
+  .rf-mf-fund-compare-input {
+    accent-color: var(--color-brand-green);
+  }
+
+  .rf-mf-view-more {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    width: 100%;
+    padding: 0.875rem;
+    margin-top: 1rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--color-brand-green);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background: #ffffff;
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .rf-mf-view-more:hover {
+    background: #f0faf4;
+    border-color: var(--color-brand-green);
+  }
+
+  .rf-mf-compare-banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+    border-radius: var(--radius-md);
+    background: #e8f5e9;
+    border: 1px solid #c8e6c9;
+    font-size: 0.875rem;
+  }
+
   .rf-btn-primary {
     background: var(--color-brand-green) !important;
     color: #ffffff !important;

@@ -51,13 +51,42 @@ export const RATING_FILTER_OPTIONS = [
 export const DEFAULT_MUTUAL_FUND_FILTERS = {
   search: '',
   category: 'all',
+  categoryGroup: 'all',
   riskLevel: 'all',
   returns: 'all',
+  minInvestment: 'all',
   expenseRatio: 'all',
   rating: 'all',
   supportsSip: false,
   supportsLumpsum: false,
 };
+
+/** Sidebar filter groups — map to backend category slugs */
+export const FILTER_FUND_CATEGORIES = [
+  { id: 'all', label: 'All Categories', slugs: [] },
+  { id: 'equity', label: 'Equity Funds', slugs: ['large_cap', 'mid_cap', 'small_cap', 'flexi_cap'] },
+  { id: 'debt', label: 'Debt Funds', slugs: ['debt_funds', 'liquid_funds'] },
+  { id: 'hybrid', label: 'Hybrid Funds', slugs: ['hybrid_funds'] },
+  { id: 'index', label: 'Index Funds', slugs: ['index_funds', 'etf'] },
+  { id: 'elss', label: 'ELSS Funds', slugs: ['elss'] },
+  { id: 'solution', label: 'Solution Oriented Funds', slugs: ['international_funds'] },
+];
+
+export const MIN_INVESTMENT_OPTIONS = [
+  { value: 'all', label: 'Any' },
+  { value: '500', label: 'Up to ₹500' },
+  { value: '1000', label: 'Up to ₹1,000' },
+  { value: '5000', label: 'Up to ₹5,000' },
+];
+
+export const MF_SORT_OPTIONS = [
+  { value: 'returns3y-desc', label: '3Y Returns (High to Low)' },
+  { value: 'returns3y-asc', label: '3Y Returns (Low to High)' },
+  { value: 'expense-asc', label: 'Expense Ratio (Low to High)' },
+  { value: 'expense-desc', label: 'Expense Ratio (High to Low)' },
+  { value: 'rating-desc', label: 'Rating (High to Low)' },
+  { value: 'name-asc', label: 'Name (A to Z)' },
+];
 
 export const COMPARE_TABLE_ROWS = [
   { key: 'returns1y', label: '1Y Returns', type: 'percent' },
@@ -71,7 +100,18 @@ export const COMPARE_TABLE_ROWS = [
 ];
 
 export function getCategoryLabel(slug) {
-  return MUTUAL_FUND_CATEGORIES.find((c) => c.slug === slug)?.label || slug;
+  return MUTUAL_FUND_CATEGORIES.find((c) => c.slug === slug)?.label || slug?.replace(/_/g, ' ') || 'Fund';
+}
+
+export function getFundCategoryDisplay(fund) {
+  const cats = fund?.categories || [];
+  if (!cats.length) return 'Mutual Fund';
+  const primary = cats[0];
+  const label = getCategoryLabel(primary);
+  if (['large_cap', 'mid_cap', 'small_cap', 'flexi_cap'].includes(primary)) {
+    return `Equity - ${label.replace(' Cap', ' Cap')}`;
+  }
+  return label;
 }
 
 export function getRiskLabel(slug) {

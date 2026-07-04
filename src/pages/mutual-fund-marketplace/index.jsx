@@ -1,27 +1,27 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import MarketplacePageShell from '../../components/layout/MarketplacePageShell';
 import Header from '../../components/ui/Header';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import MutualFundCategoryBar from '../../components/mutual-funds/MutualFundCategoryBar';
 import MutualFundFilterPanel from '../../components/mutual-funds/MutualFundFilterPanel';
+import MutualFundProductCard from '../../components/mutual-funds/MutualFundProductCard';
 import MutualFundSipModal from '../../components/mutual-funds/MutualFundSipModal';
 import MarketplaceHero from '../../components/marketplace/MarketplaceHero';
 import MarketplaceProductGrid from '../../components/marketplace/MarketplaceProductGrid';
 import MarketplaceLeadWizard from '../../components/marketplace/MarketplaceLeadWizard';
-import MarketplaceCompareBoard from '../../components/marketplace/compare/MarketplaceCompareBoard';
+import MarketplaceSideBySideCompare from '../../components/marketplace/compare/MarketplaceSideBySideCompare';
 import MutualFundCalculatorPanel from '../../components/mutual-funds/MutualFundCalculatorPanel';
 import { mutualFundService } from '../../services/mutualFundService';
-import { resolveBankLogoUrl } from '../../utils/bankBranding';
 import { MUTUAL_FUND_PRODUCT_GRID } from '../../constants/marketplaceLeadFlow';
 import {
   DEFAULT_MUTUAL_FUND_FILTERS,
-  getRiskLabel,
+  MF_SORT_OPTIONS,
 } from '../../constants/mutualFundMarketplace';
 import {
-  formatPercent,
   resetMutualFundFilters,
+  sortMutualFunds,
+  filterByMinInvestment,
 } from '../../utils/mutualFundFilters';
 import { loadMarketplaceProfile, saveMarketplaceProfile } from '../../utils/marketplaceLeadSession';
 import GuestResumeBanner from '../../components/GuestResumeBanner';
@@ -33,6 +33,7 @@ import {
 import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 
 const MAX_COMPARE = 3;
+const PAGE_SIZE = 8;
 
 const MutualFundMarketplacePage = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -48,13 +49,15 @@ const MutualFundMarketplacePage = () => {
   const [sipFund, setSipFund] = useState(null);
   const [initialSipAmount, setInitialSipAmount] = useState(null);
   const [latestSipOrder, setLatestSipOrder] = useState(null);
+  const [sortBy, setSortBy] = useState('returns3y-desc');
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [resumeSessions, setResumeSessions] = useState(() => listMarketplaceResumeSessions('mutual_funds'));
   const refreshResumeSessions = () => setResumeSessions(listMarketplaceResumeSessions('mutual_funds'));
   const [filters, setFilters] = useState(() => {
     const saved = loadMarketplaceProfile('mutual_funds');
     return {
       ...DEFAULT_MUTUAL_FUND_FILTERS,
-      category: saved?.productCategory || searchParams.get('category') || 'all',
+      categoryGroup: saved?.productCategory || searchParams.get('category') || 'all',
     };
   });
 
@@ -73,6 +76,15 @@ const MutualFundMarketplacePage = () => {
   }, [debouncedFilters, showCatalog]);
 
   useEffect(() => { loadFunds(); }, [loadFunds]);
+  useEffect(() => { setVisibleCount(PAGE_SIZE); }, [debouncedFilters, sortBy]);
+
+  const displayedFunds = useMemo(() => {
+    const filtered = filterByMinInvestment(funds, filters.minInvestment);
+    return sortMutualFunds(filtered, sortBy);
+  }, [funds, filters.minInvestment, sortBy]);
+
+  const visibleFunds = displayedFunds.slice(0, visibleCount);
+  const compareFunds = displayedFunds.filter((f) => selected.includes(f.id));
 
   useEffect(() => {
     const sipParam = searchParams.get('sip');
@@ -125,16 +137,6 @@ const MutualFundMarketplacePage = () => {
   }, [showCatalog, funds]);
 
   useEffect(() => {
-    if (!showCatalog) return;
-    setSearchParams((prev) => {
-      const next = new URLSearchParams(prev);
-      if (filters.category !== 'all') next.set('category', filters.category);
-      else next.delete('category');
-      return next;
-    }, { replace: true });
-  }, [filters.category, setSearchParams, showCatalog]);
-
-  useEffect(() => {
     if (searchParams.get('calculator') !== '1') return;
     const timer = setTimeout(() => {
       document.getElementById(showCatalog ? 'mf-calculator' : 'mf-calculator-landing')
@@ -145,7 +147,7 @@ const MutualFundMarketplacePage = () => {
 
   const handleProductSelect = (item) => {
     if (profile?.verifiedAt) {
-      setFilters((prev) => ({ ...prev, category: item.slug }));
+      setFilters((prev) => ({ ...prev, categoryGroup: item.slug }));
       setShowCatalog(true);
       return;
     }
@@ -160,7 +162,7 @@ const MutualFundMarketplacePage = () => {
       productLabel: pendingProduct?.label || completedProfile.productLabel,
     });
     setProfile(saved);
-    setFilters((prev) => ({ ...prev, category: saved.productCategory || prev.category }));
+    setFilters((prev) => ({ ...prev, categoryGroup: saved.productCategory || prev.categoryGroup }));
     setWizardOpen(false);
     setPendingProduct(null);
     setShowCatalog(true);
@@ -173,6 +175,14 @@ const MutualFundMarketplacePage = () => {
       return;
     }
     setSipFund(fund);
+  };
+
+  const handleViewDetails = (fund) => {
+    if (fund?.investUrl) {
+      window.open(fund.investUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+    handleStartSip(fund);
   };
 
   const handleSipComplete = (order) => {
@@ -195,6 +205,10 @@ const MutualFundMarketplacePage = () => {
       if (next.length >= 2) setShowCompare(true);
       return next;
     });
+  };
+
+  const handleFilterChange = (key, value) => {
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   return (
@@ -230,104 +244,132 @@ const MutualFundMarketplacePage = () => {
           </div>
         </div>
       ) : (
-          <MarketplacePageShell
-            breadcrumbs={[
-              { label: 'Home', path: '/homepage' },
-              { label: 'Investments', path: '/investment-marketplace' },
-              { label: 'Mutual Funds' },
-            ]}
-            title="Mutual Funds"
-            subtitle="Invest in the right mutual funds and grow your wealth"
-            benefits={[
-              { icon: 'Star', label: 'Expert Curated Funds', sub: 'Top-rated picks' },
-              { icon: 'GitCompare', label: 'Compare & Invest', sub: 'Side-by-side analysis' },
-              { icon: 'TrendingUp', label: 'High Returns Potential', sub: 'Equity & hybrid funds' },
-              { icon: 'ShieldCheck', label: 'Safe & Secure', sub: 'SEBI registered AMCs' },
-            ]}
-            resultCount={`${funds.length} Mutual Funds`}
-            sortControl={(
-              <select className="text-sm border border-border rounded-lg px-3 py-1.5 bg-white">
-                <option>3Y Returns (High to Low)</option>
-                <option>Expense Ratio (Low to High)</option>
-              </select>
-            )}
-            filterSidebar={(
-              <MutualFundFilterPanel
-                filters={filters}
-                onFilterChange={(key, value) => setFilters((p) => ({ ...p, [key]: value }))}
-                onReset={() => setFilters(resetMutualFundFilters())}
-                isOpen={isFilterOpen}
-                onToggle={() => setIsFilterOpen(!isFilterOpen)}
-                resultCount={funds.length}
-              />
-            )}
-            footer={false}
-          >
-            {latestSipOrder && (
-              <p className={`text-xs mb-4 inline-flex items-center gap-1 rounded-full px-3 py-1 border ${
-                latestSipOrder.status === 'mandate_pending'
-                  ? 'text-amber-700 bg-amber-50 border-amber-200'
-                  : 'text-emerald-700 bg-emerald-50 border-emerald-200'
-              }`}>
-                <Icon name={latestSipOrder.status === 'mandate_pending' ? 'Clock' : 'CheckCircle2'} size={14} />
-                SIP: ₹{Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · {latestSipOrder.fundName}
-              </p>
-            )}
+        <MarketplacePageShell
+          breadcrumbs={[
+            { label: 'Home', path: '/homepage' },
+            { label: 'Investments', path: '/investment-marketplace' },
+            { label: 'Mutual Funds' },
+          ]}
+          title="Mutual Funds"
+          subtitle="Invest in the right mutual funds and grow your wealth"
+          benefits={[
+            { icon: 'Star', label: 'Expert Curated Funds', sub: 'Top-rated picks' },
+            { icon: 'GitCompare', label: 'Compare & Invest', sub: 'Side-by-side analysis' },
+            { icon: 'TrendingUp', label: 'High Returns Potential', sub: 'Equity & hybrid funds' },
+            { icon: 'ShieldCheck', label: 'Safe & Secure', sub: 'SEBI registered AMCs' },
+          ]}
+          ctaTitle="Not sure which fund to choose?"
+          ctaDescription="Get free expert advice and find the best mutual funds for your goals."
+          resultCount={null}
+          footer
+          filterSidebar={(
+            <MutualFundFilterPanel
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={() => setFilters(resetMutualFundFilters())}
+              onApply={() => setIsFilterOpen(false)}
+              isOpen={isFilterOpen}
+              onToggle={() => setIsFilterOpen(!isFilterOpen)}
+              resultCount={displayedFunds.length}
+            />
+          )}
+        >
+          {latestSipOrder && (
+            <p className={`text-xs mb-4 inline-flex items-center gap-1 rounded-full px-3 py-1 border ${
+              latestSipOrder.status === 'mandate_pending'
+                ? 'text-amber-700 bg-amber-50 border-amber-200'
+                : 'text-emerald-700 bg-emerald-50 border-emerald-200'
+            }`}>
+              <Icon name={latestSipOrder.status === 'mandate_pending' ? 'Clock' : 'CheckCircle2'} size={14} />
+              SIP: ₹{Number(latestSipOrder.sipAmount).toLocaleString('en-IN')}/mo · {latestSipOrder.fundName}
+            </p>
+          )}
 
-            <div className="flex flex-wrap gap-2 mb-4">
-              <Button variant="outline" size="sm" onClick={() => setShowCatalog(false)}>
-                <Icon name="LayoutGrid" size={16} className="mr-1" /> Browse categories
+          <div className="rf-mf-results-bar">
+            <p className="text-sm text-muted-foreground">
+              Showing <span className="font-semibold text-foreground">{displayedFunds.length}</span> Mutual Funds
+            </p>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground hidden sm:inline">Sort By:</span>
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="rf-mf-sort-select"
+              >
+                {MF_SORT_OPTIONS.map((opt) => (
+                  <option key={opt.value} value={opt.value}>{opt.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {selected.length > 0 && (
+            <div className="rf-mf-compare-banner">
+              <span>
+                <strong>{selected.length}</strong> fund{selected.length === 1 ? '' : 's'} selected for comparison
+              </span>
+              <div className="flex gap-2">
+                {selected.length >= 2 ? (
+                  <Button size="sm" className="rf-btn-primary" onClick={() => setShowCompare(true)}>
+                    Compare Now
+                  </Button>
+                ) : null}
+                <Button size="sm" variant="outline" onClick={() => { setSelected([]); setShowCompare(false); }}>
+                  Clear
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {showCompare && compareFunds.length >= 2 ? (
+            <div className="mb-6">
+              <MarketplaceSideBySideCompare
+                type="mutual_fund"
+                products={compareFunds}
+                onRemove={(id) => toggleSelect(id)}
+                onClear={() => { setSelected([]); setShowCompare(false); }}
+                onApply={handleStartSip}
+                title="Mutual fund comparison"
+              />
+            </div>
+          ) : null}
+
+          {loading ? (
+            <div className="text-center py-16 text-muted-foreground">Loading mutual funds…</div>
+          ) : displayedFunds.length === 0 ? (
+            <div className="text-center py-16 space-y-3">
+              <Icon name="Search" size={40} className="mx-auto text-muted-foreground opacity-50" />
+              <p className="text-muted-foreground">No funds match your filters.</p>
+              <Button variant="outline" size="sm" onClick={() => setFilters(resetMutualFundFilters())}>
+                Clear filters
               </Button>
             </div>
+          ) : (
+            <div className="space-y-4">
+              {visibleFunds.map((fund) => (
+                <MutualFundProductCard
+                  key={fund.id}
+                  fund={fund}
+                  selected={selected.includes(fund.id)}
+                  onToggleCompare={toggleSelect}
+                  onInvest={handleStartSip}
+                  onViewDetails={handleViewDetails}
+                />
+              ))}
 
-            <div id="mf-calculator" className="mb-6">
-              <MutualFundCalculatorPanel />
+              {visibleCount < displayedFunds.length ? (
+                <button
+                  type="button"
+                  className="rf-mf-view-more"
+                  onClick={() => setVisibleCount((c) => c + PAGE_SIZE)}
+                >
+                  View More Funds
+                  <Icon name="ChevronDown" size={18} />
+                </button>
+              ) : null}
             </div>
-
-            <MutualFundCategoryBar activeCategory={filters.category} onCategoryChange={(slug) => setFilters((p) => ({ ...p, category: slug }))} />
-
-            {loading ? (
-              <div className="text-center py-16 text-muted-foreground">Loading mutual funds…</div>
-            ) : (
-              <MarketplaceCompareBoard
-                    type="mutual_fund"
-                    products={funds}
-                    selectedIds={selected}
-                    onToggleSelect={toggleSelect}
-                    onClearSelection={() => { setSelected([]); setShowCompare(false); }}
-                    onApply={(fund) => handleStartSip(fund)}
-                    showCompare={showCompare}
-                    title="Mutual fund comparison"
-                    emptyMessage="No funds match your filters."
-                    renderGridCard={(fund, isSelected) => (
-                      <div key={fund.id} className={`bg-card border rounded-xl p-5 flex flex-col gap-3 ${isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-border'}`}>
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="font-bold">{fund.name}</p>
-                            <p className="text-sm text-muted-foreground">{fund.amcName}</p>
-                          </div>
-                          <button type="button" onClick={() => toggleSelect(fund.id)} className={`text-xs font-semibold px-2 py-1 rounded-full border ${isSelected ? 'bg-primary text-primary-foreground border-primary' : 'border-border'}`}>
-                            {isSelected ? 'Selected' : 'Compare'}
-                          </button>
-                        </div>
-                        {fund.returns3y != null ? <span className="text-xs">3Y: <strong className="text-success">{formatPercent(fund.returns3y)}</strong></span> : null}
-                        <Button
-                          className="mt-auto w-full rf-btn-primary"
-                          onClick={() => handleStartSip(fund)}
-                        >
-                          Start SIP
-                          <Icon name="TrendingUp" size={14} className="ml-1.5" />
-                        </Button>
-                        {fund.investUrl ? (
-                          <a href={fund.investUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center justify-center gap-1.5 w-full py-2 text-sm text-muted-foreground hover:text-primary">
-                            Or invest on AMC site <Icon name="ExternalLink" size={14} />
-                          </a>
-                        ) : null}
-                      </div>
-                    )}
-                  />
-            )}
-          </MarketplacePageShell>
+          )}
+        </MarketplacePageShell>
       )}
 
       <MarketplaceLeadWizard
