@@ -13,18 +13,17 @@ import AgentSettingsPanel from './components/AgentSettingsPanel';
 import AgentProductsPanel from './components/AgentProductsPanel';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import AgentDashboardOverview from './components/AgentDashboardOverview';
 import PerformanceMetrics from './components/PerformanceMetrics';
 import ClientKanbanBoard from './components/ClientKanbanBoard';
+import AgentLeadSubmissionPanel from './components/AgentLeadSubmissionPanel';
+import AgentApplicationsPanel from './components/AgentApplicationsPanel';
 import CommissionTracker from './components/CommissionTracker';
 import CommissionReportPanel from './components/CommissionReportPanel';
 import { usePortalPolling } from '../../hooks/usePortalPolling';
 import PerformanceChart from './components/PerformanceChart';
-import UpcomingAppointments from './components/UpcomingAppointments';
 import StaffCommunicationPanel from './components/StaffCommunicationPanel';
 import TrainingResources from './components/TrainingResources';
-import CreditCardsQuickApply from '../../components/credit-cards/CreditCardsQuickApply';
-import RecentActivity from './components/RecentActivity';
-import QuickActions from './components/QuickActions';
 import AgentReferralBanner from '../../components/agent/AgentReferralBanner';
 import SessionTimeout from '../../components/SessionTimeout';
 import { agentService } from '../../services/agentService';
@@ -34,12 +33,12 @@ import {
   openLearningResource,
 } from '../../services/agentLearningService';
 import { resolveAvatarUrl } from '../../services/agentProfileService';
-import { resolveUploadUrl } from '../../utils/documentUrls';
 import { useAuth } from '../../contexts/AuthContext';
+import { setStoredAgentCode } from '../../utils/agentAttribution';
 
 const CLIENT_SECTION_META = {
   leads: { title: 'Leads', subtitle: 'New prospects in your pipeline.' },
-  applications: { title: 'Applications', subtitle: 'Track in-progress loan applications.' },
+  applications: { title: 'Applications', subtitle: 'Your submitted and in-progress loan applications.' },
   customers: { title: 'My Customers', subtitle: 'All clients you are working with.' },
 };
 
@@ -63,6 +62,14 @@ function filterClientsBySection(clients, section) {
     return clients.filter((c) => ['in-progress', 'documents', 'submitted'].includes(c.status));
   }
   return clients;
+}
+
+function mergePipelineItems(applications, pipelineLeads) {
+  const apps = Array.isArray(applications) ? applications : [];
+  const leads = Array.isArray(pipelineLeads) ? pipelineLeads : [];
+  const appIds = new Set(apps.map((item) => item.id));
+  const leadOnly = leads.filter((lead) => !lead.applicationId || !appIds.has(lead.applicationId));
+  return [...leadOnly, ...apps];
 }
 
 const AgentDashboard = () => {
@@ -112,6 +119,12 @@ const AgentDashboard = () => {
 
   usePortalPolling(() => loadDashboard({ background: true }), 20000, true);
 
+  useEffect(() => {
+    if (dashboard?.attribution?.agentCode) {
+      setStoredAgentCode(dashboard.attribution.agentCode);
+    }
+  }, [dashboard?.attribution?.agentCode]);
+
   const agentProfile = {
     name: dashboard?.profile?.name || userProfile?.full_name || 'Agent',
     agentId: dashboard?.profile?.agentId || '—',
@@ -138,6 +151,9 @@ const AgentDashboard = () => {
     avatarAlt: c.avatarAlt || c.name,
   }));
 
+  const agentApplications = dashboard?.applications || clients;
+  const pipelineItems = mergePipelineItems(clients, dashboard?.pipelineLeads || []);
+
   const commissions = (dashboard?.commissionEntries || []).map((entry) => ({
     id: entry.id,
     clientName: entry.clientName,
@@ -152,23 +168,6 @@ const AgentDashboard = () => {
   const performanceAnalytics = dashboard?.performanceAnalytics || null;
   const chartData =
     performanceAnalytics?.month || dashboard?.weeklyPerformance || [];
-  const circulars = dashboard?.circulars || [];
-
-
-  const appointments = clients.length
-    ? clients.slice(0, 6).map((c, idx) => ({
-        id: c.id,
-        applicationId: c.id,
-        clientName: c.name,
-        clientAvatar: c.avatar,
-        clientAvatarAlt: c.avatarAlt || c.name,
-        title: c.nextAction || 'Client follow-up',
-        type: c.status === 'new' ? 'consultation' : c.status === 'documents' ? 'document-review' : 'follow-up',
-        date: new Date().toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' }),
-        time: '—',
-        location: c.loanType || 'Loan application',
-      }))
-    : [];
 
   const openCommunication = (item, mode = 'help') => {
     setCommunicationContext({
@@ -240,17 +239,49 @@ const AgentDashboard = () => {
   };
 
 
-  const recentActivities = (dashboard?.recentActivities || []).map((activity) => ({
-    ...activity,
-    timestamp: activity.timestamp ? new Date(activity.timestamp) : new Date(),
-  }));
-
-
   const handleClientClick = (client) => {
-    console.log('Client clicked:', client);
+    if (client?.kind === 'lead' && !client?.applicationId) {
+      handleStartApplication(client);
+      return;
+    }
+    const loanSlug = String(client?.loanType || 'personal')
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/_loan$/, '');
+    navigate(`/agent/customer-application?loanType=${encodeURIComponent(loanSlug)}`, {
+      state: {
+        leadMeta: {
+          leadId: client?.leadId,
+          fullName: client?.name,
+          email: client?.email,
+          phone: client?.phone,
+          applicationId: client?.id,
+        },
+        resumeApplicationId: client?.id,
+      },
+    });
+  };
+
+  const handleStartApplication = (client) => {
+    const loanSlug = String(client?.loanType || 'personal')
+      .toLowerCase()
+      .replace(/\s+/g, '_')
+      .replace(/_loan$/, '');
+    navigate(`/agent/customer-application?loanType=${encodeURIComponent(loanSlug)}`, {
+      state: {
+        leadMeta: {
+          leadId: client?.leadId || client?.id,
+          fullName: client?.name,
+          email: client?.email,
+          phone: client?.phone,
+        },
+      },
+    });
   };
 
   const handleStatusChange = async (clientId, newStatus) => {
+    const item = pipelineItems.find((c) => c.id === clientId);
+    if (item?.kind === 'lead') return;
     try {
       await agentService.updateClientStatus(clientId, newStatus);
       await loadDashboard();
@@ -260,11 +291,22 @@ const AgentDashboard = () => {
   };
 
   const handleQuickAction = (actionId) => {
-    console.log('Quick action:', actionId);
-    
-    switch(actionId) {
+    switch (actionId) {
       case 'add-client':
+      case 'add-lead':
         navigate('/agent/customer-application');
+        break;
+      case 'view-leads':
+        handleNavSelect({ id: 'leads' });
+        break;
+      case 'track-application':
+        handleNavSelect({ id: 'applications' });
+        break;
+      case 'marketing-tools':
+        handleNavSelect({ id: 'marketing' });
+        break;
+      case 'training':
+        handleNavSelect({ id: 'training' });
         break;
       case 'upload-document':
         openCommunication({}, 'upload');
@@ -280,18 +322,14 @@ const AgentDashboard = () => {
         }, 100);
         break;
       case 'view-commission':
-        setSearchParams({ view: 'performance', section: 'earnings' });
-        setTimeout(() => {
-          const commissionSection = document.querySelector('[data-section="commission"]');
-          commissionSection?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }, 100);
+        handleNavSelect({ id: 'earnings' });
         break;
       default:
-        console.log('Unknown action:', actionId);
+        break;
     }
   };
 
-  const leadCount = clients.filter((c) => c.status === 'new').length;
+  const leadCount = pipelineItems.filter((c) => c.status === 'new').length;
 
   const handleNavSelect = (item) => {
     const params = getAgentSearchParamsForNavId(item.id);
@@ -309,19 +347,22 @@ const AgentDashboard = () => {
         ? PERFORMANCE_SECTION_META[selectedSection] || PERFORMANCE_SECTION_META.earnings
         : VIEW_HEADINGS[selectedView];
 
-  const filteredClients = filterClientsBySection(clients, selectedSection || 'leads');
+  const filteredClients = filterClientsBySection(pipelineItems, selectedSection || 'leads');
 
-  const agentKpis = [
-    { title: 'Total Leads', value: String(dashboard?.metrics?.find((m) => m.type === 'leads')?.value || clients.length), change: '+18.4%', icon: 'UserPlus' },
-    { title: 'Total Applications', value: String(dashboard?.metrics?.find((m) => m.type === 'applications')?.value || '—'), change: '+15.2%', icon: 'FileText', iconBg: 'bg-violet-50', iconColor: 'text-violet-600' },
-    { title: 'Approved Applications', value: String(dashboard?.metrics?.find((m) => m.type === 'approved')?.value || '—'), change: '+16.7%', icon: 'CheckCircle2' },
-    { title: 'Total Earnings', value: `₹${(dashboard?.totalEarnings || 78450).toLocaleString('en-IN')}`, change: '+22.6%', icon: 'IndianRupee', iconBg: 'bg-orange-50', iconColor: 'text-orange-600' },
-    { title: 'Pending Payout', value: `₹${(dashboard?.pendingPayout || 18750).toLocaleString('en-IN')}`, subtitle: 'Next payout: 25 May', icon: 'Wallet', iconBg: 'bg-sky-50', iconColor: 'text-sky-600' },
-  ];
+  const handleLeadRowClick = (lead) => {
+    const client = pipelineItems.find((c) => c.id === lead.id);
+    if (client) handleClientClick(client);
+    else handleNavSelect({ id: 'leads' });
+  };
+
+  const handleDownloadReport = () => {
+    handleNavSelect({ id: 'reports' });
+  };
 
   return (
     <PortalShell
       portalLabel="Agent Dashboard"
+      searchPlaceholder="Search products, leads, customers..."
       navItems={AGENT_NAV_ITEMS.map((item) => ({
         ...item,
         badge: item.badgeKey === 'leads' ? leadCount : 0,
@@ -352,7 +393,7 @@ const AgentDashboard = () => {
           size="sm"
           iconName="Download"
           title="Download Report"
-          onClick={() => handleQuickAction('view-commission')}
+          onClick={handleDownloadReport}
         >
           Download Report
         </Button>
@@ -360,97 +401,53 @@ const AgentDashboard = () => {
     >
       <SessionTimeout timeoutMinutes={30} warningMinutes={2} />
 
-        <div className="mb-6 md:mb-8">
-          {selectedView === 'overview' ? (
-            <>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                Welcome back, {agentProfile?.name?.split(' ')?.[0]}! 👋
-              </h1>
-              <p className="text-sm text-muted-foreground">Here&apos;s your business overview for today.</p>
-            </>
-          ) : sectionMeta ? (
-            <>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{sectionMeta.title}</h1>
-              <p className="text-sm text-muted-foreground">{sectionMeta.subtitle}</p>
-            </>
-          ) : null}
-        </div>
-
-        {selectedView === 'overview' ? (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-            {agentKpis.map((kpi) => (
-              <DashboardKpiCard key={kpi.title} {...kpi} />
-            ))}
+        {selectedView !== 'overview' && sectionMeta ? (
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{sectionMeta.title}</h1>
+            <p className="text-sm text-muted-foreground">{sectionMeta.subtitle}</p>
           </div>
         ) : null}
 
-        {selectedView === 'overview' &&
-        <div className="space-y-6">
-            <AgentReferralBanner attribution={dashboard?.attribution} />
-
-            <PerformanceMetrics metrics={performanceMetrics} />
-
-            <CreditCardsQuickApply />
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2">
-                <QuickActions onActionClick={handleQuickAction} />
-              </div>
-              <div>
-                <CommissionTracker commissions={commissions} />
-                <CommissionReportPanel />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div data-section="appointments">
-                <UpcomingAppointments appointments={appointments} onMessage={openCommunication} />
-              </div>
-              <RecentActivity activities={recentActivities} />
-            </div>
-
-            <div className="bg-card rounded-lg border border-border p-4 md:p-6">
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-lg font-semibold text-foreground">Commission Circulars</h2>
-                <Icon name="FileText" size={18} className="text-primary" />
-              </div>
-              {circulars.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No circular uploaded yet.</p>
-              ) : (
-                <div className="space-y-2">
-                  {circulars.map((c) => (
-                    <a
-                      key={c.id}
-                      href={resolveUploadUrl(c.file_url || c.fileUrl)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="block text-sm text-primary hover:underline"
-                    >
-                      {c.title}
-                    </a>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <TrainingResources
-              resources={trainingResources}
-              onViewAll={() => handleNavSelect({ id: 'training' })}
-              onOpenResource={handleLearningOpen}
-              onStartResource={handleLearningStart}
-            />
-          </div>
-        }
+        {selectedView === 'overview' ? (
+          <AgentDashboardOverview
+            agentName={agentProfile?.name}
+            overview={dashboard?.overview}
+            dashboard={dashboard}
+            loading={loading}
+            onDownloadReport={handleDownloadReport}
+            onNavSelect={handleNavSelect}
+            onQuickAction={handleQuickAction}
+            onLeadClick={handleLeadRowClick}
+          />
+        ) : null}
 
         {selectedView === 'clients' && (
           <div className="space-y-6">
-            {selectedSection === 'customers' ? (
+            {selectedSection === 'leads' && (
+              <AgentLeadSubmissionPanel
+                agentCode={dashboard?.attribution?.agentCode}
+                onLeadCreated={() => loadDashboard({ background: true })}
+              />
+            )}
+            {selectedSection === 'applications' ? (
+              <>
+                <AgentLeadSubmissionPanel
+                  agentCode={dashboard?.attribution?.agentCode}
+                  onLeadCreated={() => loadDashboard({ background: true })}
+                />
+                <AgentApplicationsPanel
+                  applications={agentApplications}
+                  onOpenApplication={handleClientClick}
+                  onMessage={(app) => openCommunication(app, 'help')}
+                />
+              </>
+            ) : selectedSection === 'customers' ? (
               <div className="bg-card rounded-lg border border-border overflow-hidden">
-                {filteredClients.length === 0 ? (
+                {pipelineItems.length === 0 ? (
                   <p className="text-sm text-muted-foreground p-6 text-center">No customers yet.</p>
                 ) : (
                   <div className="divide-y divide-border">
-                    {filteredClients.map((client) => (
+                    {pipelineItems.map((client) => (
                       <div key={client.id} className="p-4 md:p-5 flex items-center justify-between gap-4">
                         <div>
                           <p className="font-semibold text-foreground">{client.name}</p>
@@ -464,13 +461,14 @@ const AgentDashboard = () => {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : selectedSection === 'leads' ? (
               <ClientKanbanBoard
                 clients={filteredClients}
                 onClientClick={handleClientClick}
                 onStatusChange={handleStatusChange}
+                onStartApplication={handleStartApplication}
               />
-            )}
+            ) : null}
           </div>
         )}
 

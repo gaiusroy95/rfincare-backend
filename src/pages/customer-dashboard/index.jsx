@@ -3,22 +3,15 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import PortalShell from '../../components/layout/PortalShell';
-import DashboardKpiCard from '../../components/dashboard/DashboardKpiCard';
 import { CUSTOMER_NAV_ITEMS, CUSTOMER_TAB_IDS } from '../../constants/portalNavigation';
 import ApplicationStatusCard from './components/ApplicationStatusCard';
 import DocumentCard from './components/DocumentCard';
 import NotificationCard from './components/NotificationCard';
-import QuickActionCard from './components/QuickActionCard';
-import ProfileSummaryCard from './components/ProfileSummaryCard';
-
-import SupportCard from './components/SupportCard';
+import CustomerDashboardOverview from './components/CustomerDashboardOverview';
 import CustomerProfilePanel from './components/CustomerProfilePanel';
 import CustomerSupportPanel from './components/CustomerSupportPanel';
 import CustomerSettingsPanel from './components/CustomerSettingsPanel';
 import UnifiedFinancialOverview from './components/UnifiedFinancialOverview';
-import FinancialHealthCard from './components/FinancialHealthCard';
-import CreditScoreCard from './components/CreditScoreCard';
-import NextBestActionBanner from './components/NextBestActionBanner';
 import DocumentUploadModal from './components/DocumentUploadModal';
 import ApplicationDetailModal from './components/ApplicationDetailModal';
 import { useAuth } from '../../contexts/AuthContext';
@@ -26,7 +19,6 @@ import { customerJourneyService } from '../../services/customerJourneyService';
 import { customerFinancialService } from '../../services/customerFinancialService';
 import { bankService } from '../../services/apiServices';
 import { milestone4Service } from '../../services/milestone4Service';
-import CreditCardsQuickApply from '../../components/credit-cards/CreditCardsQuickApply';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 import { computeProfileCompletion } from '../../utils/profileCompletion';
 
@@ -267,10 +259,6 @@ const CustomerDashboard = () => {
     }
   };
 
-  const formatCurrency = (n) => {
-    if (n == null || Number.isNaN(Number(n))) return '—';
-    return new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(n);
-  };
 
   if (loading) {
     return (
@@ -301,6 +289,7 @@ const CustomerDashboard = () => {
   return (
     <PortalShell
       portalLabel="Customer Dashboard"
+      searchPlaceholder="Search for products, loans, funds and more..."
       navItems={navItems}
       activeId={sidebarActiveId}
       onNavSelect={handleNavSelect}
@@ -325,10 +314,10 @@ const CustomerDashboard = () => {
             variant="outline"
             size="sm"
             className="rf-portal-action-hide-md"
-            title="Explore Products"
-            onClick={() => navigate('/product-comparison')}
+            title="Check your eligibility"
+            onClick={() => openAssessmentOrEligibilityFirst(navigate)}
           >
-            Explore Products
+            Check your eligibility
           </Button>
           <Button
             className="rf-btn-primary"
@@ -341,65 +330,10 @@ const CustomerDashboard = () => {
         </>
       )}
     >
-        <div className="mb-6 md:mb-8">
-          {tabHeading ? (
-            <>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{tabHeading.title}</h1>
-              <p className="text-sm md:text-base text-muted-foreground">{tabHeading.subtitle}</p>
-            </>
-          ) : (
-            <>
-              <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">
-                Welcome back, {profileData?.name?.split(' ')?.[0]}! 👋
-              </h1>
-              <p className="text-sm md:text-base text-muted-foreground">
-                {documentOnlyMode
-                  ? 'Your application is submitted. Upload documents and view your read-only application summary below.'
-                  : "Here's your financial overview for today."}
-              </p>
-            </>
-          )}
-        </div>
-
-        {activeTab === 'overview' && financialSnapshot?.summary ? (
-          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 mb-6">
-            <DashboardKpiCard
-              title="Total Investments"
-              value={formatCurrency(financialSnapshot.summary.totalInvestments)}
-              change="+12.45% 1Y Returns"
-              icon="TrendingUp"
-            />
-            <DashboardKpiCard
-              title="Total Loans"
-              value={formatCurrency(financialSnapshot.summary.totalLoansOutstanding)}
-              subtitle="Outstanding Amount"
-              icon="Wallet"
-              iconBg="bg-orange-50"
-              iconColor="text-orange-600"
-            />
-            <DashboardKpiCard
-              title="Active Insurance"
-              value={formatCurrency(financialSnapshot.summary.totalInsuranceCover)}
-              subtitle="Total Sum Assured"
-              icon="Shield"
-              iconBg="bg-sky-50"
-              iconColor="text-sky-600"
-            />
-            <DashboardKpiCard
-              title="Monthly Savings"
-              value={formatCurrency(financialSnapshot.summary.monthlySavings)}
-              subtitle="Your SIP & RD Amount"
-              icon="PiggyBank"
-              iconBg="bg-violet-50"
-              iconColor="text-violet-600"
-            />
-            <DashboardKpiCard
-              title="Credit Score"
-              value={`${financialSnapshot.summary.creditScore ?? '—'} / 900`}
-              subtitle={financialSnapshot.summary.creditScoreBand || 'Pull score to update'}
-              icon="Gauge"
-              iconBg="bg-emerald-50"
-            />
+        {tabHeading ? (
+          <div className="mb-6 md:mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-foreground mb-1">{tabHeading.title}</h1>
+            <p className="text-sm md:text-base text-muted-foreground">{tabHeading.subtitle}</p>
           </div>
         ) : null}
 
@@ -423,161 +357,17 @@ const CustomerDashboard = () => {
           </div>
         )}
 
-        {/* Overview Tab */}
         {activeTab === 'overview' && (
-          <div className="space-y-6">
-            <ProfileSummaryCard 
-              profile={profileData} 
-              onEditProfile={() => handleTabChange('profile')} 
-            />
-
-            <NextBestActionBanner
-              action={financialSnapshot?.nextBestAction}
-              loading={snapshotLoading}
-            />
-
-            <FinancialHealthCard
-              snapshot={financialSnapshot}
-              loading={snapshotLoading}
-              onViewPortfolio={() => handleTabChange('portfolio')}
-            />
-
-            <CreditScoreCard
-              creditProfile={financialSnapshot?.creditProfile || {
-                score: financialSnapshot?.summary?.creditScore,
-                band: financialSnapshot?.summary?.creditScoreBand,
-                source: financialSnapshot?.summary?.creditScoreSource,
-              }}
-              loading={snapshotLoading}
-              pulling={creditPulling}
-              pullError={creditPullError}
-              onPullScore={handlePullCreditScore}
-              onImprove={() => handleTabChange('portfolio')}
-            />
-
-            {financialSnapshot?.summary && (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="bg-card border border-border rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold text-primary">{financialSnapshot.summary.financialHealthScore ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">Health Score</p>
-                </div>
-                <div className="bg-card border border-border rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold">{financialSnapshot.summary.activeLoans ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">Active Loans</p>
-                </div>
-                <div className="bg-card border border-border rounded-xl p-4 text-center">
-                  <p className="text-2xl font-bold">{financialSnapshot.summary.insurancePolicies ?? 0}</p>
-                  <p className="text-xs text-muted-foreground">Policies</p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => handleTabChange('portfolio')}
-                  className="bg-primary/10 border border-primary/30 rounded-xl p-4 text-center hover:bg-primary/15 transition-colors"
-                >
-                  <p className="text-sm font-bold text-primary">View full portfolio →</p>
-                </button>
-              </div>
-            )}
-
-            <CreditCardsQuickApply banks={partnerBanks} />
-
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-foreground">Active Applications</h2>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => setActiveTab('applications')}
-                    >
-                      View All
-                    </Button>
-                  </div>
-                  <div className="space-y-4">
-                    {applications?.slice(0, 2)?.map((app) => (
-                      <ApplicationStatusCard
-                        key={app?.id}
-                        application={app}
-                        onViewDetails={handleViewDetails}
-                      />
-                    ))}
-                    {applications?.length === 0 && (
-                      <div className="bg-card border border-border rounded-lg p-8 text-center">
-                        <Icon name="FileText" size={48} color="var(--color-muted-foreground)" className="mx-auto mb-4" />
-                        <p className="text-muted-foreground mb-4">No applications yet</p>
-                        <Button
-                          variant="default"
-                          onClick={() => openAssessmentOrEligibilityFirst(navigate)}
-                        >
-                          Apply for Loan
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h2 className="text-xl font-bold text-foreground">Recent Documents</h2>
-                    <Button
-                      variant="link"
-                      size="sm"
-                      onClick={() => setActiveTab('documents')}
-                    >
-                      View All
-                    </Button>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {documents?.slice(0, 4)?.map((doc) => (
-                      <DocumentCard
-                        key={doc?.id}
-                        document={doc}
-                        onDelete={handleDocumentDeleted}
-                      />
-                    ))}
-                    {documents?.length === 0 && (
-                      <div className="col-span-2 bg-card border border-border rounded-lg p-8 text-center">
-                        <Icon name="FolderOpen" size={48} color="var(--color-muted-foreground)" className="mx-auto mb-4" />
-                        <p className="text-muted-foreground mb-4">No documents uploaded yet</p>
-                        <Button
-                          variant="default"
-                          onClick={() => setIsUploadModalOpen(true)}
-                        >
-                          Upload Document
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                {localStorage.getItem('loan_assessment_form_data') && (
-                  <QuickActionCard
-                    action={{
-                      type: 'apply',
-                      icon: 'PlayCircle',
-                      title: 'Continue application',
-                      description: 'Resume your saved loan assessment where you left off',
-                      badge: 'Draft saved',
-                    }}
-                    onClick={() => navigate('/customer-assessment-portal?resume=1')}
-                  />
-                )}
-                <QuickActionCard
-                  action={{
-                    type: 'apply',
-                    icon: 'FileText',
-                    title: 'New application',
-                    description: 'Start a fresh loan assessment',
-                  }}
-                  onClick={() => openAssessmentOrEligibilityFirst(navigate)}
-                />
-                <SupportCard />
-              </div>
-            </div>
-          </div>
+          <CustomerDashboardOverview
+            profileName={profileData?.name}
+            financialSnapshot={financialSnapshot}
+            snapshotLoading={snapshotLoading}
+            applications={applications}
+            onViewApplication={handleViewDetails}
+            onTabChange={handleTabChange}
+            onPullCreditScore={handlePullCreditScore}
+            creditPulling={creditPulling}
+          />
         )}
 
         {activeTab === 'portfolio' && (

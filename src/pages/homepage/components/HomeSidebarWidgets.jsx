@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { POPULAR_CALCULATORS } from '../../../constants/calculatorProductBridges';
+import { bankService } from '../../../services/apiServices';
+import { getBankShortLabel } from '../../../utils/bankBranding';
 
 const CALC_ICONS = {
   'emi-calculator': { icon: 'Calculator', color: 'bg-emerald-100 text-emerald-700' },
@@ -11,9 +13,71 @@ const CALC_ICONS = {
   'tax-saving-calculator': { icon: 'Receipt', color: 'bg-orange-100 text-orange-700' },
 };
 
+const FEATURED_BANK_KEYS = ['state bank of india', 'hdfc bank', 'icici bank'];
+
+function normalizeBankKey(name) {
+  return String(name || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function pickFeaturedBanks(banks) {
+  const list = Array.isArray(banks) ? banks : [];
+  const sorted = [...list].sort(
+    (a, b) => (b.displayPriority || b.display_priority || 0) - (a.displayPriority || a.display_priority || 0),
+  );
+  const picked = [];
+
+  for (const key of FEATURED_BANK_KEYS) {
+    const match = sorted.find((bank) => normalizeBankKey(bank.name) === key);
+    if (match && !picked.some((b) => b.id === match.id)) picked.push(match);
+  }
+
+  for (const bank of sorted) {
+    if (picked.length >= 3) break;
+    if (!picked.some((b) => b.id === bank.id)) picked.push(bank);
+  }
+
+  return picked.slice(0, 3);
+}
+
 const HomeSidebarWidgets = () => {
   const navigate = useNavigate();
   const calcs = POPULAR_CALCULATORS.slice(0, 4);
+  const [partnerBanks, setPartnerBanks] = useState([]);
+  const [totalPartners, setTotalPartners] = useState(0);
+  const [partnersLoading, setPartnersLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setPartnersLoading(true);
+        const data = await bankService.getActiveBanks({ includeProducts: false });
+        if (cancelled) return;
+        const list = Array.isArray(data) ? data : [];
+        setPartnerBanks(pickFeaturedBanks(list));
+        setTotalPartners(list.length);
+      } catch {
+        if (!cancelled) {
+          setPartnerBanks([]);
+          setTotalPartners(0);
+        }
+      } finally {
+        if (!cancelled) setPartnersLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const extraPartnerCount = useMemo(
+    () => Math.max(0, totalPartners - partnerBanks.length),
+    [totalPartners, partnerBanks.length],
+  );
+
+  const openBankProducts = (bankId) => {
+    navigate(`/bank-marketplace?bankId=${encodeURIComponent(bankId)}`);
+  };
 
   return (
     <>
@@ -64,16 +128,43 @@ const HomeSidebarWidgets = () => {
 
       <div className="rf-sidebar-widget bg-emerald-50 border-emerald-100">
         <h3 className="font-bold text-foreground mb-3 text-sm">RBI Registered Partners</h3>
-        <div className="flex items-center gap-3 flex-wrap">
-          {['SBI', 'HDFC', 'ICICI'].map((bank) => (
-            <span
-              key={bank}
-              className="px-3 py-1.5 bg-white rounded-lg text-xs font-bold text-slate-700 border border-border"
+        <div className="flex items-center gap-2 flex-wrap">
+          {partnersLoading ? (
+            <>
+              {[1, 2, 3].map((n) => (
+                <span
+                  key={n}
+                  className="px-3 py-1.5 bg-white rounded-lg text-xs border border-border animate-pulse text-transparent"
+                >
+                  Loading
+                </span>
+              ))}
+            </>
+          ) : partnerBanks.length ? (
+            partnerBanks.map((bank) => (
+              <button
+                key={bank.id}
+                type="button"
+                onClick={() => openBankProducts(bank.id)}
+                title={`View ${bank.name} products`}
+                className="px-3 py-1.5 bg-white rounded-lg text-xs font-bold text-slate-700 border border-border hover:border-[var(--color-brand-green)] hover:text-[var(--color-brand-green)] transition-colors"
+              >
+                {getBankShortLabel(bank)}
+              </button>
+            ))
+          ) : (
+            <span className="text-xs text-muted-foreground">Partners loading soon</span>
+          )}
+          {extraPartnerCount > 0 && (
+            <button
+              type="button"
+              onClick={() => navigate('/bank-marketplace')}
+              className="text-sm font-semibold text-[var(--color-brand-green)] hover:underline"
+              title="View all banking partners"
             >
-              {bank}
-            </span>
-          ))}
-          <span className="text-sm font-semibold text-[var(--color-brand-green)]">+47</span>
+              +{extraPartnerCount}
+            </button>
+          )}
         </div>
       </div>
     </>

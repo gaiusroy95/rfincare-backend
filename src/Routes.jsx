@@ -17,6 +17,7 @@ const lazyPage = (factory) => lazy(factory);
 
 const Homepage = lazyPage(() => import('./pages/homepage'));
 const AboutUs = lazyPage(() => import('./pages/about-us'));
+const AboutTeam = lazyPage(() => import('./pages/about-team'));
 const ContactUs = lazyPage(() => import('./pages/contact-us'));
 const ProductComparison = lazyPage(() => import('./pages/product-comparison'));
 const ProductLanding = lazyPage(() => import('./pages/product-landing'));
@@ -103,6 +104,7 @@ function Routes() {
                 <Route path="/" element={<SuspenseRoute><Homepage /></SuspenseRoute>} />
                 <Route path="/homepage" element={<SuspenseRoute><Homepage /></SuspenseRoute>} />
                 <Route path="/about-us" element={<SuspenseRoute><AboutUs /></SuspenseRoute>} />
+                <Route path="/about-team" element={<SuspenseRoute><AboutTeam /></SuspenseRoute>} />
                 <Route path="/contact-us" element={<SuspenseRoute><ContactUs /></SuspenseRoute>} />
                 <Route path="/products/:loanType" element={<SuspenseRoute><ProductLanding /></SuspenseRoute>} />
                 <Route path="/product-comparison" element={<SuspenseRoute><ProductComparison /></SuspenseRoute>} />

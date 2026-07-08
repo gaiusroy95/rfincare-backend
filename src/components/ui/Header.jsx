@@ -15,6 +15,7 @@ const PUBLIC_GUEST_PATHS = new Set([
   '/',
   '/homepage',
   '/about-us',
+  '/about-team',
   '/contact-us',
   '/product-comparison',
   '/eligibility-assessment',

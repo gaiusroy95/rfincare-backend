@@ -142,7 +142,25 @@ export const employeeService = {
       });
       return { data: toCamelCase(res.data), error: null };
     } catch (error) {
-      return { data: null, error: { message: 'Verification failed' } };
+      return { data: null, error: { message: error.response?.data?.error || 'Verification failed' } };
+    }
+  },
+
+  async requestDocumentReupload(documentId, reason) {
+    return employeeService.verifyDocument(documentId, {
+      status: 'rejected',
+      verificationNotes: reason,
+    });
+  },
+
+  async downloadApplicationPdf(applicationId) {
+    try {
+      const res = await apiClient.get(`/loan-applications/${applicationId}/summary-pdf`, {
+        responseType: 'blob',
+      });
+      return { data: res.data, error: null };
+    } catch (error) {
+      return { data: null, error: { message: error.response?.data?.error || 'Download failed' } };
     }
   },
 

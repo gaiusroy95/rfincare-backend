@@ -19,6 +19,8 @@ const DocumentReviewModal = ({
   onClose,
   onUpdated,
   readOnly = false,
+  passLabel = 'Pass',
+  rejectLabel = 'Reject',
 }) => {
   const [previewUrl, setPreviewUrl] = useState(null);
   const [previewLoading, setPreviewLoading] = useState(false);
@@ -27,6 +29,7 @@ const DocumentReviewModal = ({
   const [remark, setRemark] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
+  const [contentTab, setContentTab] = useState('view');
   const blobUrlRef = useRef(null);
 
   const revokeBlobUrl = useCallback(() => {
@@ -41,8 +44,9 @@ const DocumentReviewModal = ({
       revokeBlobUrl();
       setPreviewUrl(null);
       setPreviewError('');
-      setRemark(document?.verificationNote || '');
-      setError('');
+    setRemark(document?.verificationNote || '');
+    setError('');
+    setContentTab('view');
       return undefined;
     }
 
@@ -208,6 +212,32 @@ const DocumentReviewModal = ({
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex rounded-lg border border-border overflow-hidden w-fit">
+            <button
+              type="button"
+              className={`px-4 py-2 text-sm font-medium ${
+                contentTab === 'view'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card text-muted-foreground hover:bg-muted'
+              }`}
+              onClick={() => setContentTab('view')}
+            >
+              View
+            </button>
+            <button
+              type="button"
+              className={`px-4 py-2 text-sm font-medium border-l border-border ${
+                contentTab === 'download'
+                  ? 'bg-primary text-primary-foreground'
+                  : 'bg-card text-muted-foreground hover:bg-muted'
+              }`}
+              onClick={() => setContentTab('download')}
+            >
+              Download
+            </button>
+          </div>
+
+          {contentTab === 'view' ? (
           <div className="bg-muted/30 rounded-lg min-h-[240px] flex items-center justify-center p-4">
             {previewLoading && (
               <div className="flex flex-col items-center gap-3">
@@ -272,6 +302,18 @@ const DocumentReviewModal = ({
               </div>
             )}
           </div>
+          ) : (
+            <div className="bg-muted/30 rounded-lg min-h-[240px] flex flex-col items-center justify-center p-6 text-center">
+              <Icon name="Download" size={48} className="text-muted-foreground mb-3" />
+              <p className="text-sm text-muted-foreground mb-4 max-w-md">
+                Download a copy of <span className="font-medium text-foreground">{document.name}</span>{' '}
+                to review offline.
+              </p>
+              <Button variant="default" iconName="Download" onClick={handleDownload} disabled={submitting}>
+                Download document
+              </Button>
+            </div>
+          )}
 
           {!readOnly && (
             <div>
@@ -326,7 +368,7 @@ const DocumentReviewModal = ({
                 disabled={submitting}
                 iconName="X"
               >
-                Reject
+                {rejectLabel}
               </Button>
               <Button
                 variant="default"
@@ -334,7 +376,7 @@ const DocumentReviewModal = ({
                 disabled={submitting}
                 iconName="Check"
               >
-                Approve
+                {passLabel}
               </Button>
             </>
           )}

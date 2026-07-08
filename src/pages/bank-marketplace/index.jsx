@@ -51,6 +51,7 @@ const BankMarketplace = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const loanTypeSlug = searchParams.get('loanType');
+  const bankIdParam = searchParams.get('bankId');
   const activeProduct = getLoanProductBySlug(loanTypeSlug);
   const { user } = useAuth();
   const [viewMode, setViewMode] = useState('list');
@@ -136,6 +137,12 @@ const BankMarketplace = () => {
   useEffect(() => {
     loadBanks();
   }, [loadBanks]);
+
+  useEffect(() => {
+    if (!bankIdParam || loading || !allOffers.length) return;
+    const match = allOffers.find((offer) => offer.id === bankIdParam);
+    if (match) setSelectedBankOffer(match);
+  }, [bankIdParam, loading, allOffers]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
@@ -239,6 +246,10 @@ const BankMarketplace = () => {
   const filteredAndSortedBanks = useMemo(() => {
     let result = [...banks];
 
+    if (bankIdParam) {
+      result = result.filter((offer) => offer.id === bankIdParam);
+    }
+
     if (isCreditCardView) {
       result = result.filter((offer) => filterCreditCardOffer(offer, creditCardFilters));
     }
@@ -301,11 +312,15 @@ const BankMarketplace = () => {
     });
 
     return result;
-  }, [banks, filters, sortBy, isCreditCardView, creditCardFilters]);
+  }, [banks, filters, sortBy, isCreditCardView, creditCardFilters, bankIdParam]);
 
   const comparedBanks = banks?.filter((bank) =>
     compareList?.includes(getMarketplaceCompareKey(bank)),
   );
+
+  const focusedBank = bankIdParam
+    ? banks.find((offer) => offer.id === bankIdParam) || selectedBankOffer
+    : null;
 
   return (
     <div className="min-h-screen bg-[#f8faf9]">
@@ -360,6 +375,30 @@ const BankMarketplace = () => {
                       Full card comparison
                     </Button>
                   )}
+                </div>
+              )}
+              {focusedBank && (
+                <div className="flex flex-wrap items-center gap-2 mt-3">
+                  <span className="text-sm text-muted-foreground">
+                    Showing products for <strong className="text-foreground">{focusedBank.name}</strong>
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setSelectedBankOffer(null);
+                      navigate('/bank-marketplace');
+                    }}
+                  >
+                    View all banks
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="default"
+                    onClick={() => handleViewBank(focusedBank)}
+                  >
+                    Explore bank details
+                  </Button>
                 </div>
               )}
             </div>

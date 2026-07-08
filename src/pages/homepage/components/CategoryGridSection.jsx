@@ -14,6 +14,7 @@ const CATEGORIES = [
   { label: 'SIP', icon: 'LineChart', color: '#4f46e5', path: '/mutual-fund-marketplace' },
   { label: 'Govt Schemes', icon: 'Landmark', color: '#0d9488', path: '/government-schemes-marketplace' },
   { label: 'Tax Saving', icon: 'Receipt', color: '#be185d', path: '/tax-saving' },
+  { label: 'Post Office', icon: 'Mailbox', color: '#c2410c', path: '/post-office-marketplace' },
 ];
 
 const CategoryGridSection = () => {

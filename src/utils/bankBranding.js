@@ -59,3 +59,30 @@ export function getBankLogoAlt(bank) {
   return bank?.logoAlt || bank?.logo_alt || `${bank?.name || 'Bank'} logo`;
 }
 
+const BANK_SHORT_LABELS = {
+  'state bank of india': 'SBI',
+  sbi: 'SBI',
+  'hdfc bank': 'HDFC',
+  hdfc: 'HDFC',
+  'icici bank': 'ICICI',
+  icici: 'ICICI',
+  'axis bank': 'Axis',
+  'punjab national bank': 'PNB',
+  pnb: 'PNB',
+  'bank of baroda': 'BoB',
+  'kotak mahindra bank': 'Kotak',
+};
+
+/** Short label for compact UI chips (e.g. homepage partner pills). */
+export function getBankShortLabel(bankOrName) {
+  const name = typeof bankOrName === 'string' ? bankOrName : bankOrName?.name;
+  const key = normalizeBankNameKey(name);
+  if (BANK_SHORT_LABELS[key]) return BANK_SHORT_LABELS[key];
+  const words = String(name || '').trim().split(/\s+/);
+  if (words.length === 1) return words[0];
+  if (words.length >= 2 && words.every((w) => w.length <= 4)) {
+    return words.map((w) => w[0]?.toUpperCase() || '').join('');
+  }
+  return words[0];
+}
+

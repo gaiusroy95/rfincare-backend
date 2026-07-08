@@ -18,18 +18,16 @@ export function buildMainNavGroups({ marketplaceVisibility = {}, t = (k) => k } 
     v.creditCardMarketplace !== false
       ? { label: t('header.creditCardMarketplace', 'Credit Cards'), path: '/credit-cards', icon: 'CreditCard' }
       : null,
-    v.bankMarketplace !== false
-      ? { label: t('header.bankMarketplace', 'Bank Marketplace'), path: '/bank-marketplace', icon: 'Building2' }
-      : null,
   ].filter(Boolean);
 
-  const loansChildren = [
-    { label: 'Check Eligibility', path: '/eligibility-assessment', icon: 'CheckCircle' },
-    { label: t('header.applyForLoan', 'Apply for Loan'), path: '/customer-assessment-portal', icon: 'FileText' },
-    v.bankMarketplace !== false
-      ? { label: 'Bank Loans', path: '/bank-marketplace', icon: 'Building2' }
-      : null,
-  ].filter(Boolean);
+  const bankMarketplaceChildren = [
+    { label: 'Personal Loan', path: '/bank-marketplace?loanType=personal', icon: 'Wallet' },
+    { label: 'Home Loan', path: '/bank-marketplace?loanType=home', icon: 'Home' },
+    { label: 'Business Loan', path: '/bank-marketplace?loanType=business', icon: 'Briefcase' },
+    { label: 'Loan Against Property', path: '/bank-marketplace?loanType=loan_against_property', icon: 'Building' },
+    { label: 'Auto Loan', path: '/bank-marketplace?loanType=auto', icon: 'Car' },
+    { label: 'Other Loan', path: '/bank-marketplace', icon: 'Layers' },
+  ];
 
   const investmentsChildren = [
     v.mutualFundMarketplace !== false
@@ -58,18 +56,25 @@ export function buildMainNavGroups({ marketplaceVisibility = {}, t = (k) => k } 
 
   const resourcesChildren = [
     { label: 'Financial Calculators', path: '/resources/calculators', icon: 'Calculator' },
-    { label: 'About Us', path: '/about-us', icon: 'Info' },
-    { label: 'Contact Us', path: '/contact-us', icon: 'Phone' },
-    { label: 'Share Your Story', path: '/share-your-story', icon: 'MessageSquare' },
     { label: 'Tax Saving', path: '/tax-saving', icon: 'Receipt' },
+    { label: 'Other', path: '/resources/calculators?category=other', icon: 'Layers' },
+  ];
+
+  const aboutUsChildren = [
+    { label: 'About Us', path: '/about-us', icon: 'Info' },
+    { label: 'About Team', path: '/about-team', icon: 'Users' },
+    { label: 'Contact Us Help', path: '/contact-us', icon: 'Headphones' },
   ];
 
   return [
-    productsChildren.length ? { id: 'products', label: 'Products', children: productsChildren } : null,
-    loansChildren.length ? { id: 'loans', label: 'Loans', children: loansChildren } : null,
+    productsChildren.length ? { id: 'products', label: t('header.applyNow', 'Apply now'), children: productsChildren } : null,
+    v.bankMarketplace !== false && bankMarketplaceChildren.length
+      ? { id: 'bank-marketplace', label: t('header.bankMarketplace', 'Bank Marketplace'), children: bankMarketplaceChildren }
+      : null,
     investmentsChildren.length ? { id: 'investments', label: 'Investments', children: investmentsChildren } : null,
     insuranceChildren.length ? { id: 'insurance', label: 'Insurance', children: insuranceChildren } : null,
     govtChildren.length ? { id: 'government', label: 'Government Schemes', children: govtChildren } : null,
+    { id: 'about-us', label: t('header.aboutUs', 'About Us'), children: aboutUsChildren },
     { id: 'resources', label: 'Resources', children: resourcesChildren },
     { id: 'calculators', label: 'Calculators', path: '/resources/calculators' },
   ].filter(Boolean);

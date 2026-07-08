@@ -40,6 +40,10 @@ export const homepageService = {
     const res = await apiClient.post('/public/eligibility/calculate', payload);
     return res.data;
   },
+  async checkCibilScore(payload) {
+    const res = await apiClient.post('/public/cibil/check', payload);
+    return res.data;
+  },
   async requestStatusOtp(payload) {
     const res = await apiClient.post('/public/status-check/request-otp', payload);
     return res.data;

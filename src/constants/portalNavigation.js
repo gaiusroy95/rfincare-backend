@@ -33,7 +33,7 @@ export const EMPLOYEE_NAV_ITEMS = [
   { id: 'applications', label: 'Dashboard', icon: 'LayoutDashboard', tab: 'applications' },
   { id: 'leads', label: 'Leads & CRM', icon: 'UserCheck', tab: 'leads' },
   { id: 'agents', label: 'Agent Verification', icon: 'Users', tab: 'agents' },
-  { id: 'documents', label: 'Documents', icon: 'FolderOpen', tab: 'documents' },
+  { id: 'documents', label: 'Application Verification', icon: 'FolderOpen', tab: 'documents' },
   { id: 'training', label: 'Training', icon: 'GraduationCap', tab: 'training' },
   { id: 'activity', label: 'Activity Log', icon: 'Activity', tab: 'activity' },
   { id: 'support', label: 'Support Center', icon: 'Headphones', tab: 'support' },

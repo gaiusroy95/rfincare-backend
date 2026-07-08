@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import PortalShell from '../../components/layout/PortalShell';
@@ -292,13 +292,46 @@ const EmployeePortal = () => {
     return matchesSearch;
   });
 
+  const pendingApplicationGroups = useMemo(() => {
+    const groups = {};
+    for (const doc of pendingDocuments || []) {
+      const appId = doc.applicationId;
+      if (!appId) continue;
+      if (!groups[appId]) {
+        const linkedApp = assignedApplications.find((a) => a.id === appId);
+        groups[appId] = {
+          applicationId: appId,
+          applicationNumber: doc.applicationNumber || linkedApp?.applicationNumber,
+          customerName:
+            linkedApp?.customer?.fullName ||
+            linkedApp?.customerName ||
+            doc.customerName ||
+            'Applicant',
+          documents: [],
+          latestUpload: null,
+        };
+      }
+      groups[appId].documents.push(doc);
+      const uploaded = doc.uploadedAt || doc.createdAt;
+      if (
+        uploaded
+        && (!groups[appId].latestUpload || new Date(uploaded) > new Date(groups[appId].latestUpload))
+      ) {
+        groups[appId].latestUpload = uploaded;
+      }
+    }
+    return Object.values(groups).sort(
+      (a, b) => new Date(b.latestUpload || 0) - new Date(a.latestUpload || 0),
+    );
+  }, [pendingDocuments, assignedApplications]);
+
   const effectiveAccess = employeeAccess || authEmployeeAccess;
 
   const allTabs = [
     { id: 'applications', label: 'Applications', icon: 'FileText', count: assignedApplications?.length, module: 'applications' },
     { id: 'leads', label: 'Leads', icon: 'UserPlus', module: 'leads' },
     { id: 'agents', label: 'Agent Verification', icon: 'UserCheck', count: pendingAgents?.length, module: 'agents' },
-    { id: 'documents', label: 'Pending documents', icon: 'FolderOpen', count: pendingDocuments?.length, module: 'documents' },
+    { id: 'documents', label: 'Application Verification', icon: 'FolderOpen', count: pendingDocuments?.length, module: 'documents' },
     { id: 'activity', label: 'Activity Log', icon: 'Activity', module: 'reports' },
     { id: 'training', label: 'Training', icon: 'GraduationCap' },
   ];
@@ -349,7 +382,7 @@ const EmployeePortal = () => {
     applications: null,
     leads: { title: 'Leads & CRM', subtitle: 'Manage and follow up on customer leads.' },
     agents: { title: 'Agent Verification', subtitle: 'Review and verify pending agent registrations.' },
-    documents: { title: 'Documents', subtitle: 'Review pending document uploads.' },
+    documents: { title: 'Application Verification', subtitle: 'Review and verify pending application documents.' },
     training: { title: 'Training', subtitle: 'Complete modules to boost productivity.' },
     activity: { title: 'Activity Log', subtitle: 'Your recent actions and audit trail.' },
     support: { title: 'Support Center', subtitle: 'Get help from our operations team.' },
@@ -622,71 +655,82 @@ const EmployeePortal = () => {
             {initialLoading ? (
               <div className="text-center py-12">
                 <Icon name="Loader" size={32} className="animate-spin mx-auto text-primary" />
-                <p className="text-muted-foreground mt-4">Loading documents...</p>
+                <p className="text-muted-foreground mt-4">Loading applications...</p>
               </div>
-            ) : pendingDocuments?.length > 0 ? (
+            ) : pendingApplicationGroups?.length > 0 ? (
               <div className="space-y-4">
-                {pendingDocuments?.map((doc) => (
-                  <div key={doc?.id} className="bg-card border border-border rounded-lg p-4 md:p-6">
+                {pendingApplicationGroups.map((group) => (
+                  <button
+                    key={group.applicationId}
+                    type="button"
+                    onClick={() => openWorkspaceByApplicationId(group.applicationId)}
+                    className="w-full text-left bg-card border border-border rounded-lg p-4 md:p-6 hover:border-primary/40 hover:shadow-sm transition-all"
+                  >
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
                       <div className="flex-1">
-                        <div className="flex items-center space-x-3 mb-3">
+                        <div className="flex flex-wrap items-center gap-3 mb-3">
                           <h3 className="text-lg font-semibold text-foreground">
-                            {doc?.documentName || doc?.title || 'Document'}
+                            {group.applicationNumber || group.applicationId?.slice(0, 8)}
                           </h3>
-                          <span className="px-2 py-1 bg-primary/10 text-primary rounded text-xs font-medium">
-                            {doc?.documentType || doc?.type}
+                          <span className="px-2 py-1 bg-amber-100 text-amber-800 rounded text-xs font-medium">
+                            {group.documents.length} document{group.documents.length === 1 ? '' : 's'} pending
                           </span>
                         </div>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
                           <div>
-                            <span className="text-muted-foreground">Application:</span>
-                            <p className="font-medium text-foreground">
-                              {doc?.applicationNumber || doc?.applicationId?.slice(0, 8) || '—'}
-                            </p>
+                            <span className="text-muted-foreground">Customer:</span>
+                            <p className="font-medium text-foreground">{group.customerName}</p>
                           </div>
                           <div>
                             <span className="text-muted-foreground">Status:</span>
-                            <p className="font-medium text-foreground">{doc?.status}</p>
+                            <p className="font-medium text-foreground capitalize">Pending review</p>
                           </div>
                           <div>
-                            <span className="text-muted-foreground">Uploaded:</span>
+                            <span className="text-muted-foreground">Last upload:</span>
                             <p className="font-medium text-foreground">
-                              {doc?.uploadedAt || doc?.createdAt
-                                ? new Date(doc.uploadedAt || doc.createdAt).toLocaleDateString('en-IN')
+                              {group.latestUpload
+                                ? new Date(group.latestUpload).toLocaleDateString('en-IN')
                                 : '—'}
                             </p>
                           </div>
                         </div>
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {group.documents.slice(0, 4).map((doc) => (
+                            <span
+                              key={doc.id}
+                              className="px-2 py-1 bg-muted text-muted-foreground rounded text-xs"
+                            >
+                              {doc.documentType || doc.documentName || 'Document'}
+                            </span>
+                          ))}
+                          {group.documents.length > 4 && (
+                            <span className="px-2 py-1 bg-muted text-muted-foreground rounded text-xs">
+                              +{group.documents.length - 4} more
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex gap-2">
-                        {doc?.applicationId && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => openWorkspaceByApplicationId(doc.applicationId)}
-                          >
-                            <Icon name="ClipboardCheck" size={14} className="mr-1" />
-                            Process application
-                          </Button>
-                        )}
+                      <div className="flex gap-2 shrink-0">
                         <Button
-                          variant="outline"
+                          variant="default"
                           size="sm"
-                          onClick={() => navigate('/document-management-center')}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            openWorkspaceByApplicationId(group.applicationId);
+                          }}
                         >
-                          <Icon name="FolderOpen" size={14} className="mr-1" />
-                          Open in Documents
+                          <Icon name="ClipboardCheck" size={14} className="mr-1" />
+                          Review application
                         </Button>
                       </div>
                     </div>
-                  </div>
+                  </button>
                 ))}
               </div>
             ) : (
               <div className="text-center py-12 bg-card border border-border rounded-lg">
                 <Icon name="FolderOpen" size={48} className="mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No documents pending</p>
+                <p className="text-muted-foreground">No applications pending verification</p>
               </div>
             )}
           </div>

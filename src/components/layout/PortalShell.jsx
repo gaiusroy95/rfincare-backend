@@ -23,6 +23,7 @@ const PortalShell = ({
   promoCard,
   children,
   headerActions,
+  searchPlaceholder = 'Search products, leads, customers...',
 }) => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -81,7 +82,7 @@ const PortalShell = ({
               type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search products, leads, customers..."
+              placeholder={searchPlaceholder}
               className="rf-portal-search-input"
             />
             <span className="rf-portal-search-hint hidden xl:inline">Ctrl + K</span>

@@ -58,17 +58,6 @@ const AdminLayout = () => {
           })}
         </nav>
 
-        <div className="rf-portal-promo">
-          <div className="flex items-center gap-2 mb-2">
-            <Icon name="Star" size={18} className="text-amber-500" />
-            <span className="text-sm font-bold text-foreground">Premium Plan</span>
-          </div>
-          <p className="text-xs text-muted-foreground mb-3">Unlock advanced analytics &amp; API access</p>
-          <button type="button" className="w-full py-2 text-xs font-semibold text-white bg-[var(--color-brand-green)] rounded-lg hover:opacity-90">
-            Upgrade Now
-          </button>
-        </div>
-
         <div className="rf-portal-sidebar-footer">
           <button type="button" onClick={handleLogout} className="rf-portal-logout" title="Logout">
             <Icon name="LogOut" size={18} />

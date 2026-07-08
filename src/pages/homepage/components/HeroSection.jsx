@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import HomeSidebarWidgets from './HomeSidebarWidgets';
+import HeroCibilScoreCard from './HeroCibilScoreCard';
 
 const TRUST_ITEMS = [
   { icon: 'Shield', label: '100% Secure' },
@@ -28,7 +29,7 @@ const HeroSection = () => {
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
           <div className="xl:col-span-5 space-y-6">
             <div>
-              <h1 className="text-3xl md:text-4xl lg:text-[2.65rem] font-bold text-foreground leading-tight">
+              <h1 className="rf-hero-title text-3xl md:text-4xl lg:text-[2.65rem] font-bold leading-tight">
                 Everything You Need. One Place. For Your Financial Freedom.
               </h1>
               <p className="text-base md:text-lg text-muted-foreground mt-4 max-w-xl">
@@ -66,9 +67,9 @@ const HeroSection = () => {
                 className="rf-btn-primary"
                 iconName="ArrowRight"
                 iconPosition="right"
-                onClick={() => navigate('/product-comparison')}
+                onClick={() => navigate('/eligibility-assessment')}
               >
-                Explore Products
+                Check Eligibility
               </Button>
               <Button
                 variant="outline"
@@ -83,43 +84,14 @@ const HeroSection = () => {
           </div>
 
           <div className="xl:col-span-4 relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[4/3] bg-gradient-to-br from-emerald-50 to-orange-50">
+            <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[4/3] bg-gradient-to-br from-sky-50 to-emerald-50">
               <img
-                src="https://images.unsplash.com/photo-1511895426328-dc8714191300?w=800&q=80"
-                alt="Happy family planning their finances"
+                src="https://images.unsplash.com/photo-1579621970795-87facc2f976d?w=900&q=80"
+                alt="Person reviewing credit score and financial health on a laptop"
                 className="w-full h-full object-cover"
               />
-              <div className="absolute bottom-4 right-4 left-4 sm:left-auto sm:w-56 bg-white rounded-xl shadow-xl p-4 border border-border">
-                <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Financial Health Score</p>
-                <div className="flex items-center gap-3 mt-2">
-                  <div className="relative w-16 h-16">
-                    <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
-                      <circle cx="18" cy="18" r="15.5" fill="none" stroke="#e2e8f0" strokeWidth="3" />
-                      <circle
-                        cx="18"
-                        cy="18"
-                        r="15.5"
-                        fill="none"
-                        stroke="var(--color-brand-green)"
-                        strokeWidth="3"
-                        strokeDasharray={`${(728 / 900) * 97.4} 97.4`}
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">728</span>
-                  </div>
-                  <div>
-                    <p className="text-lg font-bold text-foreground">728<span className="text-sm font-normal text-muted-foreground">/900</span></p>
-                    <span className="inline-block text-xs font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-full">Good</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => navigate('/eligibility-assessment')}
-                  className="mt-3 text-xs font-semibold text-[var(--color-brand-green)] hover:underline"
-                >
-                  Improve Score →
-                </button>
+              <div className="absolute bottom-4 right-4 left-4 sm:left-auto sm:max-w-[20rem] sm:w-full">
+                <HeroCibilScoreCard />
               </div>
             </div>
           </div>

@@ -2,7 +2,10 @@
   "header": {
     "home": "Home",
     "applyForLoan": "Apply for Loan",
+    "applyNow": "Apply now",
+    "checkYourEligibility": "Check your eligibility",
     "bankMarketplace": "Bank Marketplace",
+    "aboutUs": "About Us",
     "creditCardMarketplace": "Credit Card Marketplace",
     "insuranceMarketplace": "Insurance Marketplace",
     "mutualFundMarketplace": "Mutual Fund Marketplace",

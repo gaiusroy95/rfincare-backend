@@ -20,7 +20,7 @@ const FinancialPillarsSection = () => {
           <p className="text-xs font-semibold uppercase tracking-widest text-[var(--color-brand-green)] mb-2">
             Your financial journey
           </p>
-          <h2 className="text-xl md:text-2xl font-bold text-foreground">
+          <h2 className="text-xl md:text-2xl font-bold text-sky-500">
             Plan · Protect · Invest · Borrow
           </h2>
           <p className="text-sm text-muted-foreground mt-2 max-w-xl mx-auto">
@@ -43,7 +43,7 @@ const FinancialPillarsSection = () => {
                 <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
                   {pillar.subtitle}
                 </p>
-                <h3 className="text-lg font-bold text-foreground mt-0.5">{pillar.title}</h3>
+                <h3 className="text-lg font-bold text-sky-500 mt-0.5">{pillar.title}</h3>
                 <p className="text-sm text-muted-foreground mt-1.5 line-clamp-2 leading-relaxed">
                   {pillar.description}
                 </p>

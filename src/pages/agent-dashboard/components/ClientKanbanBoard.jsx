@@ -3,21 +3,20 @@ import Icon from '../../../components/AppIcon';
 import Image from '../../../components/AppImage';
 import Button from '../../../components/ui/Button';
 
-const ClientKanbanBoard = ({ clients, onClientClick, onStatusChange }) => {
+const ClientKanbanBoard = ({ clients, onClientClick, onStatusChange, onStartApplication }) => {
   const [draggedClient, setDraggedClient] = useState(null);
 
   const columns = [
     { id: 'new', title: 'New Leads', color: 'blue', icon: 'UserPlus' },
     { id: 'in-progress', title: 'In Progress', color: 'amber', icon: 'Clock' },
     { id: 'documents', title: 'Documents Pending', color: 'purple', icon: 'FileText' },
-    { id: 'submitted', title: 'Submitted', color: 'green', icon: 'CheckCircle' }
+    { id: 'submitted', title: 'Submitted', color: 'green', icon: 'CheckCircle' },
   ];
 
-  const getColumnClients = (columnId) => {
-    return clients?.filter(client => client?.status === columnId);
-  };
+  const getColumnClients = (columnId) => clients?.filter((client) => client?.status === columnId);
 
   const handleDragStart = (e, client) => {
+    if (client?.kind === 'lead') return;
     setDraggedClient(client);
     e.dataTransfer.effectAllowed = 'move';
   };
@@ -39,7 +38,7 @@ const ClientKanbanBoard = ({ clients, onClientClick, onStatusChange }) => {
     const colors = {
       high: 'bg-red-100 text-red-700 border-red-200',
       medium: 'bg-amber-100 text-amber-700 border-amber-200',
-      low: 'bg-green-100 text-green-700 border-green-200'
+      low: 'bg-green-100 text-green-700 border-green-200',
     };
     return colors?.[priority] || colors?.medium;
   };
@@ -74,12 +73,17 @@ const ClientKanbanBoard = ({ clients, onClientClick, onStatusChange }) => {
                 </span>
               </div>
               <div className="space-y-3">
+                {columnClients?.length === 0 && (
+                  <p className="text-xs text-muted-foreground text-center py-8">No items yet</p>
+                )}
                 {columnClients?.map((client) => (
                   <div
-                    key={client?.id}
-                    draggable
+                    key={`${client?.kind || 'item'}-${client?.id}`}
+                    draggable={client?.kind !== 'lead'}
                     onDragStart={(e) => handleDragStart(e, client)}
-                    className="bg-card rounded-lg p-3 border border-border cursor-move hover:shadow-md transition-all duration-200"
+                    className={`bg-card rounded-lg p-3 border border-border transition-all duration-200 ${
+                      client?.kind === 'lead' ? 'cursor-pointer hover:shadow-md' : 'cursor-move hover:shadow-md'
+                    }`}
                     onClick={() => onClientClick(client)}
                   >
                     <div className="flex items-start space-x-3 mb-3">
@@ -89,8 +93,18 @@ const ClientKanbanBoard = ({ clients, onClientClick, onStatusChange }) => {
                         className="w-10 h-10 rounded-full object-cover flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
-                        <h4 className="text-sm font-semibold text-foreground truncate">{client?.name}</h4>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h4 className="text-sm font-semibold text-foreground truncate">{client?.name}</h4>
+                          {client?.kind === 'lead' && (
+                            <span className="text-[10px] font-semibold uppercase tracking-wide px-1.5 py-0.5 rounded bg-sky-100 text-sky-700">
+                              Lead
+                            </span>
+                          )}
+                        </div>
                         <p className="text-xs text-muted-foreground truncate">{client?.loanType}</p>
+                        {client?.email && (
+                          <p className="text-[10px] text-muted-foreground truncate mt-0.5">{client.email}</p>
+                        )}
                       </div>
                     </div>
 
@@ -114,6 +128,20 @@ const ClientKanbanBoard = ({ clients, onClientClick, onStatusChange }) => {
                           <span className="truncate">{client?.nextAction}</span>
                         </div>
                       </div>
+                    )}
+
+                    {client?.kind === 'lead' && !client?.applicationId && onStartApplication && (
+                      <Button
+                        size="sm"
+                        className="w-full mt-3 rf-btn-primary"
+                        iconName="FileText"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onStartApplication(client);
+                        }}
+                      >
+                        Submit application
+                      </Button>
                     )}
                   </div>
                 ))}
