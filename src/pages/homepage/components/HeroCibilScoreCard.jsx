@@ -109,16 +109,25 @@ const HeroCibilScoreCard = () => {
 
   return (
     <div className="rf-hero-cibil-card">
-      <div className="rf-hero-cibil-tabs">
-        <button
-          type="button"
-          className={`rf-hero-cibil-tab ${activeTab === 'check' ? 'rf-hero-cibil-tab--active' : ''}`}
-          onClick={() => setActiveTab('check')}
-        >
-          <Icon name="Gauge" size={14} />
-          Check free CIBIL score
-        </button>
-        {result && (
+      <div className="rf-hero-cibil-header">
+        <div className="rf-hero-cibil-header-icon">
+          <Icon name="Gauge" size={20} />
+        </div>
+        <div>
+          <h3 className="rf-hero-cibil-title">Check free CIBIL score</h3>
+          <p className="rf-hero-cibil-subtitle">Secure bureau check · No impact on your score</p>
+        </div>
+      </div>
+
+      {result && (
+        <div className="rf-hero-cibil-tabs">
+          <button
+            type="button"
+            className={`rf-hero-cibil-tab ${activeTab === 'check' ? 'rf-hero-cibil-tab--active' : ''}`}
+            onClick={() => setActiveTab('check')}
+          >
+            Details
+          </button>
           <button
             type="button"
             className={`rf-hero-cibil-tab ${activeTab === 'result' ? 'rf-hero-cibil-tab--active' : ''}`}
@@ -126,13 +135,13 @@ const HeroCibilScoreCard = () => {
           >
             Your score
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {activeTab === 'result' && result ? (
         <div className="rf-hero-cibil-result">
-          <div className="flex items-center gap-3">
-            <div className="relative w-16 h-16 shrink-0">
+          <div className="flex items-center gap-4">
+            <div className="relative w-20 h-20 shrink-0">
               <svg viewBox="0 0 36 36" className="w-full h-full -rotate-90">
                 <circle cx="18" cy="18" r="15.5" fill="none" stroke="#e2e8f0" strokeWidth="3" />
                 <circle
@@ -146,36 +155,36 @@ const HeroCibilScoreCard = () => {
                   strokeLinecap="round"
                 />
               </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-xs font-bold text-foreground">
+              <span className="absolute inset-0 flex items-center justify-center text-sm font-bold text-foreground">
                 {result.creditScore}
               </span>
             </div>
             <div>
               <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">CIBIL Score</p>
-              <p className="text-lg font-bold text-foreground">
+              <p className="text-2xl font-bold text-foreground">
                 {result.creditScore}
                 <span className="text-sm font-normal text-muted-foreground">/900</span>
               </p>
-              <span className={`inline-block text-xs font-semibold px-2 py-0.5 rounded-full mt-1 ${BAND_STYLES[result.band] || BAND_STYLES.good}`}>
+              <span className={`inline-block text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1.5 ${BAND_STYLES[result.band] || BAND_STYLES.good}`}>
                 {result.bandLabel}
               </span>
             </div>
           </div>
           {result.sandboxMode && (
-            <p className="text-[10px] text-muted-foreground mt-2">Sandbox preview — bureau credentials not live.</p>
+            <p className="text-xs text-muted-foreground mt-3">Sandbox preview — bureau credentials not live.</p>
           )}
-          <div className="flex flex-wrap gap-2 mt-3">
+          <div className="flex flex-wrap gap-3 mt-4 pt-4 border-t border-border">
             <button
               type="button"
               onClick={() => navigate('/eligibility-assessment')}
-              className="text-xs font-semibold text-[var(--color-brand-green)] hover:underline"
+              className="text-sm font-semibold text-[var(--color-brand-green)] hover:underline"
             >
               Check loan eligibility →
             </button>
             <button
               type="button"
               onClick={handleReset}
-              className="text-xs font-semibold text-muted-foreground hover:underline"
+              className="text-sm font-semibold text-muted-foreground hover:underline"
             >
               Check again
             </button>
@@ -183,113 +192,121 @@ const HeroCibilScoreCard = () => {
         </div>
       ) : (
         <form onSubmit={handleSubmit} className="rf-hero-cibil-form">
-          <p className="text-xs text-muted-foreground mb-3">
-            Enter your details to fetch your free CIBIL score securely.
-          </p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <Input
-              name="fullName"
-              label="Full name"
-              value={form.fullName}
-              onChange={handleChange}
-              error={errors.fullName}
-              required
-              className="text-xs"
-            />
-            <Input
-              name="email"
-              type="email"
-              label="Email"
-              value={form.email}
-              onChange={handleChange}
-              error={errors.email}
-              required
-            />
-            <Input
-              name="phone"
-              type="tel"
-              label="Mobile"
-              value={form.phone}
-              onChange={handleChange}
-              error={errors.phone}
-              placeholder="10-digit number"
-              required
-            />
-            <Input
-              name="dateOfBirth"
-              type="date"
-              label="Date of birth"
-              value={form.dateOfBirth}
-              onChange={handleChange}
-              error={errors.dateOfBirth}
-              required
-            />
-            <Input
-              name="panNumber"
-              label="PAN"
-              value={form.panNumber}
-              onChange={handleChange}
-              error={errors.panNumber}
-              placeholder="ABCDE1234F"
-              required
-            />
-            <Select
-              label="Gender"
-              value={form.gender}
-              onChange={(value) => {
-                setForm((prev) => ({ ...prev, gender: value }));
-                if (errors.gender) setErrors((prev) => ({ ...prev, gender: '' }));
-              }}
-              options={GENDER_OPTIONS}
-              placeholder="Select"
-            />
-            <Input
-              name="city"
-              label="City"
-              value={form.city}
-              onChange={handleChange}
-              error={errors.city}
-              required
-            />
-            <Input
-              name="pincode"
-              label="Pincode"
-              value={form.pincode}
-              onChange={handleChange}
-              error={errors.pincode}
-              placeholder="6 digits"
-              required
-            />
+          <div className="rf-hero-cibil-form-grid">
+            <div className="rf-hero-cibil-field">
+              <Input
+                name="fullName"
+                label="Full name"
+                value={form.fullName}
+                onChange={handleChange}
+                error={errors.fullName}
+                required
+              />
+            </div>
+            <div className="rf-hero-cibil-field">
+              <Input
+                name="email"
+                type="email"
+                label="Email"
+                value={form.email}
+                onChange={handleChange}
+                error={errors.email}
+                required
+              />
+            </div>
+            <div className="rf-hero-cibil-field">
+              <Input
+                name="phone"
+                type="tel"
+                label="Mobile"
+                value={form.phone}
+                onChange={handleChange}
+                error={errors.phone}
+                placeholder="10-digit number"
+                required
+              />
+            </div>
+            <div className="rf-hero-cibil-field">
+              <Input
+                name="dateOfBirth"
+                type="date"
+                label="Date of birth"
+                value={form.dateOfBirth}
+                onChange={handleChange}
+                error={errors.dateOfBirth}
+                required
+              />
+            </div>
+            <div className="rf-hero-cibil-field">
+              <Input
+                name="panNumber"
+                label="PAN"
+                value={form.panNumber}
+                onChange={handleChange}
+                error={errors.panNumber}
+                placeholder="ABCDE1234F"
+                required
+              />
+            </div>
+            <div className="rf-hero-cibil-field">
+              <Select
+                label="Gender"
+                value={form.gender}
+                onChange={(value) => {
+                  setForm((prev) => ({ ...prev, gender: value }));
+                  if (errors.gender) setErrors((prev) => ({ ...prev, gender: '' }));
+                }}
+                options={GENDER_OPTIONS}
+                placeholder="Select"
+              />
+            </div>
+            <div className="rf-hero-cibil-field">
+              <Input
+                name="city"
+                label="City"
+                value={form.city}
+                onChange={handleChange}
+                error={errors.city}
+                required
+              />
+            </div>
+            <div className="rf-hero-cibil-field">
+              <Input
+                name="pincode"
+                label="Pincode"
+                value={form.pincode}
+                onChange={handleChange}
+                error={errors.pincode}
+                placeholder="6 digits"
+                required
+              />
+            </div>
           </div>
 
-          <label className="flex items-start gap-2 mt-3 text-xs text-muted-foreground cursor-pointer">
+          <label className="rf-hero-cibil-consent">
             <input
               type="checkbox"
               name="consentAccepted"
               checked={form.consentAccepted}
               onChange={handleChange}
-              className="mt-0.5"
+              className="mt-0.5 shrink-0"
             />
             <span>
               I consent to Rfincare fetching my credit score from bureau partners and storing my details for eligibility matching.
             </span>
           </label>
           {errors.consentAccepted && (
-            <p className="text-xs text-destructive mt-1">{errors.consentAccepted}</p>
+            <p className="text-xs text-destructive mt-1.5">{errors.consentAccepted}</p>
           )}
           {formError && <p className="text-xs text-destructive mt-2">{formError}</p>}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="rf-hero-cibil-submit mt-3 w-full"
-          >
+          <button type="submit" disabled={loading} className="rf-hero-cibil-submit">
             {loading ? 'Fetching score…' : 'Get my free CIBIL score'}
           </button>
 
-          <div className="flex items-center gap-1.5 mt-2 text-[10px] text-muted-foreground">
-            <Icon name="Lock" size={12} />
-            <span>256-bit encrypted · No impact on score</span>
+          <div className="rf-hero-cibil-trust">
+            <Icon name="Lock" size={13} />
+            <span>256-bit encrypted · RBI registered partners</span>
           </div>
         </form>
       )}

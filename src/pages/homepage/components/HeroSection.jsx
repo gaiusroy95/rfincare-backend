@@ -83,17 +83,16 @@ const HeroSection = () => {
             </div>
           </div>
 
-          <div className="xl:col-span-4 relative">
-            <div className="relative rounded-2xl overflow-hidden shadow-lg aspect-[4/3] bg-gradient-to-br from-sky-50 to-emerald-50">
+          <div className="xl:col-span-4 flex flex-col gap-4">
+            <div className="relative rounded-2xl overflow-hidden shadow-md h-44 sm:h-48 lg:h-52 bg-gradient-to-br from-sky-50 to-emerald-50">
               <img
                 src="https://images.unsplash.com/photo-1579621970795-87facc2f976d?w=900&q=80"
                 alt="Person reviewing credit score and financial health on a laptop"
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover object-center"
               />
-              <div className="absolute bottom-4 right-4 left-4 sm:left-auto sm:max-w-[20rem] sm:w-full">
-                <HeroCibilScoreCard />
-              </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-white/30 via-transparent to-transparent pointer-events-none" />
             </div>
+            <HeroCibilScoreCard />
           </div>
 
           <div className="xl:col-span-3 space-y-4">
