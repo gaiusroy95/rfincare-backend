@@ -370,7 +370,6 @@ const AgentDashboard = () => {
     <PortalShell
       portalLabel="Agent Dashboard"
       searchPlaceholder="Search products, leads, customers..."
-      showSiteHeader
       navItems={AGENT_NAV_ITEMS.map((item) => ({
         ...item,
         badge: item.badgeKey === 'leads' ? leadCount : 0,

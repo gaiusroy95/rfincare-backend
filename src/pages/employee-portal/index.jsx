@@ -419,7 +419,6 @@ const EmployeePortal = () => {
   return (
     <PortalShell
       portalLabel="Employee Portal"
-      showSiteHeader
       navItems={employeeNavItems}
       activeId={activeTab}
       onNavSelect={handleEmployeeNav}
