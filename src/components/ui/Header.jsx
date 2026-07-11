@@ -11,42 +11,6 @@ import BrandLogo from './BrandLogo';
 import HeaderNavDropdown from './HeaderNavDropdown';
 import LanguageSwitcher from './LanguageSwitcher';
 
-const PUBLIC_GUEST_PATHS = new Set([
-  '/',
-  '/homepage',
-  '/about-us',
-  '/about-team',
-  '/contact-us',
-  '/book-appointment',
-  '/talk-to-expert',
-  '/product-comparison',
-  '/eligibility-assessment',
-  '/bank-marketplace',
-  '/credit-cards',
-  '/insurance-marketplace',
-  '/mutual-fund-marketplace',
-  '/fixed-income-marketplace',
-  '/post-office-marketplace',
-  '/government-schemes-marketplace',
-  '/investment-marketplace',
-  '/retirement-planning',
-  '/tax-saving',
-  '/wealth-management',
-  '/resources/calculators',
-  '/customer-assessment-portal',
-  '/login-page',
-  '/customer-login',
-  '/share-your-story',
-]);
-
-function isPublicGuestRoute(pathname) {
-  if (!pathname) return true;
-  if (pathname.startsWith('/legal/')) return true;
-  if (pathname.startsWith('/products/')) return true;
-  if (pathname.startsWith('/resources/calculators')) return true;
-  return PUBLIC_GUEST_PATHS.has(pathname);
-}
-
 const Header = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -60,8 +24,23 @@ const Header = ({ children }) => {
 
   const isGuest = !user;
   const currentRole = resolveEffectiveRole(user, userProfile) || 'customer';
-  const showMarketingNav = isPublicGuestRoute(location?.pathname)
-    && (isGuest || currentRole === 'customer');
+  const isAdminRole = currentRole === 'admin' || currentRole === 'super_admin';
+  const isStaffPortalRole = currentRole === 'agent' || currentRole === 'employee';
+  /**
+   * Agents & employees use Documents / Reports / Referrals in the dashboard sidebar.
+   * Whenever Header renders for them (or customers/guests), show the main marketing nav —
+   * never the old portal shortcut tabs.
+   */
+  const showMarketingNav = !isAdminRole;
+
+  const DASHBOARD_BY_ROLE = {
+    customer: '/customer-dashboard',
+    agent: '/agent-dashboard',
+    employee: '/employee-portal',
+    admin: '/admin-dashboard',
+    super_admin: '/admin-dashboard',
+  };
+  const dashboardPath = DASHBOARD_BY_ROLE[currentRole] || '/homepage';
 
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
@@ -91,28 +70,16 @@ const Header = ({ children }) => {
     [marketplaceVisibility, t],
   );
 
+  /** Admin-only header shortcuts. Staff tools live in portal sidebars. */
   const portalNavItems = useMemo(() => {
+    if (isStaffPortalRole) return [];
     const items = [
       { label: t('header.myDashboard'), path: '/customer-dashboard', roles: ['customer'] },
       { label: t('header.agentDashboard'), path: '/agent-dashboard', roles: ['agent'] },
       { label: t('header.adminDashboard'), path: '/admin-dashboard', roles: ['admin', 'super_admin'] },
       { label: t('header.employeePortal'), path: '/employee-portal', roles: ['employee'] },
-      { label: t('header.documents'), path: '/document-management-center', roles: ['agent', 'admin', 'super_admin', 'employee'] },
-      { label: t('header.reports'), path: '/reports-and-analytics', roles: ['admin', 'super_admin', 'employee'] },
-      {
-        label: 'Agent Referral',
-        path: '/employee-portal?tab=agent-referral',
-        matchPath: '/employee-portal',
-        matchTab: 'agent-referral',
-        roles: ['employee'],
-      },
-      {
-        label: 'Customer Referral',
-        path: '/employee-portal?tab=customer-referral',
-        matchPath: '/employee-portal',
-        matchTab: 'customer-referral',
-        roles: ['employee'],
-      },
+      { label: t('header.documents'), path: '/document-management-center', roles: ['admin', 'super_admin'] },
+      { label: t('header.reports'), path: '/reports-and-analytics', roles: ['admin', 'super_admin'] },
     ];
     return items.filter((item) => {
       if (!item.roles.includes(currentRole)) return false;
@@ -122,13 +89,11 @@ const Header = ({ children }) => {
       }
       return true;
     });
-  }, [t, currentRole, employeeAccess]);
-
-  const dashboardPath = portalNavItems.find((item) => !item.matchTab)?.path
-    || portalNavItems[0]?.path;
+  }, [t, currentRole, employeeAccess, isStaffPortalRole]);
 
   /** Top-bar links exclude the primary dashboard path (shown as My Dashboard CTA). */
   const desktopPortalLinks = useMemo(() => {
+    if (showMarketingNav || isStaffPortalRole) return [];
     return portalNavItems.filter((item) => {
       const basePath = (item.path || '').split('?')[0];
       if (dashboardPath && basePath === dashboardPath.split('?')[0] && !item.matchTab) {
@@ -136,7 +101,7 @@ const Header = ({ children }) => {
       }
       return true;
     });
-  }, [portalNavItems, dashboardPath]);
+  }, [portalNavItems, dashboardPath, showMarketingNav, isStaffPortalRole]);
 
   const isPathActive = useCallback(
     (path, matchTab) => {
