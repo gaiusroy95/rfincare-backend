@@ -1,8 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { useSiteContact } from '../../../contexts/SiteContactContext';
+import { useAuth } from '../../../contexts/AuthContext';
+import CustomerLiveChatDrawer from './CustomerLiveChatDrawer';
+import StaffSupportChatInbox from './StaffSupportChatInbox';
 
 const SUPPORT_CHANNELS = [
   {
@@ -42,11 +45,39 @@ const SUPPORT_CHANNELS = [
 const CustomerSupportPanel = () => {
   const navigate = useNavigate();
   const { contact } = useSiteContact();
+  const { user, userProfile } = useAuth();
+  const [chatOpen, setChatOpen] = useState(false);
+
+  const role = userProfile?.role || user?.role || '';
+  const isCustomer = role === 'customer';
+  const isStaff = ['employee', 'admin', 'super_admin'].includes(role);
 
   const phone = contact?.phone || contact?.phones?.[0];
   const email = contact?.email || contact?.emails?.[0];
 
+  const openWhatsApp = () => {
+    const digits = String(phone || '').replace(/\D/g, '');
+    const withCountry = digits.length === 10 ? `91${digits}` : digits;
+    if (!withCountry) {
+      navigate('/contact-us');
+      return;
+    }
+    window.open(
+      `https://wa.me/${withCountry}?text=${encodeURIComponent('Hi Rfincare support, I need help with…')}`,
+      '_blank',
+      'noopener,noreferrer',
+    );
+  };
+
   const handleChannel = (action) => {
+    if (action === 'chat') {
+      if (isCustomer) {
+        setChatOpen(true);
+        return;
+      }
+      openWhatsApp();
+      return;
+    }
     if (action === 'phone' && phone) {
       window.location.href = `tel:${phone}`;
       return;
@@ -92,6 +123,8 @@ const CustomerSupportPanel = () => {
         ))}
       </div>
 
+      {isStaff ? <StaffSupportChatInbox /> : null}
+
       <div className="rf-filter-card space-y-4">
         <h3 className="font-semibold text-foreground flex items-center gap-2">
           <Icon name="Headphones" size={20} className="text-[var(--color-brand-green)]" />
@@ -121,9 +154,9 @@ const CustomerSupportPanel = () => {
           variant="outline"
           className="rf-btn-outline-green"
           iconName="MessageCircle"
-          onClick={() => navigate('/contact-us')}
+          onClick={() => (isCustomer ? setChatOpen(true) : navigate('/contact-us'))}
         >
-          Open contact form
+          {isCustomer ? 'Open live chat' : 'Open contact form'}
         </Button>
       </div>
 
@@ -131,6 +164,8 @@ const CustomerSupportPanel = () => {
         <p className="font-semibold mb-1">Quick tip</p>
         <p>Most queries are resolved within 2 hours during business hours. Keep your application reference handy.</p>
       </div>
+
+      <CustomerLiveChatDrawer open={chatOpen} onClose={() => setChatOpen(false)} />
     </div>
   );
 };

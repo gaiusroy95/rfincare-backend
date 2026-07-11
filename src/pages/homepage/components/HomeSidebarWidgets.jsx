@@ -116,7 +116,7 @@ const HomeSidebarWidgets = () => {
         <p className="text-sm text-muted-foreground mb-3">
           Get free consultation from our financial experts
         </p>
-        <Button className="rf-btn-primary w-full" size="sm" onClick={() => navigate('/contact-us')}>
+        <Button className="rf-btn-primary w-full" size="sm" onClick={() => navigate('/book-appointment')}>
           Talk to Expert
         </Button>
         <div className="flex -space-x-2 mt-3">

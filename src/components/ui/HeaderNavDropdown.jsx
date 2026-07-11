@@ -22,7 +22,7 @@ const HeaderNavDropdown = ({
   }, [isOpen, onClose]);
 
   return (
-    <div className="relative" ref={ref}>
+    <div className="relative shrink-0" ref={ref}>
       <button
         type="button"
         onClick={onToggle}
@@ -30,7 +30,7 @@ const HeaderNavDropdown = ({
         aria-expanded={isOpen}
         aria-haspopup="true"
       >
-        <span>{label}</span>
+        <span className="whitespace-nowrap">{label}</span>
         <Icon name="ChevronDown" size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       {isOpen && (

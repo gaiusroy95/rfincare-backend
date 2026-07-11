@@ -1,4 +1,4 @@
-/** Supported UI languages — keep in sync with locale files in ./locales/ */
+/** Supported i18n locale files (hand-written keys). Page translation uses Google Translate. */
 export const SUPPORTED_LANGUAGES = [
   { code: 'en', name: 'English', nativeName: 'English' },
   { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },

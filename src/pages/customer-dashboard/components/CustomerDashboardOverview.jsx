@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   PieChart,
@@ -11,6 +11,8 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import DashboardKpiCard from '../../../components/dashboard/DashboardKpiCard';
 import { openAssessmentOrEligibilityFirst } from '../../../utils/eligibilityGate';
+import { marketService } from '../../../services/marketService';
+import FinancialGoalsPlanner from './FinancialGoalsPlanner';
 
 const DEFAULT_ALLOCATION = [
   { name: 'Equity Funds', value: 45, color: '#1e3a5f' },
@@ -20,12 +22,14 @@ const DEFAULT_ALLOCATION = [
   { name: 'Others', value: 8, color: '#cbd5e1' },
 ];
 
-const MARKET_INDICES = [
-  { name: 'NIFTY 50', value: '24,321.45', change: '+0.84%', up: true, spark: [12, 14, 13, 15, 14, 16, 17] },
-  { name: 'SENSEX', value: '80,142.92', change: '+0.76%', up: true, spark: [11, 13, 12, 14, 15, 14, 16] },
-  { name: 'GOLD (24K)', value: '₹7,245/g', change: '-0.32%', up: false, spark: [16, 15, 14, 15, 13, 14, 13] },
-  { name: 'USD/INR', value: '83.42', change: '+0.12%', up: true, spark: [13, 13, 14, 13, 14, 14, 15] },
+const FALLBACK_MARKET_INDICES = [
+  { name: 'NIFTY 50', value: '—', change: '—', up: true, spark: [1, 1, 1, 1, 1, 1, 1] },
+  { name: 'SENSEX', value: '—', change: '—', up: true, spark: [1, 1, 1, 1, 1, 1, 1] },
+  { name: 'GOLD (24K)', value: '—', change: '—', up: true, spark: [1, 1, 1, 1, 1, 1, 1] },
+  { name: 'USD/INR', value: '—', change: '—', up: true, spark: [1, 1, 1, 1, 1, 1, 1] },
 ];
+
+const MARKET_REFRESH_MS = 60_000;
 
 const DEFAULT_RECOMMENDATIONS = [
   {
@@ -97,14 +101,16 @@ function appIcon(loanType) {
 }
 
 function Sparkline({ points, up }) {
-  const max = Math.max(...points);
-  const min = Math.min(...points);
+  const raw = (points || []).map(Number).filter(Number.isFinite);
+  const series = raw.length >= 2 ? raw : raw.length === 1 ? [raw[0] * 0.995, raw[0]] : [1, 1, 1];
+  const max = Math.max(...series);
+  const min = Math.min(...series);
   const range = max - min || 1;
   const w = 56;
   const h = 24;
-  const coords = points
+  const coords = series
     .map((p, i) => {
-      const x = (i / (points.length - 1)) * w;
+      const x = (i / (series.length - 1)) * w;
       const y = h - ((p - min) / range) * h;
       return `${x},${y}`;
     })
@@ -121,12 +127,12 @@ function Sparkline({ points, up }) {
   );
 }
 
-function OverviewPanel({ title, onViewAll, children, className = '' }) {
+function OverviewPanel({ title, onViewAll, headerRight, children, className = '' }) {
   return (
     <div className={`bg-card border border-border rounded-xl shadow-sm flex flex-col h-full ${className}`}>
       <div className="flex items-center justify-between px-5 pt-5 pb-3">
         <h3 className="font-bold text-foreground">{title}</h3>
-        {onViewAll ? (
+        {headerRight || (onViewAll ? (
           <button
             type="button"
             onClick={onViewAll}
@@ -134,7 +140,7 @@ function OverviewPanel({ title, onViewAll, children, className = '' }) {
           >
             View All
           </button>
-        ) : null}
+        ) : null)}
       </div>
       <div className="px-5 pb-5 flex-1">{children}</div>
     </div>
@@ -150,9 +156,54 @@ const CustomerDashboardOverview = ({
   onTabChange,
   onPullCreditScore,
   creditPulling,
+  onRefreshSnapshot,
 }) => {
   const navigate = useNavigate();
   const firstName = profileName?.split(' ')?.[0] || 'there';
+  const [marketIndices, setMarketIndices] = useState(FALLBACK_MARKET_INDICES);
+  const [marketMeta, setMarketMeta] = useState({ live: false, updatedAt: null, loading: true });
+
+  useEffect(() => {
+    let cancelled = false;
+    let retryTimer;
+
+    const loadMarket = async () => {
+      try {
+        const data = await marketService.getMarketOverview();
+        if (cancelled) return;
+        if (Array.isArray(data?.indices) && data.indices.length > 0) {
+          setMarketIndices(data.indices);
+          setMarketMeta({
+            live: Boolean(data.live) && !data.stale,
+            updatedAt: data.updatedAt || null,
+            loading: false,
+            stale: Boolean(data.stale),
+          });
+          // Background refresh may still be running — poll once more shortly.
+          if (data.refreshing || data.stale) {
+            clearTimeout(retryTimer);
+            retryTimer = setTimeout(() => {
+              if (!cancelled) loadMarket();
+            }, 8_000);
+          }
+        } else {
+          setMarketMeta((prev) => ({ ...prev, loading: false }));
+        }
+      } catch {
+        if (!cancelled) {
+          setMarketMeta((prev) => ({ ...prev, loading: false, live: false }));
+        }
+      }
+    };
+
+    loadMarket();
+    const timer = setInterval(loadMarket, MARKET_REFRESH_MS);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+      clearTimeout(retryTimer);
+    };
+  }, []);
 
   const summary = financialSnapshot?.summary || {};
   const allocation = useMemo(() => {
@@ -180,13 +231,7 @@ const CustomerDashboardOverview = ({
     return fromApi.length >= 2 ? fromApi : DEFAULT_RECOMMENDATIONS;
   }, [financialSnapshot?.recommendations]);
 
-  const goals = financialSnapshot?.financialGoals?.length
-    ? financialSnapshot.financialGoals
-    : [
-        { id: 'home', label: 'Buy a Home', target: 5000000, current: 1750000, progress: 35 },
-        { id: 'education', label: 'Child Education', target: 2500000, current: 1500000, progress: 60 },
-        { id: 'retirement', label: 'Retirement Fund', target: 10000000, current: 4500000, progress: 45 },
-      ];
+  const goals = financialSnapshot?.financialGoals || [];
 
   const payments = financialSnapshot?.upcomingPayments?.length
     ? financialSnapshot.upcomingPayments
@@ -429,34 +474,31 @@ const CustomerDashboardOverview = ({
           {/* Row 2: Goals | Market | Payments */}
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
             <OverviewPanel title="Financial Goals">
-              <div className="space-y-4">
-                {goals.map((goal) => (
-                  <div key={goal.id || goal.label}>
-                    <div className="flex items-center justify-between text-sm mb-1.5">
-                      <span className="font-medium text-foreground">{goal.label}</span>
-                      <span className="text-xs text-muted-foreground">{goal.progress ?? 0}%</span>
-                    </div>
-                    <div className="h-2 bg-muted rounded-full overflow-hidden mb-1">
-                      <div
-                        className="h-full bg-primary rounded-full transition-all"
-                        style={{ width: `${goal.progress ?? 0}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-xs text-muted-foreground">
-                      <span>{formatInr(goal.current)}</span>
-                      <span>{formatInr(goal.target)}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <FinancialGoalsPlanner goals={goals} onChanged={onRefreshSnapshot} />
             </OverviewPanel>
 
-            <OverviewPanel title="Market Overview">
+            <OverviewPanel
+              title="Market Overview"
+              headerRight={
+                <span
+                  className={`inline-flex items-center gap-1.5 text-xs font-medium ${
+                    marketMeta.live ? 'text-emerald-600' : 'text-muted-foreground'
+                  }`}
+                >
+                  <span
+                    className={`h-1.5 w-1.5 rounded-full ${
+                      marketMeta.live ? 'bg-emerald-500 animate-pulse' : 'bg-muted-foreground/50'
+                    }`}
+                  />
+                  {marketMeta.loading ? 'Updating…' : marketMeta.live ? 'Live' : marketMeta.stale ? 'Cached' : 'Offline'}
+                </span>
+              }
+            >
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                   <tbody>
-                    {MARKET_INDICES.map((row) => (
-                      <tr key={row.name} className="border-b border-border last:border-0">
+                    {marketIndices.map((row) => (
+                      <tr key={row.id || row.name} className="border-b border-border last:border-0">
                         <td className="py-2.5 pr-2 font-medium text-foreground whitespace-nowrap">
                           {row.name}
                         </td>
@@ -469,7 +511,7 @@ const CustomerDashboardOverview = ({
                           {row.change}
                         </td>
                         <td className="py-2.5 pl-2">
-                          <Sparkline points={row.spark} up={row.up} />
+                          <Sparkline points={row.spark?.length ? row.spark : [1, 1, 1]} up={row.up} />
                         </td>
                       </tr>
                     ))}
@@ -534,7 +576,7 @@ const CustomerDashboardOverview = ({
           <Button
             className="rf-btn-primary shrink-0"
             iconName="MessageCircle"
-            onClick={() => onTabChange?.('support')}
+            onClick={() => navigate('/book-appointment')}
           >
             Talk to Expert
           </Button>

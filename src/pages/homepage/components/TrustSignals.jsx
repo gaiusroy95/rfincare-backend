@@ -170,9 +170,12 @@ const TrustSignals = () => {
         </div>
 
         <div>
-          <h3 className="text-xl md:text-2xl font-bold text-foreground text-center mb-6 md:mb-8">
-            Our Banking Partners
+          <h3 className="text-xl md:text-2xl font-bold text-foreground text-center mb-2">
+            Our Prestigious Partner
           </h3>
+          <p className="text-sm md:text-base text-muted-foreground text-center mb-6 md:mb-8 max-w-2xl mx-auto">
+            We partner with india&apos;s leading financial institutes to bring you the best offers
+          </p>
           {bankPartners.length === 0 ? (
             <p className="text-center text-sm text-muted-foreground">No active partner banks configured.</p>
           ) : (

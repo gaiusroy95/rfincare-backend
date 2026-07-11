@@ -13,22 +13,6 @@ export const TRUST_BAR_ITEMS = [
 export function buildMainNavGroups({ marketplaceVisibility = {}, t = (k) => k } = {}) {
   const v = marketplaceVisibility;
 
-  const productsChildren = [
-    { label: t('header.productComparison', 'Compare Products'), path: '/product-comparison', icon: 'GitCompare' },
-    v.creditCardMarketplace !== false
-      ? { label: t('header.creditCardMarketplace', 'Credit Cards'), path: '/credit-cards', icon: 'CreditCard' }
-      : null,
-  ].filter(Boolean);
-
-  const bankMarketplaceChildren = [
-    { label: 'Personal Loan', path: '/bank-marketplace?loanType=personal', icon: 'Wallet' },
-    { label: 'Home Loan', path: '/bank-marketplace?loanType=home', icon: 'Home' },
-    { label: 'Business Loan', path: '/bank-marketplace?loanType=business', icon: 'Briefcase' },
-    { label: 'Loan Against Property', path: '/bank-marketplace?loanType=loan_against_property', icon: 'Building' },
-    { label: 'Auto Loan', path: '/bank-marketplace?loanType=auto', icon: 'Car' },
-    { label: 'Other Loan', path: '/bank-marketplace', icon: 'Layers' },
-  ];
-
   const investmentsChildren = [
     v.mutualFundMarketplace !== false
       ? { label: t('header.mutualFundMarketplace', 'Mutual Funds'), path: '/mutual-fund-marketplace', icon: 'TrendingUp' }
@@ -57,26 +41,26 @@ export function buildMainNavGroups({ marketplaceVisibility = {}, t = (k) => k } 
   const resourcesChildren = [
     { label: 'Financial Calculators', path: '/resources/calculators', icon: 'Calculator' },
     { label: 'Tax Saving', path: '/tax-saving', icon: 'Receipt' },
-    { label: 'Other', path: '/resources/calculators?category=other', icon: 'Layers' },
   ];
 
   const aboutUsChildren = [
     { label: 'About Us', path: '/about-us', icon: 'Info' },
     { label: 'About Team', path: '/about-team', icon: 'Users' },
-    { label: 'Contact Us Help', path: '/contact-us', icon: 'Headphones' },
   ];
 
   return [
-    productsChildren.length ? { id: 'products', label: t('header.applyNow', 'Apply now'), children: productsChildren } : null,
-    v.bankMarketplace !== false && bankMarketplaceChildren.length
-      ? { id: 'bank-marketplace', label: t('header.bankMarketplace', 'Bank Marketplace'), children: bankMarketplaceChildren }
+    v.bankMarketplace !== false
+      ? { id: 'bank-marketplace', label: t('header.bankMarketplace', 'Bank Marketplace'), path: '/bank-marketplace' }
+      : null,
+    v.creditCardMarketplace !== false
+      ? { id: 'credit-cards', label: t('header.creditCards', 'Credit cards'), path: '/credit-cards' }
       : null,
     investmentsChildren.length ? { id: 'investments', label: 'Investments', children: investmentsChildren } : null,
     insuranceChildren.length ? { id: 'insurance', label: 'Insurance', children: insuranceChildren } : null,
-    govtChildren.length ? { id: 'government', label: 'Government Schemes', children: govtChildren } : null,
+    govtChildren.length ? { id: 'government', label: 'Govt.Schemes', children: govtChildren } : null,
     { id: 'about-us', label: t('header.aboutUs', 'About Us'), children: aboutUsChildren },
     { id: 'resources', label: 'Resources', children: resourcesChildren },
-    { id: 'calculators', label: 'Calculators', path: '/resources/calculators' },
+    { id: 'contact-us', label: t('header.contactUs', 'Contact Us'), path: '/contact-us' },
   ].filter(Boolean);
 }
 

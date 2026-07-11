@@ -620,7 +620,13 @@ const BankMarketplace = () => {
                 Our loan experts are available to help you understand your options and make the best decision for your financial needs.
               </p>
             </div>
-            <Button variant="default" iconName="Phone" iconPosition="left" className="w-full md:w-auto">
+            <Button
+              variant="default"
+              iconName="Phone"
+              iconPosition="left"
+              className="w-full md:w-auto"
+              onClick={() => navigate('/book-appointment')}
+            >
               Talk to Expert
             </Button>
           </div>

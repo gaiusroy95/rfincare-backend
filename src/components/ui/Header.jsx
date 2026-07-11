@@ -17,6 +17,8 @@ const PUBLIC_GUEST_PATHS = new Set([
   '/about-us',
   '/about-team',
   '/contact-us',
+  '/book-appointment',
+  '/talk-to-expert',
   '/product-comparison',
   '/eligibility-assessment',
   '/bank-marketplace',

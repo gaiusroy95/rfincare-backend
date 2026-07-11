@@ -1,75 +1,74 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { useTranslation } from 'react-i18next';
-import Icon from '../AppIcon';
-import Button from './Button';
-import { SUPPORTED_LANGUAGES } from '../../i18n/languages';
+import React, { useEffect } from 'react';
 
+/** Official / widely spoken Indian languages supported by Google Translate */
+export const GOOGLE_INDIAN_LANGUAGES = [
+  { code: 'en', name: 'English', nativeName: 'English' },
+  { code: 'hi', name: 'Hindi', nativeName: 'हिंदी' },
+  { code: 'bn', name: 'Bengali', nativeName: 'বাংলা' },
+  { code: 'te', name: 'Telugu', nativeName: 'తెలుగు' },
+  { code: 'mr', name: 'Marathi', nativeName: 'मराठी' },
+  { code: 'ta', name: 'Tamil', nativeName: 'தமிழ்' },
+  { code: 'ur', name: 'Urdu', nativeName: 'اردو' },
+  { code: 'gu', name: 'Gujarati', nativeName: 'ગુજરાતી' },
+  { code: 'kn', name: 'Kannada', nativeName: 'ಕನ್ನಡ' },
+  { code: 'ml', name: 'Malayalam', nativeName: 'മലയാളം' },
+  { code: 'or', name: 'Odia', nativeName: 'ଓଡ଼ିଆ' },
+  { code: 'pa', name: 'Punjabi', nativeName: 'ਪੰਜਾਬੀ' },
+  { code: 'as', name: 'Assamese', nativeName: 'অসমীয়া' },
+  { code: 'ne', name: 'Nepali', nativeName: 'नेपाली' },
+  { code: 'sa', name: 'Sanskrit', nativeName: 'संस्कृतम्' },
+  { code: 'sd', name: 'Sindhi', nativeName: 'سنڌي' },
+];
+
+const INCLUDED_LANGUAGES = GOOGLE_INDIAN_LANGUAGES.map((l) => l.code).join(',');
+const SCRIPT_ID = 'google-translate-script';
+const ELEMENT_ID = 'google_translate_element';
+
+function initGoogleTranslate() {
+  if (typeof window === 'undefined' || !window.google?.translate?.TranslateElement) return;
+  const host = document.getElementById(ELEMENT_ID);
+  if (!host || host.querySelector('.goog-te-combo, .skiptranslate')) return;
+
+  // eslint-disable-next-line no-new
+  new window.google.translate.TranslateElement(
+    {
+      pageLanguage: 'en',
+      includedLanguages: INCLUDED_LANGUAGES,
+      layout: window.google.translate.TranslateElement.InlineLayout.SIMPLE,
+      autoDisplay: false,
+    },
+    ELEMENT_ID,
+  );
+}
+
+/**
+ * Google Translate widget for Indian languages.
+ * Replaces the previous i18n dropdown at this header slot.
+ */
 const LanguageSwitcher = () => {
-  const { i18n } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const containerRef = useRef(null);
-
-  const baseLang = (i18n?.language || 'en').split('-')[0];
-  const currentLanguage =
-    SUPPORTED_LANGUAGES.find((lang) => lang.code === baseLang) || SUPPORTED_LANGUAGES[0];
-
-  const changeLanguage = (langCode) => {
-    i18n?.changeLanguage(langCode);
-    setOpen(false);
-  };
-
   useEffect(() => {
-    const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
-        setOpen(false);
+    window.googleTranslateElementInit = initGoogleTranslate;
+
+    const existing = document.getElementById(SCRIPT_ID);
+    if (existing) {
+      if (window.google?.translate?.TranslateElement) {
+        initGoogleTranslate();
       }
-    };
-    if (open) {
-      document.addEventListener('mousedown', handleClickOutside);
+      return undefined;
     }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [open]);
+
+    const script = document.createElement('script');
+    script.id = SCRIPT_ID;
+    script.src = `https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit`;
+    script.async = true;
+    document.body.appendChild(script);
+
+    return undefined;
+  }, []);
 
   return (
-    <div className="relative" ref={containerRef}>
-      <Button
-        variant="ghost"
-        size="sm"
-        type="button"
-        className="flex items-center space-x-2 text-sm"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-        aria-haspopup="listbox"
-      >
-        <Icon name="Globe" size={16} />
-        <span className="hidden md:inline">{currentLanguage?.nativeName}</span>
-        <Icon name="ChevronDown" size={14} />
-      </Button>
-
-      {open && (
-        <div
-          className="absolute right-0 mt-2 w-48 max-h-72 overflow-y-auto bg-popover border border-border rounded-lg shadow-lg z-50"
-          role="listbox"
-        >
-          <div className="py-2">
-            {SUPPORTED_LANGUAGES.map((lang) => (
-              <button
-                key={lang.code}
-                type="button"
-                role="option"
-                aria-selected={baseLang === lang.code}
-                onClick={() => changeLanguage(lang.code)}
-                className={`w-full px-4 py-2 text-left text-sm hover:bg-muted transition-colors flex items-center justify-between ${
-                  baseLang === lang.code ? 'bg-muted text-primary font-semibold' : ''
-                }`}
-              >
-                <span>{lang.nativeName}</span>
-                {baseLang === lang.code && <Icon name="Check" size={16} />}
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
+    <div className="rf-google-translate" aria-label="Translate page">
+      <div id={ELEMENT_ID} />
     </div>
   );
 };

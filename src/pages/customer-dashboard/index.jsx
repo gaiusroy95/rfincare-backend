@@ -367,6 +367,7 @@ const CustomerDashboard = () => {
             onTabChange={handleTabChange}
             onPullCreditScore={handlePullCreditScore}
             creditPulling={creditPulling}
+            onRefreshSnapshot={loadFinancialSnapshot}
           />
         )}
 

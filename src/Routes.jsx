@@ -19,6 +19,7 @@ const Homepage = lazyPage(() => import('./pages/homepage'));
 const AboutUs = lazyPage(() => import('./pages/about-us'));
 const AboutTeam = lazyPage(() => import('./pages/about-team'));
 const ContactUs = lazyPage(() => import('./pages/contact-us'));
+const BookAppointment = lazyPage(() => import('./pages/book-appointment'));
 const ProductComparison = lazyPage(() => import('./pages/product-comparison'));
 const ProductLanding = lazyPage(() => import('./pages/product-landing'));
 const EligibilityAssessment = lazyPage(() => import('./pages/eligibility-assessment'));
@@ -106,6 +107,8 @@ function Routes() {
                 <Route path="/about-us" element={<SuspenseRoute><AboutUs /></SuspenseRoute>} />
                 <Route path="/about-team" element={<SuspenseRoute><AboutTeam /></SuspenseRoute>} />
                 <Route path="/contact-us" element={<SuspenseRoute><ContactUs /></SuspenseRoute>} />
+                <Route path="/book-appointment" element={<SuspenseRoute><BookAppointment /></SuspenseRoute>} />
+                <Route path="/talk-to-expert" element={<SuspenseRoute><BookAppointment /></SuspenseRoute>} />
                 <Route path="/products/:loanType" element={<SuspenseRoute><ProductLanding /></SuspenseRoute>} />
                 <Route path="/product-comparison" element={<SuspenseRoute><ProductComparison /></SuspenseRoute>} />
                 <Route path="/eligibility-assessment" element={<SuspenseRoute><EligibilityAssessment /></SuspenseRoute>} />
