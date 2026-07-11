@@ -236,18 +236,52 @@
     background: #fff;
   }
 
+  .rf-desktop-nav-shell {
+    @apply hidden lg:flex items-center flex-1 min-w-0 relative;
+  }
+
   .rf-desktop-nav {
-    @apply hidden lg:flex items-center gap-0.5 xl:gap-1 flex-1 min-w-0;
+    @apply flex items-center gap-0.5 xl:gap-1 flex-1 min-w-0;
     justify-content: flex-start;
     flex-wrap: nowrap;
     overflow-x: auto;
-    overflow-y: visible;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-brand-green) 35%, transparent) transparent;
+    padding-block: 0.25rem;
   }
 
   .rf-desktop-nav::-webkit-scrollbar {
-    display: none;
+    height: 4px;
+  }
+
+  .rf-desktop-nav::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-brand-green) 40%, transparent);
+    border-radius: 999px;
+  }
+
+  .rf-desktop-nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .rf-nav-scroll-btn {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-full border border-border bg-white text-foreground shrink-0 z-[1] shadow-sm;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .rf-nav-scroll-btn:hover {
+    @apply bg-muted;
+    color: var(--color-brand-green);
+  }
+
+  .rf-nav-scroll-btn--left {
+    margin-right: 0.25rem;
+  }
+
+  .rf-nav-scroll-btn--right {
+    margin-left: 0.25rem;
   }
 
   .rf-desktop-nav > * {
