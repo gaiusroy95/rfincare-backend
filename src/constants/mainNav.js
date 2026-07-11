@@ -60,7 +60,7 @@ export function buildMainNavGroups({ marketplaceVisibility = {}, t = (k) => k } 
     govtChildren.length ? { id: 'government', label: 'Govt.Schemes', children: govtChildren } : null,
     { id: 'about-us', label: t('header.aboutUs', 'About Us'), children: aboutUsChildren },
     { id: 'resources', label: 'Resources', children: resourcesChildren },
-    { id: 'contact-us', label: t('header.contactUs', 'Contact Us'), path: '/contact-us' },
+    { id: 'contact-us', label: t('header.contactUs', 'Contact'), path: '/contact-us' },
   ].filter(Boolean);
 }
 

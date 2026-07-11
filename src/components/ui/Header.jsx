@@ -171,7 +171,7 @@ const Header = ({ children }) => {
                 onClick={() => handleNavigation('/homepage')}
                 aria-label="Rfincare home"
               >
-                <BrandLogo size="2xl" />
+                <BrandLogo size="xl" />
               </button>
 
               {/* Desktop nav */}
