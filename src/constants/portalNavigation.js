@@ -19,6 +19,12 @@ export const AGENT_NAV_ITEMS = [
   { id: 'leads', label: 'Leads', icon: 'UserPlus', view: 'clients', section: 'leads', badgeKey: 'leads' },
   { id: 'applications', label: 'Applications', icon: 'FileText', view: 'clients', section: 'applications' },
   { id: 'customers', label: 'My Customers', icon: 'Users', view: 'clients', section: 'customers' },
+  {
+    id: 'doc-management',
+    label: 'Documents',
+    icon: 'Files',
+    path: '/document-management-center',
+  },
   { id: 'earnings', label: 'My Earnings', icon: 'IndianRupee', view: 'performance', section: 'earnings' },
   { id: 'payouts', label: 'Payouts', icon: 'Wallet', view: 'performance', section: 'payouts' },
   { id: 'marketing', label: 'Marketing Tools', icon: 'Megaphone', view: 'learning', section: 'marketing' },
@@ -35,6 +41,20 @@ export const EMPLOYEE_NAV_ITEMS = [
   { id: 'leads', label: 'Leads & CRM', icon: 'UserCheck', tab: 'leads' },
   { id: 'agents', label: 'Agent Verification', icon: 'Users', tab: 'agents' },
   { id: 'documents', label: 'Application Verification', icon: 'FolderOpen', tab: 'documents' },
+  {
+    id: 'doc-management',
+    label: 'Documents',
+    icon: 'Files',
+    path: '/document-management-center',
+    module: 'documents',
+  },
+  {
+    id: 'reports-analytics',
+    label: 'Reports',
+    icon: 'BarChart3',
+    path: '/reports-and-analytics',
+    module: 'reports',
+  },
   { id: 'training', label: 'Training', icon: 'GraduationCap', tab: 'training' },
   { id: 'activity', label: 'Activity Log', icon: 'Activity', tab: 'activity' },
   { id: 'agent-referral', label: 'Agent Referral', icon: 'Gift', tab: 'agent-referral' },
@@ -75,7 +95,7 @@ export function resolveAgentNavFromSearch(searchParams) {
 
 export function getAgentSearchParamsForNavId(navId) {
   const item = AGENT_NAV_ITEMS.find((i) => i.id === navId);
-  if (!item || item.view === 'overview') return {};
+  if (!item || item.path || item.view === 'overview') return {};
   if (item.section) return { view: item.view, section: item.section };
   return { view: item.view };
 }

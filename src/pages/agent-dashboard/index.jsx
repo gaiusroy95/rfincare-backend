@@ -332,7 +332,14 @@ const AgentDashboard = () => {
   const leadCount = pipelineItems.filter((c) => c.status === 'new').length;
 
   const handleNavSelect = (item) => {
-    const params = getAgentSearchParamsForNavId(item.id);
+    const navItem = typeof item === 'string'
+      ? AGENT_NAV_ITEMS.find((i) => i.id === item)
+      : (AGENT_NAV_ITEMS.find((i) => i.id === item?.id) || item);
+    if (navItem?.path) {
+      navigate(navItem.path);
+      return;
+    }
+    const params = getAgentSearchParamsForNavId(navItem?.id || item?.id || item);
     if (Object.keys(params).length === 0) {
       setSearchParams({});
     } else {

@@ -359,6 +359,10 @@ const EmployeePortal = () => {
 
 
   const employeeNavItems = EMPLOYEE_NAV_ITEMS.filter((item) => {
+    if (item.path) {
+      if (item.module && !employeeCan(effectiveAccess, item.module, 'read')) return false;
+      return true;
+    }
     if (item.tab && EMPLOYEE_ALWAYS_VISIBLE_TABS.includes(item.tab)) return true;
     const tab = tabs.find((t) => t.id === item.tab);
     if (item.tab && !tab) return false;
@@ -369,6 +373,10 @@ const EmployeePortal = () => {
   });
 
   const handleEmployeeNav = (item) => {
+    if (item.path) {
+      navigate(item.path);
+      return;
+    }
     if (item.tab) {
       setActiveTab(item.tab);
       if (item.tab === 'applications') {
