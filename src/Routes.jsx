@@ -1,8 +1,8 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes as RouterRoutes, Route } from 'react-router-dom';
-import ScrollToTop from 'components/ScrollToTop';
-import ErrorBoundary from 'components/ErrorBoundary';
-import ProtectedRoute from 'components/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
+import ErrorBoundary from './components/ErrorBoundary';
+import ProtectedRoute from './components/ProtectedRoute';
 import AdminRouteShell from './components/layout/AdminRouteShell';
 import ReportsRouteShell from './components/layout/ReportsRouteShell';
 import PageLoader from './components/PageLoader';

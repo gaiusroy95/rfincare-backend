@@ -12,6 +12,7 @@ import CustomerProfilePanel from './components/CustomerProfilePanel';
 import CustomerSupportPanel from './components/CustomerSupportPanel';
 import CustomerSettingsPanel from './components/CustomerSettingsPanel';
 import UnifiedFinancialOverview from './components/UnifiedFinancialOverview';
+import ReferralSharePanel from '../../components/referral/ReferralSharePanel';
 import DocumentUploadModal from './components/DocumentUploadModal';
 import ApplicationDetailModal from './components/ApplicationDetailModal';
 import { useAuth } from '../../contexts/AuthContext';
@@ -281,6 +282,7 @@ const CustomerDashboard = () => {
     notifications: { title: 'My Alerts', subtitle: 'Stay updated on your applications and account activity.' },
     profile: { title: 'My Profile', subtitle: 'Update your personal information and contact details.' },
     support: { title: 'Support Center', subtitle: 'Get help from our financial experts — we are here for you.' },
+    refer: { title: 'Refer & Earn', subtitle: 'Invite friends with your referral link and grow together.' },
     settings: { title: 'Settings', subtitle: 'Manage your password, sessions, and account security.' },
   };
 
@@ -301,9 +303,9 @@ const CustomerDashboard = () => {
       onLogout={handleLogout}
       promoCard={(
         <div>
-          <p className="text-sm font-bold text-foreground mb-1">Refer &amp; Earn</p>
+          <p className="text-sm font-bold text-foreground mb-1">Earn More</p>
           <p className="text-xs text-muted-foreground mb-3">Invite friends and earn rewards</p>
-          <Button className="rf-btn-primary w-full" size="sm" onClick={() => navigate('/share-your-story')}>
+          <Button className="rf-btn-primary w-full" size="sm" onClick={() => handleTabChange('refer')}>
             Refer Now
           </Button>
         </div>
@@ -504,6 +506,13 @@ const CustomerDashboard = () => {
         {activeTab === 'profile' && <CustomerProfilePanel />}
 
         {activeTab === 'support' && <CustomerSupportPanel />}
+
+        {activeTab === 'refer' && (
+          <ReferralSharePanel
+            variant="customer"
+            referralCode={userProfile?.customerCode || ''}
+          />
+        )}
 
         {activeTab === 'settings' && <CustomerSettingsPanel />}
 

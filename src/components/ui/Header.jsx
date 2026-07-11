@@ -99,19 +99,58 @@ const Header = ({ children }) => {
       { label: t('header.employeePortal'), path: '/employee-portal', roles: ['employee'] },
       { label: t('header.documents'), path: '/document-management-center', roles: ['agent', 'admin', 'super_admin', 'employee'] },
       { label: t('header.reports'), path: '/reports-and-analytics', roles: ['admin', 'super_admin', 'employee'] },
+      {
+        label: 'Agent Referral',
+        path: '/employee-portal?tab=agent-referral',
+        matchPath: '/employee-portal',
+        matchTab: 'agent-referral',
+        roles: ['employee'],
+      },
+      {
+        label: 'Customer Referral',
+        path: '/employee-portal?tab=customer-referral',
+        matchPath: '/employee-portal',
+        matchTab: 'customer-referral',
+        roles: ['employee'],
+      },
     ];
     return items.filter((item) => {
       if (!item.roles.includes(currentRole)) return false;
       if (currentRole === 'employee' && employeeAccess?.configured) {
-        return employeeCanReachRoute(employeeAccess, item.path);
+        const checkPath = item.matchPath || item.path.split('?')[0];
+        return employeeCanReachRoute(employeeAccess, checkPath);
       }
       return true;
     });
   }, [t, currentRole, employeeAccess]);
 
+  const dashboardPath = portalNavItems.find((item) => !item.matchTab)?.path
+    || portalNavItems[0]?.path;
+
+  /** Top-bar links exclude the primary dashboard path (shown as My Dashboard CTA). */
+  const desktopPortalLinks = useMemo(() => {
+    return portalNavItems.filter((item) => {
+      const basePath = (item.path || '').split('?')[0];
+      if (dashboardPath && basePath === dashboardPath.split('?')[0] && !item.matchTab) {
+        return false;
+      }
+      return true;
+    });
+  }, [portalNavItems, dashboardPath]);
+
   const isPathActive = useCallback(
-    (path) => location?.pathname === path || location?.pathname?.startsWith(`${path}/`),
-    [location?.pathname],
+    (path, matchTab) => {
+      const basePath = String(path || '').split('?')[0];
+      if (matchTab) {
+        const params = new URLSearchParams(location.search);
+        return (
+          location?.pathname === basePath
+          && params.get('tab') === matchTab
+        );
+      }
+      return location?.pathname === basePath || location?.pathname?.startsWith(`${basePath}/`);
+    },
+    [location?.pathname, location.search],
   );
 
   const isGroupActive = useCallback(
@@ -137,8 +176,6 @@ const Header = ({ children }) => {
   };
 
   const roleLabel = currentRole === 'super_admin' ? 'Admin' : t(`header.${currentRole}`);
-
-  const dashboardPath = portalNavItems[0]?.path;
 
   return (
     <>
@@ -206,14 +243,14 @@ const Header = ({ children }) => {
                 </nav>
               )}
 
-              {!showMarketingNav && portalNavItems.length > 0 && (
+              {!showMarketingNav && desktopPortalLinks.length > 0 && (
                 <nav className="rf-desktop-nav" aria-label="Portal navigation">
-                  {portalNavItems.slice(0, 4).map((item) => (
+                  {desktopPortalLinks.map((item) => (
                     <button
                       key={item.path}
                       type="button"
                       onClick={() => handleNavigation(item.path)}
-                      className={`rf-nav-link ${isPathActive(item.path) ? 'rf-nav-link-active' : ''}`}
+                      className={`rf-nav-link ${isPathActive(item.path, item.matchTab) ? 'rf-nav-link-active' : ''}`}
                     >
                       {item.label}
                     </button>
@@ -366,7 +403,7 @@ const Header = ({ children }) => {
                 <button
                   key={item.path}
                   type="button"
-                  className={`rf-mobile-link ${isPathActive(item.path) ? 'active' : ''}`}
+                  className={`rf-mobile-link ${isPathActive(item.path, item.matchTab) ? 'active' : ''}`}
                   onClick={() => handleNavigation(item.path)}
                 >
                   {item.label}

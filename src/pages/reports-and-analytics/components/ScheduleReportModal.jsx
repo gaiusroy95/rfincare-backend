@@ -11,7 +11,7 @@ const ScheduleReportModal = ({ report, onClose, onSchedule }) => {
     dayOfWeek: 'monday',
     time: '09:00',
     recipients: '',
-    format: 'pdf',
+    format: 'csv',
     includeCharts: true,
     autoSend: true
   });
@@ -34,9 +34,9 @@ const ScheduleReportModal = ({ report, onClose, onSchedule }) => {
   ];
 
   const formatOptions = [
-    { value: 'pdf', label: 'PDF' },
-    { value: 'excel', label: 'Excel (XLSX)' },
-    { value: 'csv', label: 'CSV' }
+    { value: 'csv', label: 'CSV (emailed attachment)' },
+    { value: 'xlsx', label: 'Excel-compatible CSV' },
+    { value: 'pdf', label: 'PDF (sent as CSV for now)' }
   ];
 
   const handleSubmit = (e) => {
@@ -74,7 +74,7 @@ const ScheduleReportModal = ({ report, onClose, onSchedule }) => {
               required
             />
 
-            {scheduleData?.frequency === 'weekly' && (
+            {(scheduleData?.frequency === 'weekly' || scheduleData?.frequency === 'quarterly') && (
               <Select
                 label="Day of Week"
                 options={dayOptions}
@@ -103,9 +103,9 @@ const ScheduleReportModal = ({ report, onClose, onSchedule }) => {
 
           <Input
             label="Email Recipients"
-            type="email"
+            type="text"
             placeholder="email1@example.com, email2@example.com"
-            description="Separate multiple emails with commas"
+            description="Separate multiple emails with commas. First email is sent immediately when Auto-send is on."
             value={scheduleData?.recipients}
             onChange={(e) => setScheduleData({ ...scheduleData, recipients: e?.target?.value })}
             required

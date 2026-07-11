@@ -24,7 +24,7 @@ import { usePortalPolling } from '../../hooks/usePortalPolling';
 import PerformanceChart from './components/PerformanceChart';
 import StaffCommunicationPanel from './components/StaffCommunicationPanel';
 import TrainingResources from './components/TrainingResources';
-import AgentReferralBanner from '../../components/agent/AgentReferralBanner';
+import ReferralSharePanel from '../../components/referral/ReferralSharePanel';
 import SessionTimeout from '../../components/SessionTimeout';
 import { agentService } from '../../services/agentService';
 import {
@@ -549,15 +549,15 @@ const AgentDashboard = () => {
 
         {selectedView === 'refer' && (
           <div className="space-y-6">
-            <AgentReferralBanner attribution={dashboard?.attribution} />
-            <div className="bg-card border border-border rounded-lg p-6 text-center">
-              <p className="text-muted-foreground mb-4">
-                Share your referral link and earn commissions when partners join RFINCARE.
-              </p>
-              <Button className="rf-btn-primary" iconName="Share2" onClick={() => navigate('/share-your-story')}>
-                Share Referral Link
-              </Button>
-            </div>
+            <ReferralSharePanel
+              variant="agent"
+              referralCode={dashboard?.attribution?.agentCode || agentProfile?.agentId}
+              shareLinks={dashboard?.attribution?.shareLinks}
+              stats={{
+                attributedCount: dashboard?.attribution?.attributedLeads || 0,
+                attributedLabel: 'attributed leads',
+              }}
+            />
           </div>
         )}
 

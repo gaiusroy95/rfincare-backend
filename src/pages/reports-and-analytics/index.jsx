@@ -280,15 +280,37 @@ const ReportsAndAnalytics = () => {
 
   const handleScheduleSubmit = async (scheduleData) => {
     try {
-      await reportsService.createSchedule({
+      const result = await reportsService.createSchedule({
         reportKey: selectedReport.key,
         reportName: selectedReport.name,
         frequency: scheduleData.frequency,
-        format: scheduleData.format,
+        format: scheduleData.format === 'excel' ? 'xlsx' : scheduleData.format,
         recipients: scheduleData.recipients,
-        filters,
+        dayOfWeek: scheduleData.dayOfWeek,
+        time: scheduleData.time,
+        autoSend: scheduleData.autoSend !== false,
+        includeCharts: Boolean(scheduleData.includeCharts),
+        filters: {
+          ...filters,
+          dayOfWeek: scheduleData.dayOfWeek,
+          time: scheduleData.time,
+          dayOfMonth: 1,
+        },
       });
-      alert('Report scheduled successfully.');
+      const delivery = result?.delivery;
+      if (delivery?.ok) {
+        alert('Report scheduled and emailed successfully.');
+      } else if (scheduleData.autoSend === false) {
+        alert('Report scheduled. Auto-send is off — cron will send at the next due time.');
+      } else if (delivery?.reason === 'smtp_not_configured' || result?.warning) {
+        alert(
+          `Report scheduled, but email was not sent: ${result?.warning || delivery?.warning || delivery?.reason || 'SMTP not configured'}. Configure SMTP_* on the API server and set up the reports cron.`,
+        );
+      } else if (delivery && !delivery.ok) {
+        alert(`Report scheduled, but email failed: ${delivery.reason || 'unknown error'}`);
+      } else {
+        alert('Report scheduled successfully.');
+      }
       setShowScheduleModal(false);
       loadDashboard();
     } catch (err) {

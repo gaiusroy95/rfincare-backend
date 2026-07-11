@@ -8,6 +8,7 @@ export const CUSTOMER_NAV_ITEMS = [
   { id: 'notifications', label: 'My Alerts', icon: 'Bell', tab: 'notifications', badgeKey: 'notifications' },
   { id: 'profile', label: 'My Profile', icon: 'User', tab: 'profile' },
   { id: 'support', label: 'Support Center', icon: 'Headphones', tab: 'support' },
+  { id: 'refer', label: 'Refer & Earn', icon: 'Gift', tab: 'refer' },
   { id: 'settings', label: 'Settings', icon: 'Settings', tab: 'settings' },
 ];
 
@@ -36,11 +37,18 @@ export const EMPLOYEE_NAV_ITEMS = [
   { id: 'documents', label: 'Application Verification', icon: 'FolderOpen', tab: 'documents' },
   { id: 'training', label: 'Training', icon: 'GraduationCap', tab: 'training' },
   { id: 'activity', label: 'Activity Log', icon: 'Activity', tab: 'activity' },
+  { id: 'agent-referral', label: 'Agent Referral', icon: 'Gift', tab: 'agent-referral' },
+  { id: 'customer-referral', label: 'Customer Referral', icon: 'Share2', tab: 'customer-referral' },
   { id: 'support', label: 'Support Center', icon: 'Headphones', tab: 'support' },
   { id: 'settings', label: 'Settings', icon: 'Settings', tab: 'settings' },
 ];
 
-export const EMPLOYEE_ALWAYS_VISIBLE_TABS = ['support', 'settings'];
+export const EMPLOYEE_ALWAYS_VISIBLE_TABS = [
+  'support',
+  'settings',
+  'agent-referral',
+  'customer-referral',
+];
 
 export function resolveAgentNavFromSearch(searchParams) {
   const view = searchParams.get('view');

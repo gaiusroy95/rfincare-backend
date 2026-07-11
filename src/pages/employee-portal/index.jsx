@@ -31,6 +31,7 @@ import { usePortalPolling } from '../../hooks/usePortalPolling';
 import StaffCommunicationPanel from '../agent-dashboard/components/StaffCommunicationPanel';
 import CustomerSupportPanel from '../customer-dashboard/components/CustomerSupportPanel';
 import EmployeeSettingsPanel from './components/EmployeeSettingsPanel';
+import ReferralSharePanel from '../../components/referral/ReferralSharePanel';
 import { staffMessagingService } from '../../services/staffMessagingService';
 import {
   employeeCan,
@@ -385,6 +386,14 @@ const EmployeePortal = () => {
     documents: { title: 'Application Verification', subtitle: 'Review and verify pending application documents.' },
     training: { title: 'Training', subtitle: 'Complete modules to boost productivity.' },
     activity: { title: 'Activity Log', subtitle: 'Your recent actions and audit trail.' },
+    'agent-referral': {
+      title: 'Agent Referral',
+      subtitle: 'Share partner referral links and invite new agents to join RFINCARE.',
+    },
+    'customer-referral': {
+      title: 'Customer Referral',
+      subtitle: 'Share customer referral links and help friends start their loan journey.',
+    },
     support: { title: 'Support Center', subtitle: 'Get help from our operations team.' },
     settings: { title: 'Settings', subtitle: 'Update your profile photo and password.' },
   };
@@ -745,6 +754,32 @@ const EmployeePortal = () => {
             resources={trainingResources}
             onStartResource={handleLearningStart}
             onOpenResource={handleLearningOpen}
+          />
+        )}
+
+        {activeTab === 'agent-referral' && (
+          <ReferralSharePanel
+            variant="agent"
+            referralCode="RFINCARE-AGENT"
+            shareLinks={{
+              homepage: `${window.location.origin}/?agent=RFINCARE-AGENT`,
+              insurance: `${window.location.origin}/insurance-marketplace?agent=RFINCARE-AGENT`,
+              mutualFunds: `${window.location.origin}/mutual-fund-marketplace?agent=RFINCARE-AGENT`,
+              calculators: `${window.location.origin}/resources/calculators?agent=RFINCARE-AGENT`,
+            }}
+          />
+        )}
+
+        {activeTab === 'customer-referral' && (
+          <ReferralSharePanel
+            variant="customer"
+            referralCode="RFINCARE-CUSTOMER"
+            shareLinks={{
+              homepage: `${window.location.origin}/?ref=RFINCARE-CUSTOMER`,
+              insurance: `${window.location.origin}/eligibility-assessment?ref=RFINCARE-CUSTOMER`,
+              mutualFunds: `${window.location.origin}/mutual-fund-marketplace?ref=RFINCARE-CUSTOMER`,
+              calculators: `${window.location.origin}/resources/calculators?ref=RFINCARE-CUSTOMER`,
+            }}
           />
         )}
 
