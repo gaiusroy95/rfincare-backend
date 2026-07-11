@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
@@ -19,8 +19,6 @@ const Header = ({ children }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(null);
-  const [navScroll, setNavScroll] = useState({ left: false, right: false });
-  const navScrollRef = useRef(null);
   const { visibility: marketplaceVisibility } = useMarketplaceVisibility();
 
   const isGuest = !user;
@@ -35,41 +33,6 @@ const Header = ({ children }) => {
   };
   const dashboardPath = DASHBOARD_BY_ROLE[currentRole] || '/homepage';
 
-  const updateNavScrollState = useCallback(() => {
-    const el = navScrollRef.current;
-    if (!el) {
-      setNavScroll({ left: false, right: false });
-      return;
-    }
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    setNavScroll({
-      left: el.scrollLeft > 4,
-      right: maxScroll > 4 && el.scrollLeft < maxScroll - 4,
-    });
-  }, []);
-
-  const scrollNavBy = useCallback((direction) => {
-    const el = navScrollRef.current;
-    if (!el) return;
-    const amount = Math.max(160, Math.floor(el.clientWidth * 0.55));
-    el.scrollBy({ left: direction * amount, behavior: 'smooth' });
-  }, []);
-
-  useLayoutEffect(() => {
-    updateNavScrollState();
-    const el = navScrollRef.current;
-    if (!el) return undefined;
-    const onScroll = () => updateNavScrollState();
-    el.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', updateNavScrollState);
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateNavScrollState) : null;
-    ro?.observe(el);
-    return () => {
-      el.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', updateNavScrollState);
-      ro?.disconnect();
-    };
-  }, [updateNavScrollState, marketplaceVisibility]);
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
     return () => {
@@ -97,10 +60,6 @@ const Header = ({ children }) => {
     () => buildMainNavGroups({ marketplaceVisibility, t }),
     [marketplaceVisibility, t],
   );
-
-  useLayoutEffect(() => {
-    updateNavScrollState();
-  }, [mainNavGroups, updateNavScrollState]);
 
   const isPathActive = useCallback(
     (path, matchTab) => {
@@ -165,7 +124,6 @@ const Header = ({ children }) => {
         <div className="rf-main-bar">
           <div className="rf-header-container">
             <div className="rf-main-bar-inner">
-              {/* Logo */}
               <button
                 type="button"
                 className="rf-logo-btn shrink-0"
@@ -175,63 +133,35 @@ const Header = ({ children }) => {
                 <BrandLogo size="lg" />
               </button>
 
-              {/* Desktop nav — horizontally scrollable when tabs overflow */}
-              <div className="rf-desktop-nav-shell">
-                {navScroll.left ? (
-                  <button
-                    type="button"
-                    className="rf-nav-scroll-btn rf-nav-scroll-btn--left"
-                    aria-label="Scroll navigation left"
-                    onClick={() => scrollNavBy(-1)}
-                  >
-                    <Icon name="ChevronLeft" size={18} />
-                  </button>
-                ) : null}
-                <nav
-                  ref={navScrollRef}
-                  className="rf-desktop-nav"
-                  aria-label="Main navigation"
-                  onScroll={updateNavScrollState}
-                >
-                  {mainNavGroups.map((group) => {
-                    if (group.path) {
-                      return (
-                        <button
-                          key={group.id}
-                          type="button"
-                          onClick={() => handleNavigation(group.path)}
-                          className={`rf-nav-link ${isPathActive(group.path) ? 'rf-nav-link-active' : ''}`}
-                        >
-                          {group.label}
-                        </button>
-                      );
-                    }
+              <nav className="rf-desktop-nav" aria-label="Main navigation">
+                {mainNavGroups.map((group) => {
+                  if (group.path) {
                     return (
-                      <HeaderNavDropdown
+                      <button
                         key={group.id}
-                        label={group.label}
-                        children={group.children}
-                        isOpen={openDropdown === group.id}
-                        onToggle={() => setOpenDropdown((prev) => (prev === group.id ? null : group.id))}
-                        onClose={() => setOpenDropdown(null)}
-                        onNavigate={handleNavigation}
-                        isActive={isGroupActive(group)}
-                      />
+                        type="button"
+                        onClick={() => handleNavigation(group.path)}
+                        className={`rf-nav-link ${isPathActive(group.path) ? 'rf-nav-link-active' : ''}`}
+                      >
+                        {group.label}
+                      </button>
                     );
-                  })}
-                </nav>
-                {navScroll.right ? (
-                  <button
-                    type="button"
-                    className="rf-nav-scroll-btn rf-nav-scroll-btn--right"
-                    aria-label="Scroll navigation right"
-                    onClick={() => scrollNavBy(1)}
-                  >
-                    <Icon name="ChevronRight" size={18} />
-                  </button>
-                ) : null}
-              </div>
-              {/* Actions */}
+                  }
+                  return (
+                    <HeaderNavDropdown
+                      key={group.id}
+                      label={group.label}
+                      children={group.children}
+                      isOpen={openDropdown === group.id}
+                      onToggle={() => setOpenDropdown((prev) => (prev === group.id ? null : group.id))}
+                      onClose={() => setOpenDropdown(null)}
+                      onNavigate={handleNavigation}
+                      isActive={isGroupActive(group)}
+                    />
+                  );
+                })}
+              </nav>
+
               <div className="rf-header-actions">
                 <LanguageSwitcher />
 
@@ -262,27 +192,19 @@ const Header = ({ children }) => {
                     </div>
                   )}
                 </div>
+
                 {!isGuest && (
                   <span className={`role-badge ${currentRole} hidden lg:inline-flex`}>{roleLabel}</span>
                 )}
 
                 {isGuest ? (
-                  <>
-                    <button
-                      type="button"
-                      className="rf-btn-login hidden sm:inline-flex"
-                      onClick={() => handleNavigation('/customer-login')}
-                    >
-                      {t('header.login', 'Login')}
-                    </button>
-                    <button
-                      type="button"
-                      className="rf-btn-cta hidden sm:inline-flex"
-                      onClick={() => handleNavigation('/eligibility-assessment')}
-                    >
-                      Get Started
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="rf-btn-login hidden sm:inline-flex"
+                    onClick={() => handleNavigation('/customer-login')}
+                  >
+                    {t('header.login', 'Login')}
+                  </button>
                 ) : (
                   <>
                     {dashboardPath && (
@@ -321,7 +243,6 @@ const Header = ({ children }) => {
         </div>
       </header>
 
-      {/* Mobile menu */}
       {isMobileMenuOpen && (
         <div className="rf-mobile-menu lg:hidden animate-slide-in">
           <div className="rf-mobile-menu-content">
@@ -370,14 +291,9 @@ const Header = ({ children }) => {
 
             <div className="rf-mobile-cta-row">
               {isGuest ? (
-                <>
-                  <button type="button" className="rf-btn-login w-full justify-center" onClick={() => handleNavigation('/customer-login')}>
-                    {t('header.login', 'Login')}
-                  </button>
-                  <button type="button" className="rf-btn-cta w-full justify-center" onClick={() => handleNavigation('/eligibility-assessment')}>
-                    Get Started
-                  </button>
-                </>
+                <button type="button" className="rf-btn-login w-full justify-center" onClick={() => handleNavigation('/customer-login')}>
+                  {t('header.login', 'Login')}
+                </button>
               ) : (
                 <button type="button" className="rf-btn-login w-full justify-center text-destructive border-destructive/40" onClick={handleLogout}>
                   {t('header.logout', 'Log out')}
@@ -388,7 +304,6 @@ const Header = ({ children }) => {
         </div>
       )}
 
-      {/* Spacer for fixed header (trust bar + main bar) */}
       <div className="rf-header-spacer" />
     </>
   );
