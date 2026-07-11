@@ -222,19 +222,32 @@
   }
 
   .rf-main-bar-inner {
-    @apply flex items-center justify-between gap-2 xl:gap-3 h-[72px] lg:h-[76px];
+    @apply flex items-center gap-3 xl:gap-5 h-[72px] lg:h-[76px];
     overflow: visible;
   }
 
   .rf-logo-btn {
     @apply text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-green)] focus-visible:ring-offset-2 flex items-center shrink-0;
+    position: relative;
+    z-index: 2;
     line-height: 0;
+    padding-right: 0.25rem;
+    margin-right: 0.25rem;
+    background: #fff;
   }
 
   .rf-desktop-nav {
-    @apply hidden lg:flex items-center gap-0 flex-1 justify-center min-w-0;
+    @apply hidden lg:flex items-center gap-0.5 xl:gap-1 flex-1 min-w-0;
+    justify-content: flex-start;
     flex-wrap: nowrap;
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: visible;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+
+  .rf-desktop-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .rf-desktop-nav > * {
@@ -242,7 +255,7 @@
   }
 
   .rf-nav-link {
-    @apply inline-flex items-center gap-0.5 xl:gap-1 px-1.5 xl:px-2.5 py-1.5 text-[12.5px] xl:text-sm font-medium rounded-md transition-colors;
+    @apply inline-flex items-center gap-0.5 xl:gap-1 px-2 xl:px-2.5 py-1.5 text-[12.5px] xl:text-sm font-medium rounded-md transition-colors;
     color: var(--color-nav-text);
     font-family: var(--font-body);
     white-space: nowrap;
@@ -284,7 +297,7 @@
   }
 
   .rf-header-actions {
-    @apply flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0;
+    @apply flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 ml-auto;
   }
 
   .rf-search-btn {
