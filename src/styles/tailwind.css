@@ -232,7 +232,7 @@
   }
 
   .rf-desktop-nav {
-    @apply hidden lg:flex items-center gap-0 flex-1 justify-center min-w-0;
+    @apply hidden lg:flex items-center gap-0 flex-1 justify-around min-w-0;
     flex-wrap: nowrap;
     overflow: visible;
   }

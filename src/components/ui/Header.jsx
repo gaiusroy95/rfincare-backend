@@ -260,22 +260,13 @@ const Header = ({ children }) => {
                 )}
 
                 {isGuest ? (
-                  <>
-                    <button
-                      type="button"
-                      className="rf-btn-login hidden sm:inline-flex"
-                      onClick={() => handleNavigation('/customer-login')}
-                    >
-                      {t('header.login', 'Login')}
-                    </button>
-                    <button
-                      type="button"
-                      className="rf-btn-cta hidden sm:inline-flex"
-                      onClick={() => handleNavigation('/eligibility-assessment')}
-                    >
-                      Get Started
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="rf-btn-login hidden sm:inline-flex"
+                    onClick={() => handleNavigation('/customer-login')}
+                  >
+                    {t('header.login', 'Login')}
+                  </button>
                 ) : (
                   <>
                     {dashboardPath && (
@@ -376,14 +367,9 @@ const Header = ({ children }) => {
 
             <div className="rf-mobile-cta-row">
               {isGuest ? (
-                <>
-                  <button type="button" className="rf-btn-login w-full justify-center" onClick={() => handleNavigation('/customer-login')}>
-                    {t('header.login', 'Login')}
-                  </button>
-                  <button type="button" className="rf-btn-cta w-full justify-center" onClick={() => handleNavigation('/eligibility-assessment')}>
-                    Get Started
-                  </button>
-                </>
+                <button type="button" className="rf-btn-login w-full justify-center" onClick={() => handleNavigation('/customer-login')}>
+                  {t('header.login', 'Login')}
+                </button>
               ) : (
                 <button type="button" className="rf-btn-login w-full justify-center text-destructive border-destructive/40" onClick={handleLogout}>
                   {t('header.logout', 'Log out')}

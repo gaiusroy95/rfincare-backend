@@ -26,6 +26,9 @@ export function buildMainNavGroups({ marketplaceVisibility = {}, t = (k) => k } 
     v.postOfficeMarketplace !== false
       ? { label: t('header.postOfficeMarketplace', 'Post Office Schemes'), path: '/post-office-marketplace', icon: 'Mailbox' }
       : null,
+    v.governmentSchemesMarketplace !== false
+      ? { label: t('header.governmentSchemesMarketplace', 'Government Schemes'), path: '/government-schemes-marketplace', icon: 'Landmark' }
+      : null,
     { label: 'Retirement Planning', path: '/retirement-planning', icon: 'Sunset' },
     { label: 'Wealth Management', path: '/wealth-management', icon: 'PieChart' },
   ].filter(Boolean);
@@ -34,33 +37,34 @@ export function buildMainNavGroups({ marketplaceVisibility = {}, t = (k) => k } 
     ? [{ label: t('header.insuranceMarketplace', 'Insurance Marketplace'), path: '/insurance-marketplace', icon: 'Shield' }]
     : [];
 
-  const govtChildren = v.governmentSchemesMarketplace !== false
-    ? [{ label: t('header.governmentSchemesMarketplace', 'Government Schemes'), path: '/government-schemes-marketplace', icon: 'Landmark' }]
-    : [];
-
-  const resourcesChildren = [
-    { label: 'Financial Calculators', path: '/resources/calculators', icon: 'Calculator' },
-    { label: 'Tax Saving', path: '/tax-saving', icon: 'Receipt' },
-  ];
+  const bankMarketplaceChildren = [
+    v.bankMarketplace !== false
+      ? { label: t('header.bankMarketplace', 'Bank Marketplace'), path: '/bank-marketplace', icon: 'Building2' }
+      : null,
+    v.creditCardMarketplace !== false
+      ? { label: t('header.creditCards', 'Credit cards'), path: '/credit-cards', icon: 'CreditCard' }
+      : null,
+  ].filter(Boolean);
 
   const aboutUsChildren = [
     { label: 'About Us', path: '/about-us', icon: 'Info' },
     { label: 'About Team', path: '/about-team', icon: 'Users' },
   ];
 
+  const resourcesChildren = [
+    { label: 'Financial Calculators', path: '/resources/calculators', icon: 'Calculator' },
+    { label: 'Tax Saving', path: '/tax-saving', icon: 'Receipt' },
+  ];
+
   return [
-    v.bankMarketplace !== false
-      ? { id: 'bank-marketplace', label: t('header.bankMarketplace', 'Bank Marketplace'), path: '/bank-marketplace' }
-      : null,
-    v.creditCardMarketplace !== false
-      ? { id: 'credit-cards', label: t('header.creditCards', 'Credit cards'), path: '/credit-cards' }
+    { id: 'about-us', label: t('header.aboutUs', 'About Us'), children: aboutUsChildren },
+    bankMarketplaceChildren.length
+      ? { id: 'bank-marketplace', label: t('header.bankMarketplace', 'Bank Marketplace'), children: bankMarketplaceChildren }
       : null,
     investmentsChildren.length ? { id: 'investments', label: 'Investments', children: investmentsChildren } : null,
     insuranceChildren.length ? { id: 'insurance', label: 'Insurance', children: insuranceChildren } : null,
-    govtChildren.length ? { id: 'government', label: 'Govt.Schemes', children: govtChildren } : null,
-    { id: 'about-us', label: t('header.aboutUs', 'About Us'), children: aboutUsChildren },
     { id: 'resources', label: 'Resources', children: resourcesChildren },
-    { id: 'contact-us', label: t('header.contactUs', 'Contact'), path: '/contact-us' },
+    { id: 'contact-us', label: t('header.contactUs', 'Contact Us'), path: '/contact-us' },
   ].filter(Boolean);
 }
 
