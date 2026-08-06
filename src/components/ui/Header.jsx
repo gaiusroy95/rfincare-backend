@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../../contexts/AuthContext';
@@ -56,8 +56,6 @@ const Header = ({ children }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(null);
-  const [navScroll, setNavScroll] = useState({ left: false, right: false });
-  const navScrollRef = useRef(null);
   const { visibility: marketplaceVisibility } = useMarketplaceVisibility();
 
   const isGuest = !user;
@@ -65,41 +63,6 @@ const Header = ({ children }) => {
   const showMarketingNav = isPublicGuestRoute(location?.pathname)
     && (isGuest || currentRole === 'customer');
 
-  const updateNavScrollState = useCallback(() => {
-    const el = navScrollRef.current;
-    if (!el) {
-      setNavScroll({ left: false, right: false });
-      return;
-    }
-    const maxScroll = el.scrollWidth - el.clientWidth;
-    setNavScroll({
-      left: el.scrollLeft > 4,
-      right: maxScroll > 4 && el.scrollLeft < maxScroll - 4,
-    });
-  }, []);
-
-  const scrollNavBy = useCallback((direction) => {
-    const el = navScrollRef.current;
-    if (!el) return;
-    const amount = Math.max(160, Math.floor(el.clientWidth * 0.55));
-    el.scrollBy({ left: direction * amount, behavior: 'smooth' });
-  }, []);
-
-  useLayoutEffect(() => {
-    updateNavScrollState();
-    const el = navScrollRef.current;
-    if (!el) return undefined;
-    const onScroll = () => updateNavScrollState();
-    el.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('resize', updateNavScrollState);
-    const ro = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(updateNavScrollState) : null;
-    ro?.observe(el);
-    return () => {
-      el.removeEventListener('scroll', onScroll);
-      window.removeEventListener('resize', updateNavScrollState);
-      ro?.disconnect();
-    };
-  }, [updateNavScrollState, marketplaceVisibility]);
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
     return () => {
@@ -128,7 +91,6 @@ const Header = ({ children }) => {
     [marketplaceVisibility, t],
   );
 
-<<<<<<< HEAD
   const portalNavItems = useMemo(() => {
     const items = [
       { label: t('header.myDashboard'), path: '/customer-dashboard', roles: ['customer'] },
@@ -142,21 +104,6 @@ const Header = ({ children }) => {
       if (!item.roles.includes(currentRole)) return false;
       if (currentRole === 'employee' && employeeAccess?.configured) {
         return employeeCanReachRoute(employeeAccess, item.path);
-=======
-  useLayoutEffect(() => {
-    updateNavScrollState();
-  }, [mainNavGroups, updateNavScrollState]);
-
-  const isPathActive = useCallback(
-    (path, matchTab) => {
-      const basePath = String(path || '').split('?')[0];
-      if (matchTab) {
-        const params = new URLSearchParams(location.search);
-        return (
-          location?.pathname === basePath
-          && params.get('tab') === matchTab
-        );
->>>>>>> parent of bbda465 (Refactor Header component to simplify navigation structure by removing unused scroll functionality and enhancing dropdown handling. Update main navigation groups to include new marketplace items based on visibility settings. Adjust styles in tailwind.css for improved layout and responsiveness.)
       }
       return true;
     });
@@ -227,30 +174,9 @@ const Header = ({ children }) => {
                 <BrandLogo size="xl" />
               </button>
 
-<<<<<<< HEAD
               {/* Desktop nav */}
               {showMarketingNav && (
                 <nav className="rf-desktop-nav" aria-label="Main navigation">
-=======
-              {/* Desktop nav — horizontally scrollable when tabs overflow */}
-              <div className="rf-desktop-nav-shell">
-                {navScroll.left ? (
-                  <button
-                    type="button"
-                    className="rf-nav-scroll-btn rf-nav-scroll-btn--left"
-                    aria-label="Scroll navigation left"
-                    onClick={() => scrollNavBy(-1)}
-                  >
-                    <Icon name="ChevronLeft" size={18} />
-                  </button>
-                ) : null}
-                <nav
-                  ref={navScrollRef}
-                  className="rf-desktop-nav"
-                  aria-label="Main navigation"
-                  onScroll={updateNavScrollState}
-                >
->>>>>>> parent of bbda465 (Refactor Header component to simplify navigation structure by removing unused scroll functionality and enhancing dropdown handling. Update main navigation groups to include new marketplace items based on visibility settings. Adjust styles in tailwind.css for improved layout and responsiveness.)
                   {mainNavGroups.map((group) => {
                     if (group.path) {
                       return (
@@ -278,7 +204,6 @@ const Header = ({ children }) => {
                     );
                   })}
                 </nav>
-<<<<<<< HEAD
               )}
 
               {!showMarketingNav && portalNavItems.length > 0 && (
@@ -296,24 +221,10 @@ const Header = ({ children }) => {
                 </nav>
               )}
 
-=======
-                {navScroll.right ? (
-                  <button
-                    type="button"
-                    className="rf-nav-scroll-btn rf-nav-scroll-btn--right"
-                    aria-label="Scroll navigation right"
-                    onClick={() => scrollNavBy(1)}
-                  >
-                    <Icon name="ChevronRight" size={18} />
-                  </button>
-                ) : null}
-              </div>
->>>>>>> parent of bbda465 (Refactor Header component to simplify navigation structure by removing unused scroll functionality and enhancing dropdown handling. Update main navigation groups to include new marketplace items based on visibility settings. Adjust styles in tailwind.css for improved layout and responsiveness.)
               {/* Actions */}
               <div className="rf-header-actions">
                 <LanguageSwitcher />
 
-<<<<<<< HEAD
                 {showMarketingNav && (
                   <div className="relative hidden sm:block rf-search-wrap">
                     <button
@@ -344,35 +255,6 @@ const Header = ({ children }) => {
                   </div>
                 )}
 
-=======
-                <div className="relative hidden sm:block rf-search-wrap">
-                  <button
-                    type="button"
-                    className="rf-search-btn"
-                    aria-label="Search"
-                    aria-expanded={searchOpen}
-                    onClick={() => setSearchOpen((v) => !v)}
-                  >
-                    <Icon name="Search" size={18} />
-                  </button>
-                  {searchOpen && (
-                    <div className="rf-search-panel animate-fade-in">
-                      <p className="text-xs font-semibold text-muted-foreground mb-2 px-1">Quick links</p>
-                      {QUICK_SEARCH_LINKS.map((link) => (
-                        <button
-                          key={link.path}
-                          type="button"
-                          className="rf-nav-dropdown-item"
-                          onClick={() => handleNavigation(link.path)}
-                        >
-                          <Icon name={link.icon} size={16} className="text-[var(--color-brand-green)]" />
-                          <span>{link.label}</span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                </div>
->>>>>>> parent of bbda465 (Refactor Header component to simplify navigation structure by removing unused scroll functionality and enhancing dropdown handling. Update main navigation groups to include new marketplace items based on visibility settings. Adjust styles in tailwind.css for improved layout and responsiveness.)
                 {!isGuest && (
                   <span className={`role-badge ${currentRole} hidden lg:inline-flex`}>{roleLabel}</span>
                 )}
