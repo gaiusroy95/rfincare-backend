@@ -2,12 +2,12 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BrandLogo from '../ui/BrandLogo';
 import Icon from '../AppIcon';
+import Button from '../ui/Button';
 import LanguageSwitcher from '../ui/LanguageSwitcher';
 
 /**
  * White-sidebar portal layout — customer, agent, employee dashboards.
  * Narrow viewports show a persistent icon rail; full labels from lg up.
- * Site marketing Header is homepage/public pages only — not rendered here.
  */
 const PortalShell = ({
   portalLabel = 'Dashboard',

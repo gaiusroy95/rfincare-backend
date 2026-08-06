@@ -24,7 +24,7 @@ import { usePortalPolling } from '../../hooks/usePortalPolling';
 import PerformanceChart from './components/PerformanceChart';
 import StaffCommunicationPanel from './components/StaffCommunicationPanel';
 import TrainingResources from './components/TrainingResources';
-import ReferralSharePanel from '../../components/referral/ReferralSharePanel';
+import AgentReferralBanner from '../../components/agent/AgentReferralBanner';
 import SessionTimeout from '../../components/SessionTimeout';
 import { agentService } from '../../services/agentService';
 import {
@@ -332,14 +332,7 @@ const AgentDashboard = () => {
   const leadCount = pipelineItems.filter((c) => c.status === 'new').length;
 
   const handleNavSelect = (item) => {
-    const navItem = typeof item === 'string'
-      ? AGENT_NAV_ITEMS.find((i) => i.id === item)
-      : (AGENT_NAV_ITEMS.find((i) => i.id === item?.id) || item);
-    if (navItem?.path) {
-      navigate(navItem.path);
-      return;
-    }
-    const params = getAgentSearchParamsForNavId(navItem?.id || item?.id || item);
+    const params = getAgentSearchParamsForNavId(item.id);
     if (Object.keys(params).length === 0) {
       setSearchParams({});
     } else {
@@ -556,15 +549,15 @@ const AgentDashboard = () => {
 
         {selectedView === 'refer' && (
           <div className="space-y-6">
-            <ReferralSharePanel
-              variant="agent"
-              referralCode={dashboard?.attribution?.agentCode || agentProfile?.agentId}
-              shareLinks={dashboard?.attribution?.shareLinks}
-              stats={{
-                attributedCount: dashboard?.attribution?.attributedLeads || 0,
-                attributedLabel: 'attributed leads',
-              }}
-            />
+            <AgentReferralBanner attribution={dashboard?.attribution} />
+            <div className="bg-card border border-border rounded-lg p-6 text-center">
+              <p className="text-muted-foreground mb-4">
+                Share your referral link and earn commissions when partners join RFINCARE.
+              </p>
+              <Button className="rf-btn-primary" iconName="Share2" onClick={() => navigate('/share-your-story')}>
+                Share Referral Link
+              </Button>
+            </div>
           </div>
         )}
 

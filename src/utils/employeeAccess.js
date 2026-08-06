@@ -24,26 +24,6 @@ export const EMPLOYEE_NAV_MODULE_MAP = {
   ],
   '/document-management-center': ['documents'],
   '/reports-and-analytics': ['reports'],
-  '/employee-portal?tab=agent-referral': [
-    'applications',
-    'agents',
-    'documents',
-    'customers',
-    'banks',
-    'approval_matrix',
-    'reports',
-    'leads',
-  ],
-  '/employee-portal?tab=customer-referral': [
-    'applications',
-    'agents',
-    'documents',
-    'customers',
-    'banks',
-    'approval_matrix',
-    'reports',
-    'leads',
-  ],
 };
 
 /** No admin-configured access → full employee role defaults. */

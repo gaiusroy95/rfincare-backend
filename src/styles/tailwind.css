@@ -222,25 +222,65 @@
   }
 
   .rf-main-bar-inner {
-    @apply flex items-center gap-3 xl:gap-5 h-[72px] lg:h-[76px];
+    @apply flex items-center justify-between gap-2 xl:gap-3 h-[72px] lg:h-[76px];
     overflow: visible;
   }
 
   .rf-logo-btn {
     @apply text-left rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-brand-green)] focus-visible:ring-offset-2 flex items-center shrink-0;
-    position: relative;
-    z-index: 2;
     line-height: 0;
-    padding-right: 0.25rem;
-    margin-right: 0.25rem;
-    background: #fff;
+  }
+
+  .rf-desktop-nav-shell {
+    @apply hidden lg:flex items-center flex-1 min-w-0 relative;
   }
 
   .rf-desktop-nav {
-    @apply hidden lg:flex items-center gap-0.5 xl:gap-1 flex-1 min-w-0;
-    justify-content: space-around;
+<<<<<<< HEAD
+    @apply hidden lg:flex items-center gap-0 flex-1 justify-center min-w-0;
+=======
+    @apply flex items-center gap-0.5 xl:gap-1 flex-1 min-w-0;
+    justify-content: flex-start;
+>>>>>>> parent of bbda465 (Refactor Header component to simplify navigation structure by removing unused scroll functionality and enhancing dropdown handling. Update main navigation groups to include new marketplace items based on visibility settings. Adjust styles in tailwind.css for improved layout and responsiveness.)
     flex-wrap: nowrap;
-    overflow: visible;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--color-brand-green) 35%, transparent) transparent;
+    padding-block: 0.25rem;
+  }
+
+  .rf-desktop-nav::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .rf-desktop-nav::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--color-brand-green) 40%, transparent);
+    border-radius: 999px;
+  }
+
+  .rf-desktop-nav::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .rf-nav-scroll-btn {
+    @apply inline-flex items-center justify-center w-8 h-8 rounded-full border border-border bg-white text-foreground shrink-0 z-[1] shadow-sm;
+    transition: background-color 0.15s ease, color 0.15s ease;
+  }
+
+  .rf-nav-scroll-btn:hover {
+    @apply bg-muted;
+    color: var(--color-brand-green);
+  }
+
+  .rf-nav-scroll-btn--left {
+    margin-right: 0.25rem;
+  }
+
+  .rf-nav-scroll-btn--right {
+    margin-left: 0.25rem;
   }
 
   .rf-desktop-nav > * {
@@ -248,7 +288,7 @@
   }
 
   .rf-nav-link {
-    @apply inline-flex items-center gap-0.5 xl:gap-1 px-2 xl:px-2.5 py-1.5 text-[12.5px] xl:text-sm font-medium rounded-md transition-colors;
+    @apply inline-flex items-center gap-0.5 xl:gap-1 px-1.5 xl:px-2.5 py-1.5 text-[12.5px] xl:text-sm font-medium rounded-md transition-colors;
     color: var(--color-nav-text);
     font-family: var(--font-body);
     white-space: nowrap;
@@ -290,7 +330,7 @@
   }
 
   .rf-header-actions {
-    @apply flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0 ml-auto;
+    @apply flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0;
   }
 
   .rf-search-btn {
@@ -374,14 +414,12 @@
   }
 
   .rf-header-spacer {
-    --rf-header-offset: calc(36px + 76px);
-    height: var(--rf-header-offset);
+    height: calc(36px + 76px);
   }
 
   @media (min-width: 1024px) {
     .rf-header-spacer {
-      --rf-header-offset: calc(36px + 80px);
-      height: var(--rf-header-offset);
+      height: calc(36px + 80px);
     }
   }
 
@@ -717,15 +755,11 @@
     min-height: 100vh;
   }
 
-  .rf-portal-with-site-header {
-    min-height: calc(100vh - 112px);
-  }
-
   /* Icon rail on narrow screens; full sidebar from lg up */
   .rf-portal-sidebar {
     position: sticky;
     top: 0;
-    z-index: 40;
+    z-index: 50;
     display: flex;
     flex-direction: column;
     flex-shrink: 0;
@@ -736,24 +770,9 @@
     transition: width 0.2s ease;
   }
 
-  .rf-portal-with-site-header .rf-portal-sidebar {
-    top: 0;
-    height: calc(100vh - 112px);
-    max-height: calc(100vh - 112px);
-  }
-
   @media (min-width: 1024px) {
     .rf-portal-sidebar {
       width: 260px;
-    }
-
-    .rf-portal-with-site-header {
-      min-height: calc(100vh - 116px);
-    }
-
-    .rf-portal-with-site-header .rf-portal-sidebar {
-      height: calc(100vh - 116px);
-      max-height: calc(100vh - 116px);
     }
   }
 
