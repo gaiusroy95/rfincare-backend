@@ -1,17 +1,17 @@
 import React, { useState } from 'react';
 
-const LOGO_SRC = '/assets/images/logo.png';
-const LOGO_SRC_ALT = '/assets/images/Logo_-_Copy_-_Copy-1771484476490.jpg';
+const LOGO_SRC = '/assets/images/updated_logo.png';
+const LOGO_SRC_ALT = '/assets/images/logo.png';
 
-/** Square emblem sizes — logo.png is the RFINCARE icon mark (no baked-in wordmark). */
+/** Square emblem sizes — updated_logo.png is the RFINCARE icon mark (no baked-in wordmark). */
 const EMBLEM_CLASS = {
-  sm: 'h-8 w-8',
-  md: 'h-10 w-10',
-  lg: 'h-12 w-12',
-  xl: 'h-14 w-14',
-  '2xl': 'h-[4.5rem] w-[4.5rem]',
-  icon: 'h-10 w-10',
-  sidebar: 'h-11 w-11',
+  sm: 'h-10 w-10',
+  md: 'h-14 w-14',
+  lg: 'h-16 w-16',
+  xl: 'h-20 w-20',
+  '2xl': 'h-28 w-28',
+  icon: 'h-12 w-12',
+  sidebar: 'h-16 w-16',
 };
 
 /**
@@ -50,13 +50,13 @@ const BrandLogo = ({
   }
 
   const textSizes = {
-    sm: 'text-lg',
-    md: 'text-2xl',
-    lg: 'text-3xl',
-    xl: 'text-4xl',
-    '2xl': 'text-5xl',
-    icon: 'text-xl',
-    sidebar: 'text-2xl',
+    sm: 'text-xl',
+    md: 'text-3xl',
+    lg: 'text-4xl',
+    xl: 'text-5xl',
+    '2xl': 'text-6xl',
+    icon: 'text-2xl',
+    sidebar: 'text-3xl',
   };
 
   return (

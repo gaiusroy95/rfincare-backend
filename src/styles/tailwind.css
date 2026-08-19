@@ -222,7 +222,7 @@
   }
 
   .rf-main-bar-inner {
-    @apply flex items-center justify-between gap-2 xl:gap-3 h-[72px] lg:h-[76px];
+    @apply flex items-center justify-between gap-2 xl:gap-3 h-[84px] lg:h-[88px];
     overflow: visible;
   }
 
@@ -331,12 +331,12 @@
 
   .rf-mobile-menu {
     @apply fixed left-0 right-0 bottom-0 z-40 bg-white border-t border-border overflow-y-auto;
-    top: calc(36px + 68px);
+    top: calc(36px + 84px);
   }
 
   @media (min-width: 1024px) {
     .rf-mobile-menu {
-      top: calc(36px + 72px);
+      top: calc(36px + 88px);
     }
   }
 
@@ -377,12 +377,12 @@
   }
 
   .rf-header-spacer {
-    height: calc(36px + 76px);
+    height: calc(36px + 88px);
   }
 
   @media (min-width: 1024px) {
     .rf-header-spacer {
-      height: calc(36px + 80px);
+      height: calc(36px + 92px);
     }
   }
 
