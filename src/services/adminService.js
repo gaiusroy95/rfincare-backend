@@ -209,6 +209,15 @@ export const adminService = {
     }
   },
 
+  async deleteEmployee(employeeId) {
+    try {
+      const res = await apiClient.delete(`/admin/employees/${employeeId}`);
+      return { data: toCamelCase(res.data), error: null };
+    } catch (error) {
+      return { data: null, error: apiError(error, 'Failed to delete employee') };
+    }
+  },
+
   /** Employees + agents for lead assignment (names and codes). */
   async getStaffAssignees() {
     try {
@@ -591,12 +600,26 @@ export const adminService = {
     }
   },
 
-  async getFunnelAnalytics(days = 30) {
+  async getFunnelAnalytics({ days = 30, dateFrom, dateTo } = {}) {
     try {
-      const res = await apiClient.get('/admin/funnel-analytics', { params: { days } });
+      const params = { days };
+      if (dateFrom) params.dateFrom = dateFrom;
+      if (dateTo) params.dateTo = dateTo;
+      const res = await apiClient.get('/admin/funnel-analytics', { params });
       return { data: toCamelCase(res.data), error: null };
     } catch (error) {
       return { data: null, error: apiError(error, 'Failed to load funnel analytics') };
     }
+  },
+
+  async downloadFunnelProductCsv({ productKey, days = 30, dateFrom, dateTo }) {
+    const params = { productKey, days };
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
+    const res = await apiClient.get('/admin/funnel-analytics/product-export.csv', {
+      params,
+      responseType: 'blob',
+    });
+    return res.data;
   },
 };

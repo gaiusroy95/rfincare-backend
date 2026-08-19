@@ -1,9 +1,11 @@
-import React, { useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 
 import Icon from '../AppIcon';
 import Button from '../ui/Button';
 import Input from '../ui/Input';
 import { copyTextToClipboard } from '../../utils/copyToClipboard';
+import { buildReferralShareUrl } from '../../utils/agentAttribution';
+import { referralService } from '../../services/referralService';
 
 const DEFAULT_AGENT_MESSAGE =
   'Hi! I recommend RFINCARE for loans and financial products. Use my link to get started — I\'ll be happy to help you through the process.';
@@ -24,8 +26,10 @@ export default function ReferralSharePanel({
   referralCode,
   shareLinks = null,
   stats = null,
+  program: programProp,
 }) {
   const isAgent = variant === 'agent';
+  const program = programProp || (isAgent ? 'agent' : 'customer');
   const [copied, setCopied] = useState(false);
   const [copiedKey, setCopiedKey] = useState(null);
   const [form, setForm] = useState({
@@ -40,24 +44,33 @@ export default function ReferralSharePanel({
   const primaryLink = useMemo(() => {
     if (shareLinks?.homepage) return shareLinks.homepage;
     if (!referralCode) return '';
-    const base = typeof window !== 'undefined' ? window.location.origin : 'https://rfincare.com';
-    const url = new URL('/', base);
-    if (isAgent) url.searchParams.set('agent', referralCode);
-    else url.searchParams.set('ref', referralCode);
-    return url.toString();
-  }, [shareLinks, referralCode, isAgent]);
+    return buildReferralShareUrl('/', referralCode, program);
+  }, [shareLinks, referralCode, program]);
 
   const linkOptions = useMemo(() => {
-    if (!shareLinks) {
-      return primaryLink ? [{ key: 'homepage', label: 'Homepage', url: primaryLink }] : [];
+    if (shareLinks) {
+      return [
+        { key: 'homepage', label: 'Homepage', url: shareLinks.homepage },
+        { key: 'insurance', label: 'Insurance', url: shareLinks.insurance },
+        { key: 'mutualFunds', label: 'Mutual funds', url: shareLinks.mutualFunds },
+        { key: 'calculators', label: 'Calculators', url: shareLinks.calculators },
+        { key: 'partnerLogin', label: 'Agent login', url: shareLinks.partnerLogin },
+      ].filter((item) => item.url);
+    }
+    if (!referralCode) return [];
+    if (program === 'agent') {
+      return [
+        { key: 'homepage', label: 'Homepage', url: buildReferralShareUrl('/', referralCode, 'agent') },
+        { key: 'partnerLogin', label: 'Agent login', url: buildReferralShareUrl('/agent-login', referralCode, 'agent') },
+      ];
     }
     return [
-      { key: 'homepage', label: 'Homepage', url: shareLinks.homepage },
-      { key: 'insurance', label: 'Insurance', url: shareLinks.insurance },
-      { key: 'mutualFunds', label: 'Mutual funds', url: shareLinks.mutualFunds },
-      { key: 'calculators', label: 'Calculators', url: shareLinks.calculators },
-    ].filter((item) => item.url);
-  }, [shareLinks, primaryLink]);
+      { key: 'homepage', label: 'Homepage', url: buildReferralShareUrl('/', referralCode, 'customer') },
+      { key: 'insurance', label: 'Insurance', url: buildReferralShareUrl('/insurance-marketplace', referralCode, 'customer') },
+      { key: 'mutualFunds', label: 'Mutual funds', url: buildReferralShareUrl('/mutual-fund-marketplace', referralCode, 'customer') },
+      { key: 'calculators', label: 'Calculators', url: buildReferralShareUrl('/resources/calculators', referralCode, 'customer') },
+    ];
+  }, [shareLinks, referralCode, program]);
 
   const title = isAgent ? 'Refer partners and grow your income' : 'Invite friends and earn rewards';
   const codeLabel = isAgent ? 'Agent code' : 'Your referral code';
@@ -98,33 +111,50 @@ export default function ReferralSharePanel({
     }`;
   };
 
-  const handleWhatsApp = () => {
+  const recordInvite = useCallback(async (channel) => {
+    try {
+      await referralService.recordInvite({
+        program,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        phone: form.phone.trim(),
+        channel,
+      });
+    } catch {
+      /* sharing still succeeds even if tracking POST fails */
+    }
+  }, [form.email, form.name, form.phone, program]);
+
+  const handleWhatsApp = async () => {
     if (!validate()) return;
+    await recordInvite('whatsapp');
     const digits = form.phone.replace(/\D/g, '').slice(-10);
     const text = encodeURIComponent(buildShareText());
     const url = digits
       ? `https://wa.me/91${digits}?text=${text}`
       : `https://wa.me/?text=${text}`;
     window.open(url, '_blank', 'noopener,noreferrer');
-    setSentHint('WhatsApp opened with your referral message.');
+    setSentHint('WhatsApp opened with your unique referral message.');
   };
 
-  const handleEmail = () => {
+  const handleEmail = async () => {
     if (!validate()) return;
     if (!form.email.trim()) {
       setErrors((prev) => ({ ...prev, email: 'Email is required for email share' }));
       return;
     }
+    await recordInvite('email');
     const subject = encodeURIComponent(
       isAgent ? 'Join RFINCARE with my referral' : 'Try RFINCARE with my referral',
     );
     const body = encodeURIComponent(buildShareText());
     window.location.href = `mailto:${encodeURIComponent(form.email.trim())}?subject=${subject}&body=${body}`;
-    setSentHint('Your email app opened with the referral message.');
+    setSentHint('Your email app opened with the unique referral message.');
   };
 
   const handleCopyInvite = async () => {
     if (!validate()) return;
+    await recordInvite('copy');
     const ok = await copyTextToClipboard(buildShareText());
     if (ok) {
       setSentHint('Invite message copied. Paste it into SMS, chat, or social media.');
@@ -175,6 +205,9 @@ export default function ReferralSharePanel({
             </p>
             <p className="mt-1 font-semibold text-foreground">
               {codeLabel}: <span className="font-mono">{referralCode || '—'}</span>
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              Unique to your account — anyone who uses this link is tracked back to you.
             </p>
             {stats?.attributedCount > 0 && (
               <p className="text-sm text-muted-foreground mt-1">

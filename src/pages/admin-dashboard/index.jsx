@@ -615,6 +615,21 @@ const AdminDashboard = () => {
     navigate('/admin-dashboard?tab=activity');
   };
 
+  const handleDeleteEmployee = async (employee) => {
+    if (!employee?.id) return;
+    const ok = window.confirm(
+      `Delete employee profile for ${employee?.name || 'this employee'}?\n\nThis action removes employee access permanently.`,
+    );
+    if (!ok) return;
+    const { error } = await adminService.deleteEmployee(employee.id);
+    if (error) {
+      alert(error.message);
+      return;
+    }
+    await refreshCurrentTab();
+    alert('Employee profile deleted successfully.');
+  };
+
   const handleQuickAction = (actionId) => {
     trackEvent('admin_quick_action', { action: actionId });
     const actionMap = {
@@ -845,6 +860,7 @@ const AdminDashboard = () => {
                           onResetPassword={(emp) => openStaffManage('employee', emp, 'password')}
                           onEditRole={handleEditEmployeeRole}
                           onViewActivity={handleViewEmployeeActivity}
+                          onDelete={handleDeleteEmployee}
                         />
                       ))}
                     </div>

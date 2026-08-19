@@ -18,6 +18,42 @@ const principalFromEmi = (annualRatePercent, months, emi) => {
   return (emi * (factor - 1)) / (monthlyRate * factor);
 };
 
+const normalizeProductValue = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+
+const humanizeProductValue = (value) =>
+  String(value || '')
+    .trim()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const extractLoanProductOptionsFromBanks = (banks = []) => {
+  const map = new Map();
+  for (const bank of banks || []) {
+    const products = bank?.bankProducts || bank?.bank_products || [];
+    for (const product of products) {
+      const data = product?.data || {};
+      const rawValue =
+        product?.loanType ||
+        product?.loan_type ||
+        data?.loanType ||
+        data?.loan_type ||
+        product?.name ||
+        data?.name ||
+        '';
+      const key = normalizeProductValue(rawValue);
+      if (!key || map.has(key)) continue;
+      const label = product?.name || data?.name || humanizeProductValue(rawValue);
+      map.set(key, { value: String(rawValue), label: String(label) });
+    }
+  }
+  return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+};
+
 
 const ApprovalMatrixManagement = () => {
   const [rules, setRules] = useState([]);
@@ -258,15 +294,19 @@ const ApprovalMatrixManagement = () => {
     }
   };
 
-  const loanTypeOptions = [
-    { value: '', label: 'All Loan Types' },
-    { value: 'home_loan', label: 'Home Loan' },
-    { value: 'personal_loan', label: 'Personal Loan' },
-    { value: 'business_loan', label: 'Business Loan' },
-    { value: 'auto_loan', label: 'Auto Loan' },
-    { value: 'education_loan', label: 'Education Loan' },
-    { value: 'debt_consolidation', label: 'Debt Consolidation' }
-  ];
+  const loanTypeOptions = useMemo(() => {
+    const live = extractLoanProductOptionsFromBanks(banks);
+    const base = [{ value: '', label: 'All Loan Types' }];
+    if (live.length) return base.concat(live);
+    return base.concat([
+      { value: 'home_loan', label: 'Home Loan' },
+      { value: 'personal_loan', label: 'Personal Loan' },
+      { value: 'business_loan', label: 'Business Loan' },
+      { value: 'auto_loan', label: 'Auto Loan' },
+      { value: 'education_loan', label: 'Education Loan' },
+      { value: 'debt_consolidation', label: 'Debt Consolidation' },
+    ]);
+  }, [banks]);
 
   const employmentTypeOptions = [
     { value: 'salaried', label: 'Salaried' },

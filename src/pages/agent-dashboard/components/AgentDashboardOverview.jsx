@@ -18,13 +18,7 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import DashboardKpiCard from '../../../components/dashboard/DashboardKpiCard';
 
-const DEFAULT_EARNINGS_PRODUCT = [
-  { name: 'Loans', value: 32400, pct: 41.3, color: '#1e3a5f' },
-  { name: 'Insurance', value: 20150, pct: 25.7, color: '#059669' },
-  { name: 'Credit Cards', value: 10750, pct: 13.7, color: '#2563eb' },
-  { name: 'Investments', value: 8240, pct: 10.5, color: '#7c3aed' },
-  { name: 'Others', value: 6910, pct: 8.8, color: '#94a3b8' },
-];
+const DEFAULT_EARNINGS_PRODUCT = [];
 
 function formatInr(value) {
   const n = Number(value);
@@ -39,6 +33,12 @@ function formatInr(value) {
 function formatDateRange(start, end) {
   const opts = { day: 'numeric', month: 'short', year: 'numeric' };
   return `${start.toLocaleDateString('en-IN', opts)} - ${end.toLocaleDateString('en-IN', opts)}`;
+}
+
+function formatTrendLabel(value) {
+  const v = String(value || '').trim();
+  if (!v) return '0%';
+  return v;
 }
 
 function leadStatusBadge(status) {
@@ -98,7 +98,7 @@ const AgentDashboardOverview = ({
     {
       title: 'Total Leads',
       value: String(ov.totalLeads ?? dashboard?.pipelineLeads?.length ?? 0),
-      change: `${trends.leads || '+18.4%'} vs last 7 days`,
+      change: `${formatTrendLabel(trends.leads)} vs last 7 days`,
       icon: 'UserPlus',
       iconBg: 'bg-emerald-50',
       iconColor: 'text-emerald-600',
@@ -106,7 +106,7 @@ const AgentDashboardOverview = ({
     {
       title: 'Total Applications',
       value: String(ov.totalApplications ?? dashboard?.clients?.length ?? 0),
-      change: `${trends.applications || '+15.2%'} vs last 7 days`,
+      change: `${formatTrendLabel(trends.applications)} vs last 7 days`,
       icon: 'FileText',
       iconBg: 'bg-sky-50',
       iconColor: 'text-sky-600',
@@ -114,7 +114,7 @@ const AgentDashboardOverview = ({
     {
       title: 'Approved Applications',
       value: String(ov.approvedApplications ?? 0),
-      change: `${trends.approved || '+16.7%'} vs last 7 days`,
+      change: `${formatTrendLabel(trends.approved)} vs last 7 days`,
       icon: 'CheckCircle2',
       iconBg: 'bg-orange-50',
       iconColor: 'text-orange-600',
@@ -122,7 +122,7 @@ const AgentDashboardOverview = ({
     {
       title: 'Total Earnings',
       value: formatInr(ov.totalEarnings ?? dashboard?.totalEarnings ?? 0),
-      change: `${trends.earnings || '+22.6%'} vs last 7 days`,
+      change: `${formatTrendLabel(trends.earnings)} vs last 7 days`,
       icon: 'IndianRupee',
       iconBg: 'bg-violet-50',
       iconColor: 'text-violet-600',
@@ -132,7 +132,7 @@ const AgentDashboardOverview = ({
       value: formatInr(ov.pendingPayout ?? dashboard?.pendingPayout ?? 0),
       subtitle: ov.payoutSummary?.nextPayoutDate
         ? `Next Payout: ${new Date(ov.payoutSummary.nextPayoutDate).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}`
-        : 'Next Payout: 25 May 2026',
+        : 'Next Payout: —',
       icon: 'Wallet',
       iconBg: 'bg-teal-50',
       iconColor: 'text-teal-600',
@@ -141,31 +141,20 @@ const AgentDashboardOverview = ({
 
   const leadsChart = ov.leadsChart?.length
     ? ov.leadsChart
-    : [
-        { name: 'Mon', leads: 12, applications: 8, conversions: 3 },
-        { name: 'Tue', leads: 15, applications: 10, conversions: 4 },
-        { name: 'Wed', leads: 18, applications: 12, conversions: 5 },
-        { name: 'Thu', leads: 14, applications: 9, conversions: 4 },
-        { name: 'Fri', leads: 20, applications: 14, conversions: 6 },
-        { name: 'Sat', leads: 10, applications: 6, conversions: 2 },
-        { name: 'Sun', leads: 8, applications: 5, conversions: 2 },
-      ];
+    : [];
 
   const earningsChart = ov.earningsChart?.length
     ? ov.earningsChart
-    : leadsChart.map((row, i) => ({
-        name: row.name,
-        earnings: [8200, 12400, 9800, 15200, 11400, 6800, 5400][i] || 8000,
-      }));
+    : [];
 
   const earningsByProduct = useMemo(() => {
-    const items = ov.earningsByProduct?.length ? ov.earningsByProduct : DEFAULT_EARNINGS_PRODUCT;
-    return items;
+    return ov.earningsByProduct?.length ? ov.earningsByProduct : DEFAULT_EARNINGS_PRODUCT;
   }, [ov.earningsByProduct]);
 
   const totalEarningsDonut = earningsByProduct.reduce((s, item) => s + (item.value || 0), 0)
     || ov.totalEarnings
-    || 78450;
+    || dashboard?.totalEarnings
+    || 0;
 
   const recentLeads = ov.recentLeads?.length
     ? ov.recentLeads
@@ -181,23 +170,22 @@ const AgentDashboardOverview = ({
 
   const topProducts = ov.topProducts?.length
     ? ov.topProducts
-    : [
-        { product: 'Home Loan', applications: 18, conversions: 8, earnings: 32400 },
-        { product: 'Personal Loan', applications: 14, conversions: 6, earnings: 18200 },
-        { product: 'Health Insurance', applications: 9, conversions: 5, earnings: 12400 },
-      ];
+    : [];
 
   const achievement = ov.achievement || {
     target: 150000,
-    current: ov.totalEarnings || 78450,
-    progress: 52,
-    tier: 'Silver Partner',
+    current: ov.totalEarnings || dashboard?.totalEarnings || 0,
+    progress: Math.min(
+      100,
+      Math.round((((ov.totalEarnings || dashboard?.totalEarnings || 0) / 150000) || 0) * 100),
+    ),
+    tier: 'Bronze Partner',
   };
 
   const payoutSummary = ov.payoutSummary || {
-    lastPayout: Math.round((ov.totalEarnings || 78450) * 0.75),
+    lastPayout: 0,
     lastPayoutDate: null,
-    nextPayout: ov.pendingPayout || 18750,
+    nextPayout: ov.pendingPayout || dashboard?.pendingPayout || 0,
     nextPayoutDate: null,
   };
 
@@ -266,7 +254,7 @@ const AgentDashboardOverview = ({
         <OverviewPanel title="Earnings Overview" onViewAll={() => onNavSelect?.({ id: 'reports' })}>
           <div className="mb-2">
             <p className="text-lg font-bold text-foreground">{formatInr(ov.totalEarnings ?? totalEarningsDonut)}</p>
-            <p className="text-xs text-emerald-600 font-semibold">{trends.earnings || '+22.6%'} vs last 7 days</p>
+            <p className="text-xs text-emerald-600 font-semibold">{formatTrendLabel(trends.earnings)} vs last 7 days</p>
           </div>
           <div className="h-[180px]">
             <ResponsiveContainer width="100%" height="100%">
@@ -404,6 +392,11 @@ const AgentDashboardOverview = ({
                 ))}
               </tbody>
             </table>
+            {topProducts.length === 0 && (
+              <p className="text-sm text-muted-foreground text-center py-6">
+                No product performance data yet.
+              </p>
+            )}
           </div>
           <button
             type="button"

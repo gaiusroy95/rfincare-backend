@@ -17,6 +17,12 @@ const LeadsTab = () => {
   const [lastResumeUrl, setLastResumeUrl] = useState('');
   const [resumeBusyId, setResumeBusyId] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [monthFilter, setMonthFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+  const [selectedLeadIds, setSelectedLeadIds] = useState(() => new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [deletingLeadId, setDeletingLeadId] = useState(null);
 
   const loadAssignees = useCallback(async () => {
     setAssigneesLoading(true);
@@ -33,12 +39,22 @@ const LeadsTab = () => {
     setAssigneesLoading(false);
   }, []);
 
-  const load = async () => {
+  const load = async ({ keepSelection = false } = {}) => {
     setLoading(true);
     setError('');
     try {
-      const data = await leadService.listLeads();
-      setLeads(Array.isArray(data) ? data : []);
+      const data = await leadService.listLeads({
+        month: monthFilter || undefined,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+      });
+      const next = Array.isArray(data) ? data : [];
+      setLeads(next);
+      setSelectedLeadIds((prev) => {
+        if (!keepSelection) return new Set();
+        const valid = new Set(next.map((l) => l.id));
+        return new Set(Array.from(prev).filter((id) => valid.has(id)));
+      });
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Failed to load leads');
       setLeads([]);
@@ -53,7 +69,7 @@ const LeadsTab = () => {
   }, [loadAssignees]);
 
   const handleRefresh = () => {
-    load();
+    load({ keepSelection: true });
     loadAssignees();
   };
 
@@ -83,7 +99,7 @@ const LeadsTab = () => {
     try {
       await leadService.assignLead(leadId, assignedTo);
       setActionMsg('Lead assigned successfully.');
-      load();
+      load({ keepSelection: true });
     } catch (err) {
       setActionMsg(err?.response?.data?.error || 'Assign failed');
     }
@@ -121,7 +137,7 @@ const LeadsTab = () => {
       }
 
       if (!lead.sessionKey) {
-        load();
+        load({ keepSelection: true });
       }
     } catch (err) {
       setActionMsg(err?.response?.data?.error || err?.message || 'Could not create resume link');
@@ -131,6 +147,76 @@ const LeadsTab = () => {
   };
 
   const staffCount = employees.length + agents.length;
+  const selectedCount = selectedLeadIds.size;
+
+  const handleApplyFilters = () => {
+    setActionMsg('');
+    load();
+  };
+
+  const handleResetFilters = () => {
+    setMonthFilter('');
+    setDateFrom('');
+    setDateTo('');
+    setActionMsg('');
+    setTimeout(() => load(), 0);
+  };
+
+  const toggleLeadSelection = (leadId, checked) => {
+    setSelectedLeadIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(leadId);
+      else next.delete(leadId);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelectedLeadIds((prev) => {
+      if (leads.length > 0 && prev.size === leads.length) return new Set();
+      return new Set(leads.map((l) => l.id));
+    });
+  };
+
+  const handleDeleteLead = async (lead) => {
+    if (!lead?.id) return;
+    const ok = window.confirm(
+      `Delete lead "${lead.fullName || lead.email || lead.id}"?\n\nThis will permanently remove it from the system.`,
+    );
+    if (!ok) return;
+    setDeletingLeadId(lead.id);
+    setActionMsg('');
+    try {
+      await leadService.deleteLead(lead.id);
+      setActionMsg('Lead deleted successfully.');
+      await load({ keepSelection: true });
+    } catch (err) {
+      setActionMsg(err?.response?.data?.error || err?.message || 'Could not delete lead');
+    } finally {
+      setDeletingLeadId(null);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    const ids = Array.from(selectedLeadIds);
+    if (!ids.length) return;
+    const ok = window.confirm(
+      `Delete ${ids.length} selected lead(s)?\n\nThis action is permanent.`,
+    );
+    if (!ok) return;
+    setBulkDeleting(true);
+    setActionMsg('');
+    try {
+      const res = await leadService.bulkDeleteLeads(ids);
+      const count = Number(res?.deletedCount || 0);
+      setActionMsg(`${count} lead(s) deleted successfully.`);
+      await load();
+    } catch (err) {
+      setActionMsg(err?.response?.data?.error || err?.message || 'Bulk delete failed');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
 
   if (loading && leads.length === 0) {
     return <p className="text-muted-foreground p-6">Loading leads…</p>;
@@ -151,6 +237,17 @@ const LeadsTab = () => {
           )}
         </div>
         <div className="flex items-center gap-2">
+          {selectedCount > 0 && (
+            <Button
+              variant="outline"
+              iconName="Trash2"
+              className="text-destructive hover:text-destructive"
+              loading={bulkDeleting}
+              onClick={handleBulkDelete}
+            >
+              Delete selected ({selectedCount})
+            </Button>
+          )}
           <Button
             variant="outline"
             iconName="Download"
@@ -163,6 +260,52 @@ const LeadsTab = () => {
             Refresh
           </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">Month wise</label>
+          <input
+            type="month"
+            value={monthFilter}
+            onChange={(e) => setMonthFilter(e.target.value)}
+            className="w-full border border-border rounded-md px-2 py-2 text-sm bg-background"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">From date</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-full border border-border rounded-md px-2 py-2 text-sm bg-background"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">To date</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-full border border-border rounded-md px-2 py-2 text-sm bg-background"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="default" onClick={handleApplyFilters}>
+            Apply filters
+          </Button>
+          <Button variant="outline" onClick={handleResetFilters}>
+            Reset
+          </Button>
+        </div>
+      </div>
+      <div className="flex items-center justify-between text-xs text-muted-foreground">
+        <span>{leads.length} lead(s) found</span>
+        <button type="button" className="underline" onClick={toggleSelectAllVisible}>
+          {leads.length > 0 && selectedLeadIds.size === leads.length
+            ? 'Clear selection'
+            : 'Select all visible'}
+        </button>
       </div>
 
       {error && (
@@ -204,15 +347,21 @@ const LeadsTab = () => {
       <LeadsTable
         leads={leads}
         loading={loading}
+        showSelection
+        selectedLeadIds={selectedLeadIds}
         showAssign
         showActions
+        canDeleteLead
         assigneesLoading={assigneesLoading}
         staffCount={staffCount}
         employees={employees}
         agents={agents}
         resumeBusyId={resumeBusyId}
+        deletingLeadId={deletingLeadId}
+        onToggleLeadSelection={toggleLeadSelection}
         onAssign={handleAssign}
         onResumeLink={handleResumeLink}
+        onDeleteLead={handleDeleteLead}
       />
     </div>
   );

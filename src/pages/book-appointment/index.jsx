@@ -38,6 +38,15 @@ const BookAppointment = () => {
   const [submitting, setSubmitting] = useState(false);
   const [result, setResult] = useState(null);
   const [formError, setFormError] = useState('');
+  const [consentAccepted, setConsentAccepted] = useState(false);
+  const [otpRequested, setOtpRequested] = useState(false);
+  const [mobileOtp, setMobileOtp] = useState('');
+  const [emailOtp, setEmailOtp] = useState('');
+  const [otpRequirements, setOtpRequirements] = useState({
+    requireMobileOtp: true,
+    requireEmailOtp: true,
+  });
+  const [otpInfo, setOtpInfo] = useState('');
 
   useEffect(() => {
     window.scrollTo(0, 0);
@@ -108,10 +117,16 @@ const BookAppointment = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validate()) return;
+    if (!consentAccepted) {
+      setFormError(
+        'Please accept the consent note to continue with OTP verification and appointment booking.',
+      );
+      return;
+    }
     setSubmitting(true);
     setFormError('');
     try {
-      const res = await apiClient.post('/public/appointments', {
+      const payload = {
         fullName: form.fullName.trim(),
         email: form.email.trim(),
         phone: form.phone.replace(/\D/g, '').slice(-10),
@@ -119,6 +134,42 @@ const BookAppointment = () => {
         preferredDate: form.preferredDate,
         preferredTime: form.preferredTime,
         notes: form.notes.trim() || undefined,
+        consentAccepted: true,
+      };
+
+      if (!otpRequested) {
+        const otpRes = await apiClient.post('/public/appointments/otp/request', payload);
+        setOtpRequested(true);
+        setOtpRequirements({
+          requireMobileOtp: otpRes.data?.requireMobileOtp !== false,
+          requireEmailOtp: otpRes.data?.requireEmailOtp !== false,
+        });
+        setOtpInfo('OTP sent. Please verify to confirm your appointment.');
+        if (Array.isArray(otpRes.data?.warnings) && otpRes.data.warnings.length) {
+          setFormError(otpRes.data.warnings.join(' '));
+        }
+        return;
+      }
+
+      if (otpRequirements.requireMobileOtp && mobileOtp.trim().length !== 6) {
+        setFormError('Please enter a valid 6-digit mobile OTP.');
+        return;
+      }
+      if (otpRequirements.requireEmailOtp && emailOtp.trim().length !== 6) {
+        setFormError('Please enter a valid 6-digit email OTP.');
+        return;
+      }
+
+      const verifyRes = await apiClient.post('/public/appointments/otp/verify', {
+        email: payload.email,
+        phone: payload.phone,
+        mobileOtp: otpRequirements.requireMobileOtp ? mobileOtp.trim() : undefined,
+        emailOtp: otpRequirements.requireEmailOtp ? emailOtp.trim() : undefined,
+      });
+
+      const res = await apiClient.post('/public/appointments', {
+        ...payload,
+        otpVerificationId: verifyRes.data?.otpVerificationId,
       });
       setResult(res.data);
     } catch (err) {
@@ -129,6 +180,9 @@ const BookAppointment = () => {
   };
 
   if (result) {
+    const customerEmailSent = Boolean(result?.emails?.customer?.sent);
+    const salesEmailSent = Boolean(result?.emails?.sales?.sent);
+    const smsSent = Boolean(result?.sms?.sent);
     return (
       <MarketingPageShell
         title="Appointment booked"
@@ -148,11 +202,29 @@ const BookAppointment = () => {
               <ul className="text-sm text-left space-y-2 mb-6 bg-muted/40 rounded-xl p-4">
                 <li className="flex gap-2">
                   <Icon name="Mail" size={16} className="text-primary mt-0.5 shrink-0" />
-                  Confirmation email sent to your inbox (with calendar invite).
+                  {customerEmailSent ? (
+                    <>Confirmation email sent to your inbox (with calendar invite).</>
+                  ) : (
+                    <>
+                      Confirmation email was not delivered.{' '}
+                      <span className="text-destructive">
+                        {result?.notificationWarnings?.emailWarnings?.[0] || 'Please check SMTP configuration on the server.'}
+                      </span>
+                    </>
+                  )}
                 </li>
                 <li className="flex gap-2">
                   <Icon name="Users" size={16} className="text-primary mt-0.5 shrink-0" />
-                  Sales team notified at the same time.
+                  {salesEmailSent ? (
+                    <>Sales team notified at the same time.</>
+                  ) : (
+                    <>
+                      Sales notification email was not delivered.{' '}
+                      <span className="text-destructive">
+                        {result?.notificationWarnings?.emailWarnings?.[1] || 'Please check SMTP configuration on the server.'}
+                      </span>
+                    </>
+                  )}
                 </li>
                 {result.googleCalendar?.synced ? (
                   <li className="flex gap-2">
@@ -175,6 +247,19 @@ const BookAppointment = () => {
                     Calendar invite (.ics) attached to both emails.
                   </li>
                 )}
+                <li className="flex gap-2">
+                  <Icon name="MessageCircle" size={16} className="text-primary mt-0.5 shrink-0" />
+                  {smsSent ? (
+                    <>SMS confirmation sent to your mobile.</>
+                  ) : (
+                    <>
+                      SMS confirmation not delivered.{' '}
+                      <span className="text-destructive">
+                        {result?.notificationWarnings?.smsWarning || 'Configure MSG91 SMS to enable appointment SMS.'}
+                      </span>
+                    </>
+                  )}
+                </li>
               </ul>
               <div className="flex flex-wrap gap-3 justify-center">
                 <Button className="rf-btn-primary" onClick={() => navigate('/homepage')}>
@@ -185,6 +270,11 @@ const BookAppointment = () => {
                   onClick={() => {
                     setResult(null);
                     setForm(EMPTY);
+                    setConsentAccepted(false);
+                    setOtpRequested(false);
+                    setMobileOtp('');
+                    setEmailOtp('');
+                    setOtpInfo('');
                   }}
                 >
                   Book another
@@ -293,6 +383,59 @@ const BookAppointment = () => {
                 />
               </div>
 
+              <label className="flex items-start gap-2.5 rounded-lg border border-border p-3">
+                <input
+                  type="checkbox"
+                  className="mt-1 h-4 w-4"
+                  checked={consentAccepted}
+                  onChange={(e) => {
+                    setConsentAccepted(e.target.checked);
+                    if (formError) setFormError('');
+                  }}
+                />
+                <span className="text-sm text-muted-foreground">
+                  I here by authorized to send notifications via SMS, Email, RCS and other as per
+                  terms of service &amp; privacy policy.
+                </span>
+              </label>
+
+              {otpRequested ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {otpRequirements.requireMobileOtp ? (
+                    <Input
+                      name="mobileOtp"
+                      label="Mobile OTP"
+                      value={mobileOtp}
+                      onChange={(e) => {
+                        setMobileOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                        if (formError) setFormError('');
+                      }}
+                      placeholder="Enter 6-digit OTP"
+                      required
+                    />
+                  ) : null}
+                  {otpRequirements.requireEmailOtp ? (
+                    <Input
+                      name="emailOtp"
+                      label="Email OTP"
+                      value={emailOtp}
+                      onChange={(e) => {
+                        setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6));
+                        if (formError) setFormError('');
+                      }}
+                      placeholder="Enter 6-digit OTP"
+                      required
+                    />
+                  ) : null}
+                </div>
+              ) : null}
+
+              {otpInfo ? (
+                <p className="text-sm text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg p-3">
+                  {otpInfo}
+                </p>
+              ) : null}
+
               {formError ? (
                 <p className="text-sm text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-3">
                   {formError}
@@ -305,7 +448,7 @@ const BookAppointment = () => {
                 loading={submitting}
                 iconName="Calendar"
               >
-                Confirm appointment
+                {otpRequested ? 'Verify OTP & confirm appointment' : 'Send OTP for appointment'}
               </Button>
 
               <p className="text-xs text-muted-foreground flex items-center gap-1.5">

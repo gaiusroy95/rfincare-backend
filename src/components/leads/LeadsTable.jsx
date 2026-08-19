@@ -18,6 +18,9 @@ const EMPLOYEE_STATUS_OPTIONS = [
 const LeadsTable = ({
   leads = [],
   loading = false,
+  showSelection = false,
+  selectedLeadIds = new Set(),
+  onToggleLeadSelection,
   showAssign = false,
   showActions = false,
   showStatusUpdate = false,
@@ -29,13 +32,21 @@ const LeadsTable = ({
   onAssign,
   onResumeLink,
   onStatusChange,
+  canDeleteLead = false,
+  deletingLeadId = null,
+  onDeleteLead,
   renderAssignSelect,
 }) => {
   if (loading && leads.length === 0) {
     return <p className="text-muted-foreground p-6">Loading leads…</p>;
   }
 
-  const colSpan = 5 + (showAssign ? 1 : 0) + (showActions ? 1 : 0) + (showStatusUpdate ? 1 : 0);
+  const colSpan =
+    5 +
+    (showSelection ? 1 : 0) +
+    (showAssign ? 1 : 0) +
+    (showActions ? 1 : 0) +
+    (showStatusUpdate ? 1 : 0);
 
   const defaultAssignSelect = (lead) => (
     <select
@@ -77,6 +88,7 @@ const LeadsTable = ({
       <table className="w-full text-sm min-w-[900px]">
         <thead className="bg-muted">
           <tr>
+            {showSelection ? <th className="text-left p-3 w-10">#</th> : null}
             <th className="text-left p-3">Name</th>
             <th className="text-left p-3">Contact</th>
             <th className="text-left p-3">Product type</th>
@@ -97,12 +109,27 @@ const LeadsTable = ({
           ) : (
             leads.map((lead) => (
               <tr key={lead.id} className="border-t border-border align-top">
+                {showSelection ? (
+                  <td className="p-3">
+                    <input
+                      type="checkbox"
+                      checked={selectedLeadIds?.has?.(lead.id)}
+                      onChange={(e) => onToggleLeadSelection?.(lead.id, e.target.checked)}
+                      aria-label={`Select lead ${lead.fullName || lead.id}`}
+                    />
+                  </td>
+                ) : null}
                 <td className="p-3">{lead.fullName || '—'}</td>
                 <td className="p-3">
                   <div>{lead.email}</div>
                   <div className="text-muted-foreground">{lead.phone}</div>
                   {lead.sourcedAgentCode ? (
                     <div className="text-xs text-muted-foreground mt-1">Agent: {lead.sourcedAgentCode}</div>
+                  ) : null}
+                  {lead.referralCode && lead.referralCode !== lead.sourcedAgentCode ? (
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Referral ({lead.referralProgram || 'customer'}): {lead.referralCode}
+                    </div>
                   ) : null}
                 </td>
                 <td className="p-3">{formatProductType(lead.loanType)}</td>
@@ -166,6 +193,18 @@ const LeadsTable = ({
                       >
                         Email resume link
                       </Button>
+                      {canDeleteLead ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          iconName="Trash2"
+                          className="text-destructive hover:text-destructive"
+                          loading={deletingLeadId === lead.id}
+                          onClick={() => onDeleteLead?.(lead)}
+                        >
+                          Delete lead
+                        </Button>
+                      ) : null}
                     </div>
                   </td>
                 ) : null}

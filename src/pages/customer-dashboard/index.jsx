@@ -21,6 +21,7 @@ import { bankService } from '../../services/apiServices';
 import { milestone4Service } from '../../services/milestone4Service';
 import { openAssessmentOrEligibilityFirst } from '../../utils/eligibilityGate';
 import { computeProfileCompletion } from '../../utils/profileCompletion';
+import PortalReferralSection from '../../components/referral/PortalReferralSection';
 
 
 const CustomerDashboard = () => {
@@ -279,6 +280,7 @@ const CustomerDashboard = () => {
     portfolio: { title: 'My Investments', subtitle: 'Your unified financial portfolio and holdings.' },
     documents: { title: 'My Documents', subtitle: 'Upload and manage verification documents.' },
     notifications: { title: 'My Alerts', subtitle: 'Stay updated on your applications and account activity.' },
+    refer: { title: 'Customer Referral', subtitle: 'Share your unique referral code and help friends start their loan journey.' },
     profile: { title: 'My Profile', subtitle: 'Update your personal information and contact details.' },
     support: { title: 'Support Center', subtitle: 'Get help from our financial experts — we are here for you.' },
     settings: { title: 'Settings', subtitle: 'Manage your password, sessions, and account security.' },
@@ -303,7 +305,7 @@ const CustomerDashboard = () => {
         <div>
           <p className="text-sm font-bold text-foreground mb-1">Refer &amp; Earn</p>
           <p className="text-xs text-muted-foreground mb-3">Invite friends and earn rewards</p>
-          <Button className="rf-btn-primary w-full" size="sm" onClick={() => navigate('/share-your-story')}>
+          <Button className="rf-btn-primary w-full" size="sm" onClick={() => handleTabChange('refer')}>
             Refer Now
           </Button>
         </div>
@@ -499,6 +501,13 @@ const CustomerDashboard = () => {
               )}
             </div>
           </div>
+        )}
+
+        {activeTab === 'refer' && (
+          <PortalReferralSection
+            program="customer"
+            fallbackCode={userProfile?.customerCode}
+          />
         )}
 
         {activeTab === 'profile' && <CustomerProfilePanel />}

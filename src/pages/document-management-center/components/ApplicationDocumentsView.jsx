@@ -4,6 +4,7 @@ import Button from '../../../components/ui/Button';
 import { documentTypeLabel } from '../../../utils/documentUrls';
 import { DOC_STATUS_LABELS } from '../../../services/documentManagementService';
 import AgentDocumentUploadPanel from './AgentDocumentUploadPanel';
+import BulkActions from './BulkActions';
 
 const statusStyles = {
   approved: 'bg-success/10 text-success',
@@ -22,7 +23,14 @@ const ApplicationDocumentsView = ({
   onOpenDocument,
   onDownload,
   onDocumentUploaded,
+  selectedDocumentIds,
+  onToggleDocumentSelection,
+  onDeleteDocument,
+  onDeleteSelectedDocuments,
+  onDownloadSelectedDocuments,
 }) => {
+  const selectedCount = selectedDocumentIds?.size || 0;
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-3">
@@ -62,6 +70,16 @@ const ApplicationDocumentsView = ({
         <AgentDocumentUploadPanel application={application} onUploaded={onDocumentUploaded} />
       )}
 
+      <BulkActions
+        selectedCount={selectedCount}
+        onDownloadAll={onDownloadSelectedDocuments}
+        onDeleteAll={onDeleteSelectedDocuments}
+        onClearSelection={() => {
+          if (!selectedDocumentIds) return;
+          Array.from(selectedDocumentIds).forEach((id) => onToggleDocumentSelection?.(id, false));
+        }}
+      />
+
       {loading ? (
         <div className="text-center py-12 text-muted-foreground">Loading documents…</div>
       ) : documents.length === 0 ? (
@@ -84,6 +102,14 @@ const ApplicationDocumentsView = ({
                 tabIndex={0}
               >
                 <div className="flex gap-3">
+                  <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={selectedDocumentIds?.has(doc.id)}
+                      onChange={(e) => onToggleDocumentSelection?.(doc.id, e.target.checked)}
+                      className="w-4 h-4 rounded border-border text-primary"
+                    />
+                  </div>
                   <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                     <Icon
                       name={isImage ? 'Image' : isPdf ? 'FileText' : 'FileText'}
@@ -116,6 +142,15 @@ const ApplicationDocumentsView = ({
                   </Button>
                   <Button variant="outline" size="sm" iconName="Download" onClick={() => onDownload(doc)}>
                     Download
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    iconName="Trash2"
+                    onClick={() => onDeleteDocument?.(doc)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    Delete
                   </Button>
                 </div>
               </div>

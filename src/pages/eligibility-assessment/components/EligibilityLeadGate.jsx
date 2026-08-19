@@ -182,7 +182,7 @@ const EligibilityLeadGate = ({ onVerified, loanType }) => {
           disabled={otpSent && loading}
         />
         <span className="text-muted-foreground">
-          I consent to Rfincare contacting me about loan products and storing my details per the Privacy Policy.
+          I here by authorized to send notifications via SMS, Email, RCS and other as per terms of service &amp; privacy policy.
         </span>
       </label>
       {otpSent && (

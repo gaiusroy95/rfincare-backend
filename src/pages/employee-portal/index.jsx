@@ -31,6 +31,7 @@ import { usePortalPolling } from '../../hooks/usePortalPolling';
 import StaffCommunicationPanel from '../agent-dashboard/components/StaffCommunicationPanel';
 import CustomerSupportPanel from '../customer-dashboard/components/CustomerSupportPanel';
 import EmployeeSettingsPanel from './components/EmployeeSettingsPanel';
+import PortalReferralSection from '../../components/referral/PortalReferralSection';
 import { staffMessagingService } from '../../services/staffMessagingService';
 import {
   employeeCan,
@@ -334,6 +335,8 @@ const EmployeePortal = () => {
     { id: 'documents', label: 'Application Verification', icon: 'FolderOpen', count: pendingDocuments?.length, module: 'documents' },
     { id: 'activity', label: 'Activity Log', icon: 'Activity', module: 'reports' },
     { id: 'training', label: 'Training', icon: 'GraduationCap' },
+    { id: 'agent-referral', label: 'Agent Referral', icon: 'UserPlus' },
+    { id: 'customer-referral', label: 'Customer Referral', icon: 'Gift' },
   ];
 
   const tabs = allTabs.filter((tab) => !tab.module || employeeCan(effectiveAccess, tab.module, 'read'));
@@ -385,6 +388,14 @@ const EmployeePortal = () => {
     documents: { title: 'Application Verification', subtitle: 'Review and verify pending application documents.' },
     training: { title: 'Training', subtitle: 'Complete modules to boost productivity.' },
     activity: { title: 'Activity Log', subtitle: 'Your recent actions and audit trail.' },
+    'agent-referral': {
+      title: 'Agent Referral',
+      subtitle: 'Share your unique agent-referral code to track who you referred as a partner.',
+    },
+    'customer-referral': {
+      title: 'Customer Referral',
+      subtitle: 'Share your unique customer-referral code to track who you referred for loans.',
+    },
     support: { title: 'Support Center', subtitle: 'Get help from our operations team.' },
     settings: { title: 'Settings', subtitle: 'Update your profile photo and password.' },
   };
@@ -746,6 +757,14 @@ const EmployeePortal = () => {
             onStartResource={handleLearningStart}
             onOpenResource={handleLearningOpen}
           />
+        )}
+
+        {activeTab === 'agent-referral' && (
+          <PortalReferralSection program="agent" />
+        )}
+
+        {activeTab === 'customer-referral' && (
+          <PortalReferralSection program="customer" />
         )}
 
         {activeTab === 'support' && <CustomerSupportPanel />}

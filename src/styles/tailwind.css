@@ -287,6 +287,15 @@
     @apply flex items-center gap-1.5 sm:gap-2 xl:gap-3 shrink-0;
   }
 
+  .rf-header-status-link {
+    @apply inline-flex items-center gap-1.5 px-2.5 py-2 text-sm font-semibold rounded-md transition-colors whitespace-nowrap;
+    color: var(--color-brand-green);
+  }
+
+  .rf-header-status-link:hover {
+    background: color-mix(in srgb, var(--color-brand-green) 8%, white);
+  }
+
   .rf-search-btn {
     @apply inline-flex items-center justify-center w-10 h-10 rounded-md border border-border bg-muted text-foreground transition-colors hover:bg-muted;
   }

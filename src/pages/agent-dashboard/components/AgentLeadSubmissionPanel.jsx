@@ -61,8 +61,7 @@ const AgentLeadSubmissionPanel = ({ agentCode, onLeadCreated }) => {
     loanType: form.loanType,
     source: 'agent_portal',
     consentAccepted: true,
-    sourcedAgentCode: agentCode || undefined,
-    agentCode: agentCode || undefined,
+    ...(agentCode ? { sourcedAgentCode: agentCode, agentCode } : {}),
   });
 
   const startApplication = (leadMeta) => {

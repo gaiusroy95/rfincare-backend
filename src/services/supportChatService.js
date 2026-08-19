@@ -1,6 +1,11 @@
 import { apiClient } from '../lib/apiClient';
 
 export const supportChatService = {
+  async getSupportContact() {
+    const res = await apiClient.get('/portal/customer/support-contact');
+    return res.data;
+  },
+
   async getMessages() {
     const res = await apiClient.get('/portal/customer/support-chat');
     return res.data;

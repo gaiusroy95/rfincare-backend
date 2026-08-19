@@ -24,7 +24,7 @@ import { usePortalPolling } from '../../hooks/usePortalPolling';
 import PerformanceChart from './components/PerformanceChart';
 import StaffCommunicationPanel from './components/StaffCommunicationPanel';
 import TrainingResources from './components/TrainingResources';
-import AgentReferralBanner from '../../components/agent/AgentReferralBanner';
+import PortalReferralSection from '../../components/referral/PortalReferralSection';
 import SessionTimeout from '../../components/SessionTimeout';
 import { agentService } from '../../services/agentService';
 import {
@@ -53,7 +53,8 @@ const VIEW_HEADINGS = {
   products: { title: 'Products', subtitle: 'Browse financial products to offer your clients.' },
   support: { title: 'Support Center', subtitle: 'Get help from our team — we are here for you.' },
   settings: { title: 'Profile Settings', subtitle: 'Manage your photo, login, and payout account.' },
-  refer: { title: 'Refer & Earn', subtitle: 'Invite partners and grow your income.' },
+  refer: { title: 'Agent Referral', subtitle: 'Share your unique agent-referral code and track who you referred.' },
+  'customer-referral': { title: 'Customer Referral', subtitle: 'Share your unique customer-referral link and track who you referred.' },
 };
 
 function filterClientsBySection(clients, section) {
@@ -88,6 +89,8 @@ const AgentDashboard = () => {
     clientLabel: '',
     mode: 'help',
   });
+  const [learningItems, setLearningItems] = useState([]);
+  const [learningLoading, setLearningLoading] = useState(false);
 
   const loadDashboard = useCallback(async ({ background = false } = {}) => {
     if (!background) setLoading(true);
@@ -182,20 +185,62 @@ const AgentDashboard = () => {
   const mapLearningResource = (item) => ({
     id: item.id,
     type: item.type || item.contentType,
+    contentType: item.contentType || item.content_type,
     title: item.title,
     description: item.description,
     duration: item.duration || item.durationLabel || '—',
     progress: item.progress ?? 0,
     isNew: Boolean(item.isNew ?? item.is_new),
+    fileUrl: item.fileUrl || item.file_url,
+    videoUrl: item.videoUrl || item.video_url,
+    mimeType: item.mimeType || item.mime_type,
     openUrl: resolveLearningOpenUrl(item),
     legacy: item.legacy,
   });
 
-  const trainingResources = (dashboard?.learningResources || []).map(mapLearningResource);
+  const loadLearning = useCallback(async () => {
+    setLearningLoading(true);
+    try {
+      const data = await agentLearningService.listForAgent();
+      setLearningItems(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Agent learning load failed:', err);
+      setLearningItems([]);
+    } finally {
+      setLearningLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (selectedView === 'learning') {
+      loadLearning();
+    }
+  }, [selectedView, loadLearning]);
+
+  const trainingResources = (
+    learningItems.length
+      ? learningItems
+      : (dashboard?.learningResources || [])
+  ).map(mapLearningResource);
+
+  const applyLearningProgress = (contentId, progress) => {
+    setLearningItems((prev) =>
+      prev.map((r) => (r.id === contentId ? { ...r, progress } : r)),
+    );
+    setDashboard((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        learningResources: (prev.learningResources || []).map((r) =>
+          r.id === contentId ? { ...r, progress } : r,
+        ),
+      };
+    });
+  };
 
   const handleLearningOpen = async (resource) => {
     try {
-      await openLearningResource(resource);
+      await openLearningResource(resource, 'agent');
     } catch (err) {
       console.error('Failed to open learning resource:', err);
     }
@@ -203,15 +248,7 @@ const AgentDashboard = () => {
       const nextProgress = resource.progress > 0 ? Math.min(100, resource.progress + 25) : 50;
       try {
         await agentLearningService.updateProgress(resource.id, nextProgress);
-        setDashboard((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            learningResources: (prev.learningResources || []).map((r) =>
-              r.id === resource.id ? { ...r, progress: nextProgress } : r,
-            ),
-          };
-        });
+        applyLearningProgress(resource.id, nextProgress);
       } catch {
         /* ignore */
       }
@@ -223,15 +260,7 @@ const AgentDashboard = () => {
     if (!resource.legacy && resource.id && (resource.progress || 0) < 100) {
       try {
         await agentLearningService.updateProgress(resource.id, 100);
-        setDashboard((prev) => {
-          if (!prev) return prev;
-          return {
-            ...prev,
-            learningResources: (prev.learningResources || []).map((r) =>
-              r.id === resource.id ? { ...r, progress: 100 } : r,
-            ),
-          };
-        });
+        applyLearningProgress(resource.id, 100);
       } catch {
         /* ignore */
       }
@@ -382,7 +411,7 @@ const AgentDashboard = () => {
         <div>
           <p className="text-sm font-bold text-foreground mb-1">Earn More</p>
           <p className="text-xs text-muted-foreground mb-3">Refer partners and grow your income</p>
-          <Button className="rf-btn-primary w-full" size="sm" onClick={() => handleNavSelect({ id: 'refer' })}>
+          <Button className="rf-btn-primary w-full" size="sm" onClick={() => handleNavSelect({ id: 'customer-referral' })}>
             Refer Now
           </Button>
         </div>
@@ -533,11 +562,16 @@ const AgentDashboard = () => {
                 </p>
               </div>
             )}
-            <TrainingResources
-              resources={trainingResources}
-              onOpenResource={handleLearningOpen}
-              onStartResource={handleLearningStart}
-            />
+            {learningLoading && !trainingResources.length ? (
+              <p className="text-sm text-muted-foreground text-center py-6">Loading training materials…</p>
+            ) : (
+              <TrainingResources
+                resources={trainingResources}
+                showViewAll={false}
+                onOpenResource={handleLearningOpen}
+                onStartResource={handleLearningStart}
+              />
+            )}
           </div>
         )}
 
@@ -548,17 +582,19 @@ const AgentDashboard = () => {
         {selectedView === 'settings' && <AgentSettingsPanel />}
 
         {selectedView === 'refer' && (
-          <div className="space-y-6">
-            <AgentReferralBanner attribution={dashboard?.attribution} />
-            <div className="bg-card border border-border rounded-lg p-6 text-center">
-              <p className="text-muted-foreground mb-4">
-                Share your referral link and earn commissions when partners join RFINCARE.
-              </p>
-              <Button className="rf-btn-primary" iconName="Share2" onClick={() => navigate('/share-your-story')}>
-                Share Referral Link
-              </Button>
-            </div>
-          </div>
+          <PortalReferralSection
+            program="agent"
+            fallbackCode={dashboard?.attribution?.agentCode}
+          />
+        )}
+
+        {selectedView === 'customer-referral' && (
+          <PortalReferralSection
+            program="customer"
+            fallbackCode={dashboard?.attribution?.agentCode}
+            fallbackLinks={dashboard?.attribution?.shareLinks}
+            fallbackCount={dashboard?.attribution?.attributedLeads}
+          />
         )}
 
       <StaffCommunicationPanel

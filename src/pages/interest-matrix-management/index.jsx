@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { Helmet } from 'react-helmet';
 
 import Icon from '../../components/AppIcon';
@@ -16,12 +16,49 @@ import { bankService } from '../../services/apiServices';
 const CSV_TEMPLATE = `bank_name,product_type,loan_type,credit_score_min,credit_score_max,loan_amount_min,loan_amount_max,term_min,term_max,interest_rate,status,effective_date,change_note
 HDFC Bank,Personal Loan,Unsecured,700,900,10000,50000,12,60,6.5,active,2026-01-01,Initial rate`;
 
+const normalizeProductValue = (value) =>
+  String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\s+/g, ' ');
+
+const humanizeProductValue = (value) =>
+  String(value || '')
+    .trim()
+    .replace(/[_-]+/g, ' ')
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+
+const extractLoanProductOptionsFromBanks = (banks = []) => {
+  const map = new Map();
+  for (const bank of banks || []) {
+    const products = bank?.bankProducts || bank?.bank_products || [];
+    for (const product of products) {
+      const data = product?.data || {};
+      const rawValue =
+        product?.name ||
+        data?.name ||
+        product?.loanType ||
+        product?.loan_type ||
+        data?.loanType ||
+        data?.loan_type ||
+        '';
+      const key = normalizeProductValue(rawValue);
+      if (!key || map.has(key)) continue;
+      const label = product?.name || data?.name || humanizeProductValue(rawValue);
+      map.set(key, { value: String(rawValue), label: String(label) });
+    }
+  }
+  return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+};
+
 const InterestMatrixManagement = () => {
   const [matrixData, setMatrixData] = useState([]);
   const [matrixLoading, setMatrixLoading] = useState(true);
   const [matrixError, setMatrixError] = useState('');
   const [importing, setImporting] = useState(false);
   const [bankOptions, setBankOptions] = useState([]);
+  const [partnerBanks, setPartnerBanks] = useState([]);
 
   const loadMatrix = useCallback(async () => {
     setMatrixLoading(true);
@@ -43,7 +80,8 @@ const InterestMatrixManagement = () => {
   useEffect(() => {
     const loadBanks = async () => {
       try {
-        const banks = await bankService.getActiveBanks({ includeProducts: false });
+        const banks = await bankService.getAllBanks();
+        setPartnerBanks(Array.isArray(banks) ? banks : []);
         setBankOptions(
           (banks || []).map((bank) => ({
             value: bank.id,
@@ -51,6 +89,7 @@ const InterestMatrixManagement = () => {
           })),
         );
       } catch {
+        setPartnerBanks([]);
         setBankOptions([]);
       }
     };
@@ -99,13 +138,17 @@ const InterestMatrixManagement = () => {
   const [editData, setEditData] = useState(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
 
-  const productTypes = [
-    { value: "Personal Loan", label: "Personal Loan" },
-    { value: "Home Loan", label: "Home Loan" },
-    { value: "Business Loan", label: "Business Loan" },
-    { value: "Auto Loan", label: "Auto Loan" },
-    { value: "Education Loan", label: "Education Loan" }
-  ];
+  const productTypes = useMemo(() => {
+    const live = extractLoanProductOptionsFromBanks(partnerBanks);
+    if (live.length) return live;
+    return [
+      { value: 'Personal Loan', label: 'Personal Loan' },
+      { value: 'Home Loan', label: 'Home Loan' },
+      { value: 'Business Loan', label: 'Business Loan' },
+      { value: 'Auto Loan', label: 'Auto Loan' },
+      { value: 'Education Loan', label: 'Education Loan' },
+    ];
+  }, [partnerBanks]);
 
   const loanTypes = [
     { value: "Secured", label: "Secured" },
@@ -404,6 +447,21 @@ const InterestMatrixManagement = () => {
                 >
                   Add Rate
                 </Button>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  iconName="Trash2"
+                  iconPosition="left"
+                  onClick={handleBulkDelete}
+                  disabled={!selectedRows?.length}
+                  title={
+                    selectedRows?.length
+                      ? `Delete ${selectedRows.length} selected row(s)`
+                      : 'Select rows to delete'
+                  }
+                >
+                  Delete Selected{selectedRows?.length ? ` (${selectedRows.length})` : ''}
+                </Button>
               </div>
             </div>
           </div>
@@ -491,7 +549,6 @@ const InterestMatrixManagement = () => {
 
           <BulkActions
             selectedCount={selectedRows?.length}
-            onBulkEdit={() => console.log('Bulk edit')}
             onBulkDelete={handleBulkDelete}
             onBulkExport={handleBulkExport}
             onClearSelection={() => setSelectedRows([])}

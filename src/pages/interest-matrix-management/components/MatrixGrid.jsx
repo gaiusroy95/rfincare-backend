@@ -168,6 +168,8 @@ const MatrixGrid = ({
                       size="icon"
                       onClick={() => onEditRate(row)}
                       className="h-8 w-8"
+                      title="Edit rate"
+                      aria-label="Edit rate"
                     >
                       <Icon name="Edit2" size={16} />
                     </Button>
@@ -176,6 +178,8 @@ const MatrixGrid = ({
                       size="icon"
                       onClick={() => onDeleteRate(row?.id)}
                       className="h-8 w-8 text-destructive hover:text-destructive"
+                      title="Delete rate"
+                      aria-label="Delete rate"
                     >
                       <Icon name="Trash2" size={16} />
                     </Button>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
@@ -6,6 +6,7 @@ import { useSiteContact } from '../../../contexts/SiteContactContext';
 import { useAuth } from '../../../contexts/AuthContext';
 import CustomerLiveChatDrawer from './CustomerLiveChatDrawer';
 import StaffSupportChatInbox from './StaffSupportChatInbox';
+import { supportChatService } from '../../../services/supportChatService';
 
 const SUPPORT_CHANNELS = [
   {
@@ -47,13 +48,30 @@ const CustomerSupportPanel = () => {
   const { contact } = useSiteContact();
   const { user, userProfile } = useAuth();
   const [chatOpen, setChatOpen] = useState(false);
+  const [assignedSupport, setAssignedSupport] = useState(null);
 
   const role = userProfile?.role || user?.role || '';
   const isCustomer = role === 'customer';
   const isStaff = ['employee', 'admin', 'super_admin'].includes(role);
 
-  const phone = contact?.phone || contact?.phones?.[0];
-  const email = contact?.email || contact?.emails?.[0];
+  useEffect(() => {
+    if (!isCustomer) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await supportChatService.getSupportContact();
+        if (!cancelled) setAssignedSupport(data?.contact || null);
+      } catch {
+        if (!cancelled) setAssignedSupport(null);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isCustomer]);
+
+  const phone = (isCustomer ? assignedSupport?.employeePhone : null) || contact?.phone || contact?.phones?.[0];
+  const email = (isCustomer ? assignedSupport?.employeeEmail : null) || contact?.email || contact?.emails?.[0];
 
   const openWhatsApp = () => {
     const digits = String(phone || '').replace(/\D/g, '');
@@ -124,6 +142,19 @@ const CustomerSupportPanel = () => {
       </div>
 
       {isStaff ? <StaffSupportChatInbox /> : null}
+
+      {isCustomer && assignedSupport?.employeeUserId ? (
+        <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
+          <p className="font-semibold">Assigned support owner</p>
+          <p className="mt-1">
+            {assignedSupport.employeeName || 'Assigned employee'}
+            {assignedSupport.applicationNumber ? ` · ${assignedSupport.applicationNumber}` : ''}
+          </p>
+          <p className="text-xs mt-1 text-emerald-800">
+            Your chat, email, and call requests are auto-mapped to this assigned employee.
+          </p>
+        </div>
+      ) : null}
 
       <div className="rf-filter-card space-y-4">
         <h3 className="font-semibold text-foreground flex items-center gap-2">

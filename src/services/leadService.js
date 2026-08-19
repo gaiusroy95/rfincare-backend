@@ -60,8 +60,12 @@ export const leadService = {
     return res.data;
   },
 
-  async listLeads({ assignedTo } = {}) {
-    const params = assignedTo ? { assignedTo } : {};
+  async listLeads({ assignedTo, month, dateFrom, dateTo } = {}) {
+    const params = {};
+    if (assignedTo) params.assignedTo = assignedTo;
+    if (month) params.month = month;
+    if (dateFrom) params.dateFrom = dateFrom;
+    if (dateTo) params.dateTo = dateTo;
     const res = await apiClient.get('/leads', { params });
     return res.data;
   },
@@ -88,6 +92,16 @@ export const leadService = {
 
   async resolveResumeToken(token) {
     const res = await apiClient.get(`/public/resume-application/${encodeURIComponent(token)}`);
+    return res.data;
+  },
+
+  async deleteLead(leadId) {
+    const res = await apiClient.delete(`/leads/${encodeURIComponent(leadId)}`);
+    return res.data;
+  },
+
+  async bulkDeleteLeads(leadIds = []) {
+    const res = await apiClient.post('/leads/bulk-delete', { leadIds });
     return res.data;
   },
 };

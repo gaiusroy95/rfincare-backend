@@ -5,6 +5,7 @@ import Button from '../../../components/ui/Button';
 import HomeSidebarWidgets from './HomeSidebarWidgets';
 import HeroCibilScoreCard from './HeroCibilScoreCard';
 import HeroFlashBanner from './HeroFlashBanner';
+import CustomerStatusCheckModal from './CustomerStatusCheckModal';
 
 const TRUST_ITEMS = [
   { icon: 'Shield', label: '100% Secure' },
@@ -44,6 +45,7 @@ const PLANNER_CARDS = [
 const HeroSection = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -112,6 +114,15 @@ const HeroSection = () => {
               >
                 Talk to Expert
               </Button>
+              <Button
+                variant="outline"
+                className="rf-btn-outline-green"
+                iconName="Search"
+                iconPosition="left"
+                onClick={() => setShowStatusModal(true)}
+              >
+                Application Status Check
+              </Button>
             </div>
 
             <div className="rf-hero-planner-grid">
@@ -169,6 +180,7 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
+      <CustomerStatusCheckModal isOpen={showStatusModal} onClose={() => setShowStatusModal(false)} />
     </section>
   );
 };

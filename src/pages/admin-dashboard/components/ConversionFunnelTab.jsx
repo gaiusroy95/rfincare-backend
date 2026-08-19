@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import { adminService } from '../../../services/adminService';
@@ -12,10 +12,7 @@ function FunnelStageBar({ stage, maxCount }) {
         <span className="text-muted-foreground">{stage.count.toLocaleString('en-IN')}</span>
       </div>
       <div className="h-2.5 bg-muted rounded-full overflow-hidden">
-        <div
-          className="h-full bg-primary rounded-full transition-all"
-          style={{ width: `${pct}%` }}
-        />
+        <div className="h-full bg-primary rounded-full transition-all" style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -23,14 +20,21 @@ function FunnelStageBar({ stage, maxCount }) {
 
 const ConversionFunnelTab = () => {
   const [days, setDays] = useState(30);
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [downloadingProductKey, setDownloadingProductKey] = useState('');
 
   const load = useCallback(async () => {
     setLoading(true);
     setError('');
-    const { data: result, error: err } = await adminService.getFunnelAnalytics(days);
+    const { data: result, error: err } = await adminService.getFunnelAnalytics({
+      days,
+      dateFrom: dateFrom || undefined,
+      dateTo: dateTo || undefined,
+    });
     if (err) {
       setError(err.message);
       setData(null);
@@ -38,14 +42,44 @@ const ConversionFunnelTab = () => {
       setData(result);
     }
     setLoading(false);
-  }, [days]);
+  }, [days, dateFrom, dateTo]);
 
   useEffect(() => {
     load();
   }, [load]);
 
+  const handleDownloadProduct = async (bucket) => {
+    if (!bucket?.productKey) return;
+    setDownloadingProductKey(bucket.productKey);
+    try {
+      const blob = await adminService.downloadFunnelProductCsv({
+        productKey: bucket.productKey,
+        days,
+        dateFrom: dateFrom || undefined,
+        dateTo: dateTo || undefined,
+      });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${bucket.productKey}-conversion-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+    } catch (err) {
+      setError(err?.response?.data?.error || err?.message || 'Could not download product conversion file');
+    } finally {
+      setDownloadingProductKey('');
+    }
+  };
+
   const totals = data?.totals || {};
   const rates = data?.conversionRates || {};
+  const productBuckets = data?.productBuckets || [];
+  const nonZeroBuckets = useMemo(
+    () => productBuckets.filter((b) => b.leadsCreated > 0 || b.conversions > 0),
+    [productBuckets],
+  );
 
   return (
     <div className="space-y-6">
@@ -53,22 +87,55 @@ const ConversionFunnelTab = () => {
         <div>
           <h2 className="text-xl font-bold text-foreground">Conversion funnel</h2>
           <p className="text-sm text-muted-foreground mt-1">
-            Marketplace leads, loan applications, insurance checkout and SIP orders.
+            Product buckets with lead creator, converter and payout mapping.
           </p>
         </div>
         <div className="flex items-center gap-2">
           {[7, 30, 90].map((d) => (
-            <Button
-              key={d}
-              size="sm"
-              variant={days === d ? 'default' : 'outline'}
-              onClick={() => setDays(d)}
-            >
+            <Button key={d} size="sm" variant={days === d ? 'default' : 'outline'} onClick={() => setDays(d)}>
               {d}d
             </Button>
           ))}
           <Button size="sm" variant="outline" onClick={load} disabled={loading}>
             <Icon name="RefreshCw" size={14} className={loading ? 'animate-spin' : ''} />
+          </Button>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">From date</label>
+          <input
+            type="date"
+            value={dateFrom}
+            onChange={(e) => setDateFrom(e.target.value)}
+            className="w-full border border-border rounded-md px-2 py-2 text-sm bg-background"
+          />
+        </div>
+        <div>
+          <label className="block text-xs text-muted-foreground mb-1">To date</label>
+          <input
+            type="date"
+            value={dateTo}
+            onChange={(e) => setDateTo(e.target.value)}
+            className="w-full border border-border rounded-md px-2 py-2 text-sm bg-background"
+          />
+        </div>
+        <div className="text-xs text-muted-foreground">
+          Window: <span className="font-medium text-foreground">{data?.windowLabel || `Last ${days} days`}</span>
+        </div>
+        <div className="flex gap-2">
+          <Button size="sm" onClick={load}>Apply</Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => {
+              setDateFrom('');
+              setDateTo('');
+              setTimeout(() => load(), 0);
+            }}
+          >
+            Reset
           </Button>
         </div>
       </div>
@@ -130,43 +197,63 @@ const ConversionFunnelTab = () => {
             })}
           </div>
 
-          {data?.productMix?.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h3 className="font-semibold mb-4">Product mix</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                {data.productMix.map((item) => (
-                  <div key={item.label} className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
-                    <span className="text-sm text-foreground">{item.label}</span>
-                    <span className="font-bold">{item.count.toLocaleString('en-IN')}</span>
-                  </div>
-                ))}
-              </div>
+          <div className="bg-card border border-border rounded-xl p-5">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="font-semibold">Product buckets</h3>
+              <p className="text-xs text-muted-foreground">
+                Excel/CSV download available at each product row
+              </p>
             </div>
-          )}
-
-          {data?.topAgents?.length > 0 && (
-            <div className="bg-card border border-border rounded-xl p-5">
-              <h3 className="font-semibold mb-4">Top agents by attributed leads</h3>
-              <div className="overflow-x-auto">
-                <table className="w-full text-sm">
-                  <thead>
-                    <tr className="text-left text-muted-foreground border-b border-border">
-                      <th className="pb-2 pr-4">Agent code</th>
-                      <th className="pb-2">Leads</th>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm min-w-[980px]">
+                <thead>
+                  <tr className="text-left text-muted-foreground border-b border-border">
+                    <th className="pb-2 pr-4">Product</th>
+                    <th className="pb-2 pr-4">Leads</th>
+                    <th className="pb-2 pr-4">Conversions</th>
+                    <th className="pb-2 pr-4">Created by agent</th>
+                    <th className="pb-2 pr-4">Created by employee</th>
+                    <th className="pb-2 pr-4">Converted by agent</th>
+                    <th className="pb-2 pr-4">Converted by employee</th>
+                    <th className="pb-2 pr-4">Payout mapped</th>
+                    <th className="pb-2">Download</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {nonZeroBuckets.map((bucket) => (
+                    <tr key={bucket.productKey} className="border-b border-border/60">
+                      <td className="py-2 pr-4 font-medium">{bucket.productLabel}</td>
+                      <td className="py-2 pr-4">{bucket.leadsCreated.toLocaleString('en-IN')}</td>
+                      <td className="py-2 pr-4">{bucket.conversions.toLocaleString('en-IN')}</td>
+                      <td className="py-2 pr-4">{bucket.createdByAgent.toLocaleString('en-IN')}</td>
+                      <td className="py-2 pr-4">{bucket.createdByEmployee.toLocaleString('en-IN')}</td>
+                      <td className="py-2 pr-4">{bucket.convertedByAgent.toLocaleString('en-IN')}</td>
+                      <td className="py-2 pr-4">{bucket.convertedByEmployee.toLocaleString('en-IN')}</td>
+                      <td className="py-2 pr-4">₹{Number(bucket.payoutAmount || 0).toLocaleString('en-IN')}</td>
+                      <td className="py-2">
+                        <Button
+                          size="xs"
+                          variant="outline"
+                          iconName="Download"
+                          loading={downloadingProductKey === bucket.productKey}
+                          onClick={() => handleDownloadProduct(bucket)}
+                        >
+                          Export
+                        </Button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {data.topAgents.map((row) => (
-                      <tr key={row.agentCode} className="border-b border-border/60">
-                        <td className="py-2 pr-4 font-medium">{row.agentCode}</td>
-                        <td className="py-2">{row.leadCount.toLocaleString('en-IN')}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                  ))}
+                  {!nonZeroBuckets.length && (
+                    <tr>
+                      <td colSpan={9} className="py-8 text-center text-muted-foreground">
+                        No conversion data found for selected date range.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
             </div>
-          )}
+          </div>
         </>
       )}
     </div>

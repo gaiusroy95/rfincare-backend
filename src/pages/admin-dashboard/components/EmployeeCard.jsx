@@ -10,6 +10,7 @@ const EmployeeCard = ({
   onResetPassword,
   onEditRole,
   onViewActivity,
+  onDelete,
 }) => {
   const getRoleBadge = (role) => {
     const roleConfig = {
@@ -129,6 +130,16 @@ const EmployeeCard = ({
           onClick={() => onViewActivity?.(employee)}
         >
           View Activity
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          iconName="Trash2"
+          iconPosition="left"
+          className="text-destructive hover:text-destructive"
+          onClick={() => onDelete?.(employee)}
+        >
+          Delete
         </Button>
       </div>
     </div>

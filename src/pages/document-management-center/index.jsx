@@ -26,6 +26,7 @@ const DocumentManagementCenter = () => {
   const [applications, setApplications] = useState([]);
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [documents, setDocuments] = useState([]);
+  const [selectedDocumentIds, setSelectedDocumentIds] = useState(() => new Set());
   const [loadingApps, setLoadingApps] = useState(true);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [error, setError] = useState('');
@@ -75,6 +76,7 @@ const DocumentManagementCenter = () => {
   const handleSelectApplication = async (app) => {
     setSelectedApplication(app);
     setView('documents');
+    setSelectedDocumentIds(new Set());
     await loadDocumentsForApplication(app);
   };
 
@@ -82,12 +84,69 @@ const DocumentManagementCenter = () => {
     setView('applications');
     setSelectedApplication(null);
     setDocuments([]);
+    setSelectedDocumentIds(new Set());
     setReviewDocument(null);
     loadApplications();
   };
 
   const handleOpenDocument = (doc) => {
     setReviewDocument(doc);
+  };
+
+  const selectedDocuments = documents.filter((d) => selectedDocumentIds.has(d.id));
+
+  const toggleDocumentSelection = (documentId, checked) => {
+    setSelectedDocumentIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(documentId);
+      else next.delete(documentId);
+      return next;
+    });
+  };
+
+  const handleDeleteOneDocument = async (doc) => {
+    if (!doc?.id) return;
+    if (!window.confirm('Delete this document?')) return;
+    try {
+      await documentManagementService.deleteDocument(doc.id);
+      setSelectedDocumentIds((prev) => {
+        const next = new Set(prev);
+        next.delete(doc.id);
+        return next;
+      });
+      if (selectedApplication) await loadDocumentsForApplication(selectedApplication);
+    } catch (err) {
+      window.alert(err?.response?.data?.error || err?.message || 'Delete failed');
+    }
+  };
+
+  const handleDeleteSelectedDocuments = async () => {
+    if (!selectedDocuments.length) return;
+    if (
+      !window.confirm(
+        `Delete ${selectedDocuments.length} selected document${selectedDocuments.length === 1 ? '' : 's'}?`,
+      )
+    ) {
+      return;
+    }
+
+    try {
+      await Promise.allSettled(
+        selectedDocuments.map((d) => documentManagementService.deleteDocument(d.id)),
+      );
+      setSelectedDocumentIds(new Set());
+      if (selectedApplication) await loadDocumentsForApplication(selectedApplication);
+    } catch (err) {
+      window.alert(err?.response?.data?.error || err?.message || 'Bulk delete failed');
+    }
+  };
+
+  const handleDownloadSelectedDocuments = async () => {
+    for (const doc of selectedDocuments) {
+      // Sequential so browsers don’t block multiple downloads.
+      // eslint-disable-next-line no-await-in-loop
+      await handleDownload(doc);
+    }
   };
 
   const handleDownload = async (doc) => {
@@ -214,6 +273,11 @@ const DocumentManagementCenter = () => {
             onOpenDocument={handleOpenDocument}
             onDownload={handleDownload}
             onDocumentUploaded={() => loadDocumentsForApplication(selectedApplication)}
+            selectedDocumentIds={selectedDocumentIds}
+            onToggleDocumentSelection={toggleDocumentSelection}
+            onDeleteDocument={handleDeleteOneDocument}
+            onDeleteSelectedDocuments={handleDeleteSelectedDocuments}
+            onDownloadSelectedDocuments={handleDownloadSelectedDocuments}
           />
         )}
 

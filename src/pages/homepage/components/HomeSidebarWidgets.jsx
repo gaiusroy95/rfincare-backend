@@ -5,6 +5,7 @@ import Button from '../../../components/ui/Button';
 import { POPULAR_CALCULATORS } from '../../../constants/calculatorProductBridges';
 import { bankService } from '../../../services/apiServices';
 import { getBankShortLabel } from '../../../utils/bankBranding';
+import CustomerStatusCheckModal from './CustomerStatusCheckModal';
 
 const CALC_ICONS = {
   'emi-calculator': { icon: 'Calculator', color: 'bg-emerald-100 text-emerald-700' },
@@ -45,6 +46,7 @@ const HomeSidebarWidgets = () => {
   const [partnerBanks, setPartnerBanks] = useState([]);
   const [totalPartners, setTotalPartners] = useState(0);
   const [partnersLoading, setPartnersLoading] = useState(true);
+  const [showStatusModal, setShowStatusModal] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,6 +128,22 @@ const HomeSidebarWidgets = () => {
         </div>
       </div>
 
+      <div className="rf-sidebar-widget">
+        <h3 className="font-bold text-foreground mb-2">Already Applied?</h3>
+        <p className="text-sm text-muted-foreground mb-3">
+          Track your application status or continue your saved form with OTP verification.
+        </p>
+        <Button
+          variant="outline"
+          className="w-full rf-btn-outline-green"
+          iconName="Search"
+          iconPosition="left"
+          onClick={() => setShowStatusModal(true)}
+        >
+          Application Status Check
+        </Button>
+      </div>
+
       <div className="rf-sidebar-widget bg-emerald-50 border-emerald-100">
         <h3 className="font-bold text-foreground mb-3 text-sm">RBI Registered Partners</h3>
         <div className="flex items-center gap-2 flex-wrap">
@@ -167,6 +185,7 @@ const HomeSidebarWidgets = () => {
           )}
         </div>
       </div>
+      <CustomerStatusCheckModal isOpen={showStatusModal} onClose={() => setShowStatusModal(false)} />
     </>
   );
 };

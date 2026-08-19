@@ -10,6 +10,7 @@ import Icon from '../AppIcon';
 import BrandLogo from './BrandLogo';
 import HeaderNavDropdown from './HeaderNavDropdown';
 import LanguageSwitcher from './LanguageSwitcher';
+import CustomerStatusCheckModal from '../../pages/homepage/components/CustomerStatusCheckModal';
 
 const PUBLIC_GUEST_PATHS = new Set([
   '/',
@@ -56,6 +57,7 @@ const Header = ({ children }) => {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [searchOpen, setSearchOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
   const { visibility: marketplaceVisibility } = useMarketplaceVisibility();
 
   const isGuest = !user;
@@ -259,6 +261,21 @@ const Header = ({ children }) => {
                   <span className={`role-badge ${currentRole} hidden lg:inline-flex`}>{roleLabel}</span>
                 )}
 
+                {showMarketingNav && (
+                  <button
+                    type="button"
+                    className="rf-header-status-link hidden md:inline-flex"
+                    onClick={() => {
+                      setShowStatusModal(true);
+                      setSearchOpen(false);
+                    }}
+                    aria-label="Application Status Check"
+                  >
+                    <Icon name="Search" size={16} className="shrink-0" />
+                    <span>Track Application</span>
+                  </button>
+                )}
+
                 {isGuest ? (
                   <button
                     type="button"
@@ -365,6 +382,20 @@ const Header = ({ children }) => {
               ))
             )}
 
+            {showMarketingNav && (
+              <button
+                type="button"
+                className="rf-mobile-link"
+                onClick={() => {
+                  setShowStatusModal(true);
+                  setIsMobileMenuOpen(false);
+                }}
+              >
+                <Icon name="Search" size={18} />
+                <span>Application Status Check</span>
+              </button>
+            )}
+
             <div className="rf-mobile-cta-row">
               {isGuest ? (
                 <button type="button" className="rf-btn-login w-full justify-center" onClick={() => handleNavigation('/customer-login')}>
@@ -382,6 +413,8 @@ const Header = ({ children }) => {
 
       {/* Spacer for fixed header (trust bar + main bar) */}
       <div className="rf-header-spacer" />
+
+      <CustomerStatusCheckModal isOpen={showStatusModal} onClose={() => setShowStatusModal(false)} />
     </>
   );
 };

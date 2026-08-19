@@ -2,7 +2,7 @@ import React from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
-const BulkActions = ({ selectedCount, onBulkEdit, onBulkDelete, onBulkExport, onClearSelection }) => {
+const BulkActions = ({ selectedCount, onBulkDelete, onBulkExport, onClearSelection }) => {
   if (selectedCount === 0) return null;
 
   return (
@@ -20,26 +20,6 @@ const BulkActions = ({ selectedCount, onBulkEdit, onBulkDelete, onBulkExport, on
         <div className="h-6 w-px bg-border"></div>
 
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBulkEdit}
-            iconName="Edit2"
-            iconPosition="left"
-            className="hidden sm:flex"
-          >
-            Edit
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onBulkEdit}
-            className="sm:hidden h-8 w-8"
-          >
-            <Icon name="Edit2" size={16} />
-          </Button>
-
           <Button
             variant="ghost"
             size="sm"

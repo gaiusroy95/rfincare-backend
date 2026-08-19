@@ -45,6 +45,11 @@ export const documentManagementService = {
     });
     return toCamelCase(res.data);
   },
+
+  async deleteDocument(documentId) {
+    const res = await apiClient.delete(`/documents/${encodeURIComponent(documentId)}`);
+    return toCamelCase(res.data);
+  },
 };
 
 export const DOC_SUMMARY_LABELS = {
