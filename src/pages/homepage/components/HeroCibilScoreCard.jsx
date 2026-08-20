@@ -291,8 +291,13 @@ const HeroCibilScoreCard = () => {
               onChange={handleChange}
               className="mt-0.5 shrink-0"
             />
-            <span>
-              I consent to Rfincare fetching my credit score from bureau partners and storing my details for eligibility matching.
+            <span className="space-y-1.5">
+              <span className="block">
+                I consent to Rfincare fetching my credit score from bureau partners and storing my details for eligibility matching.
+              </span>
+              <span className="block">
+                I here by authorized to send notifications via SMS, Email, RCS and other as per terms of service &amp; privacy policy.
+              </span>
             </span>
           </label>
           {errors.consentAccepted && (

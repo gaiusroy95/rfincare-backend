@@ -162,26 +162,30 @@ const MatrixGrid = ({
                   {new Date(row.effectiveDate)?.toLocaleDateString()}
                 </td>
                 <td className="px-4 py-3 text-right">
-                  <div className="flex items-center justify-end gap-2">
+                  <div className="flex items-center justify-end gap-1">
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => onEditRate(row)}
-                      className="h-8 w-8"
+                      iconName="Pencil"
+                      iconPosition="left"
                       title="Edit rate"
                       aria-label="Edit rate"
+                      className="h-8"
                     >
-                      <Icon name="Edit2" size={16} />
+                      <span className="hidden sm:inline">Edit</span>
                     </Button>
                     <Button
-                      variant="ghost"
-                      size="icon"
+                      variant="outline"
+                      size="sm"
                       onClick={() => onDeleteRate(row?.id)}
-                      className="h-8 w-8 text-destructive hover:text-destructive"
+                      iconName="Trash2"
+                      iconPosition="left"
                       title="Delete rate"
                       aria-label="Delete rate"
+                      className="h-8 text-destructive border-destructive/30 hover:text-destructive hover:bg-destructive/10"
                     >
-                      <Icon name="Trash2" size={16} />
+                      <span className="hidden sm:inline">Delete</span>
                     </Button>
                   </div>
                 </td>

@@ -44,7 +44,7 @@ function readReferralState() {
     const raw = sessionStorage.getItem(REFERRAL_STORAGE_KEY);
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (parsed?.referralCode) return parsed;
+      if (parsed?.referralCode || parsed?.sourcedAgentCode) return parsed;
     }
   } catch {
     /* ignore */
@@ -119,8 +119,9 @@ export function setStoredAgentCode(code) {
   const prev = readReferralState() || {};
   writeReferralState({
     ...prev,
-    referralCode: prev.referralCode || normalized,
-    referralProgram: prev.referralProgram || 'customer',
+    // Do not overwrite an existing customer/agent referral code with the logged-in agent's RFA code.
+    referralCode: prev.referralCode || undefined,
+    referralProgram: prev.referralProgram || undefined,
     sourcedAgentCode: normalized,
   });
 }
@@ -136,12 +137,13 @@ export function clearStoredAgentCode() {
 
 export function getAgentAttributionPayload() {
   const state = readReferralState();
-  if (!state?.referralCode && !state?.sourcedAgentCode) return {};
+  const sourced = normalizeAgentCode(state?.sourcedAgentCode) || getStoredAgentCode();
+  if (!state?.referralCode && !sourced) return {};
   return {
-    sourcedAgentCode: state.sourcedAgentCode || undefined,
-    agentCode: state.sourcedAgentCode || undefined,
-    referralCode: state.referralCode || undefined,
-    referralProgram: state.referralProgram || undefined,
+    sourcedAgentCode: sourced || undefined,
+    agentCode: sourced || undefined,
+    referralCode: state?.referralCode || undefined,
+    referralProgram: state?.referralProgram || undefined,
   };
 }
 

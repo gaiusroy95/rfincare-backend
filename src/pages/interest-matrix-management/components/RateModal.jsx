@@ -135,6 +135,8 @@ const RateModal = ({ isOpen, onClose, onSave, editData, productTypes, loanTypes,
               value={formData?.productType}
               onChange={(value) => handleChange('productType', value)}
               error={errors?.productType}
+              searchable
+              placeholder="Search products…"
             />
 
             <Select

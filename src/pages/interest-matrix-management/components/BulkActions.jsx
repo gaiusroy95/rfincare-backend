@@ -41,21 +41,23 @@ const BulkActions = ({ selectedCount, onBulkDelete, onBulkExport, onClearSelecti
           </Button>
 
           <Button
-            variant="ghost"
+            variant="destructive"
             size="sm"
             onClick={onBulkDelete}
             iconName="Trash2"
             iconPosition="left"
-            className="hidden sm:flex text-destructive hover:text-destructive"
+            className="hidden sm:flex"
           >
-            Delete
+            Delete Selected
           </Button>
 
           <Button
-            variant="ghost"
+            variant="destructive"
             size="icon"
             onClick={onBulkDelete}
-            className="sm:hidden h-8 w-8 text-destructive hover:text-destructive"
+            className="sm:hidden h-8 w-8"
+            title="Delete selected"
+            aria-label="Delete selected"
           >
             <Icon name="Trash2" size={16} />
           </Button>

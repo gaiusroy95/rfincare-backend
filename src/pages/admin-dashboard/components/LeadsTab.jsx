@@ -39,14 +39,17 @@ const LeadsTab = () => {
     setAssigneesLoading(false);
   }, []);
 
-  const load = async ({ keepSelection = false } = {}) => {
+  const load = useCallback(async ({ keepSelection = false, filters } = {}) => {
     setLoading(true);
     setError('');
+    const month = filters && 'month' in filters ? filters.month : monthFilter;
+    const from = filters && 'dateFrom' in filters ? filters.dateFrom : dateFrom;
+    const to = filters && 'dateTo' in filters ? filters.dateTo : dateTo;
     try {
       const data = await leadService.listLeads({
-        month: monthFilter || undefined,
-        dateFrom: dateFrom || undefined,
-        dateTo: dateTo || undefined,
+        month: month || undefined,
+        dateFrom: from || undefined,
+        dateTo: to || undefined,
       });
       const next = Array.isArray(data) ? data : [];
       setLeads(next);
@@ -61,7 +64,7 @@ const LeadsTab = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [monthFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     load();
@@ -151,7 +154,9 @@ const LeadsTab = () => {
 
   const handleApplyFilters = () => {
     setActionMsg('');
-    load();
+    load({
+      filters: { month: monthFilter, dateFrom, dateTo },
+    });
   };
 
   const handleResetFilters = () => {
@@ -159,7 +164,7 @@ const LeadsTab = () => {
     setDateFrom('');
     setDateTo('');
     setActionMsg('');
-    setTimeout(() => load(), 0);
+    load({ filters: { month: '', dateFrom: '', dateTo: '' } });
   };
 
   const toggleLeadSelection = (leadId, checked) => {
@@ -228,7 +233,7 @@ const LeadsTab = () => {
         <div>
           <h2 className="text-xl font-bold">Marketing leads</h2>
           <p className="text-sm text-muted-foreground">
-            Eligibility OTP leads and abandoned application drafts
+            Eligibility OTP leads, agent portal submissions, and abandoned application drafts
           </p>
           {!assigneesLoading && staffCount > 0 && (
             <p className="text-xs text-muted-foreground mt-1">
@@ -300,7 +305,12 @@ const LeadsTab = () => {
         </div>
       </div>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
-        <span>{leads.length} lead(s) found</span>
+        <span>
+          {leads.length} lead(s) found
+          {(monthFilter || dateFrom || dateTo) && leads.length === 0
+            ? ' — try Reset to clear date filters'
+            : ''}
+        </span>
         <button type="button" className="underline" onClick={toggleSelectAllVisible}>
           {leads.length > 0 && selectedLeadIds.size === leads.length
             ? 'Clear selection'

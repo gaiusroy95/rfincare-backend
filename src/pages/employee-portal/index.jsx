@@ -752,11 +752,14 @@ const EmployeePortal = () => {
         )}
 
         {activeTab === 'training' && (
-          <TrainingResources
-            resources={trainingResources}
-            onStartResource={handleLearningStart}
-            onOpenResource={handleLearningOpen}
-          />
+          <div className="space-y-6">
+            <EmployeeLeadsTab embed />
+            <TrainingResources
+              resources={trainingResources}
+              onStartResource={handleLearningStart}
+              onOpenResource={handleLearningOpen}
+            />
+          </div>
         )}
 
         {activeTab === 'agent-referral' && (

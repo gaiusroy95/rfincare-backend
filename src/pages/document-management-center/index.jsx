@@ -27,6 +27,7 @@ const DocumentManagementCenter = () => {
   const [selectedApplication, setSelectedApplication] = useState(null);
   const [documents, setDocuments] = useState([]);
   const [selectedDocumentIds, setSelectedDocumentIds] = useState(() => new Set());
+  const [selectedApplicationIds, setSelectedApplicationIds] = useState(() => new Set());
   const [loadingApps, setLoadingApps] = useState(true);
   const [loadingDocs, setLoadingDocs] = useState(false);
   const [error, setError] = useState('');
@@ -106,7 +107,7 @@ const DocumentManagementCenter = () => {
 
   const handleDeleteOneDocument = async (doc) => {
     if (!doc?.id) return;
-    if (!window.confirm('Delete this document?')) return;
+    if (!window.confirm(`Delete document "${doc.name || 'this file'}"? This cannot be undone.`)) return;
     try {
       await documentManagementService.deleteDocument(doc.id);
       setSelectedDocumentIds((prev) => {
@@ -115,6 +116,7 @@ const DocumentManagementCenter = () => {
         return next;
       });
       if (selectedApplication) await loadDocumentsForApplication(selectedApplication);
+      await loadApplications();
     } catch (err) {
       window.alert(err?.response?.data?.error || err?.message || 'Delete failed');
     }
@@ -124,18 +126,96 @@ const DocumentManagementCenter = () => {
     if (!selectedDocuments.length) return;
     if (
       !window.confirm(
-        `Delete ${selectedDocuments.length} selected document${selectedDocuments.length === 1 ? '' : 's'}?`,
+        `Delete ${selectedDocuments.length} selected document${selectedDocuments.length === 1 ? '' : 's'}? This cannot be undone.`,
       )
     ) {
       return;
     }
 
     try {
-      await Promise.allSettled(
-        selectedDocuments.map((d) => documentManagementService.deleteDocument(d.id)),
-      );
+      const result = await documentManagementService.bulkDeleteDocuments({
+        documentIds: selectedDocuments.map((d) => d.id),
+      });
       setSelectedDocumentIds(new Set());
       if (selectedApplication) await loadDocumentsForApplication(selectedApplication);
+      await loadApplications();
+      if (!result?.deleted) {
+        window.alert('No documents were deleted.');
+      }
+    } catch (err) {
+      window.alert(err?.response?.data?.error || err?.message || 'Bulk delete failed');
+    }
+  };
+
+  const toggleApplicationSelection = (applicationId, checked) => {
+    setSelectedApplicationIds((prev) => {
+      const next = new Set(prev);
+      if (checked) next.add(applicationId);
+      else next.delete(applicationId);
+      return next;
+    });
+  };
+
+  const toggleSelectAllApplications = (checked) => {
+    if (!checked) {
+      setSelectedApplicationIds(new Set());
+      return;
+    }
+    setSelectedApplicationIds(new Set(applications.map((app) => app.applicationId)));
+  };
+
+  const handleDeleteApplicationDocuments = async (app) => {
+    const count = Number(app?.totalDocs || 0);
+    if (!app?.applicationId || count <= 0) return;
+    if (
+      !window.confirm(
+        `Delete all ${count} document${count === 1 ? '' : 's'} for ${
+          app.applicationNumber || app.applicationId
+        }? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      const result = await documentManagementService.bulkDeleteDocuments({
+        applicationIds: [app.applicationId],
+      });
+      setSelectedApplicationIds((prev) => {
+        const next = new Set(prev);
+        next.delete(app.applicationId);
+        return next;
+      });
+      await loadApplications();
+      window.alert(`Deleted ${result?.deleted ?? 0} document(s).`);
+    } catch (err) {
+      window.alert(err?.response?.data?.error || err?.message || 'Delete failed');
+    }
+  };
+
+  const handleDeleteSelectedApplicationsDocuments = async () => {
+    const selectedApps = applications.filter((app) => selectedApplicationIds.has(app.applicationId));
+    const withDocs = selectedApps.filter((app) => Number(app.totalDocs || 0) > 0);
+    if (!withDocs.length) {
+      window.alert('Selected applications have no documents to delete.');
+      return;
+    }
+    const totalDocs = withDocs.reduce((sum, app) => sum + Number(app.totalDocs || 0), 0);
+    if (
+      !window.confirm(
+        `Delete ${totalDocs} document${totalDocs === 1 ? '' : 's'} across ${withDocs.length} application${
+          withDocs.length === 1 ? '' : 's'
+        }? This cannot be undone.`,
+      )
+    ) {
+      return;
+    }
+    try {
+      const result = await documentManagementService.bulkDeleteDocuments({
+        applicationIds: withDocs.map((app) => app.applicationId),
+      });
+      setSelectedApplicationIds(new Set());
+      await loadApplications();
+      window.alert(`Deleted ${result?.deleted ?? 0} document(s).`);
     } catch (err) {
       window.alert(err?.response?.data?.error || err?.message || 'Bulk delete failed');
     }
@@ -259,6 +339,11 @@ const DocumentManagementCenter = () => {
               loading={loadingApps}
               isAgent={isAgent}
               onSelectApplication={handleSelectApplication}
+              selectedApplicationIds={selectedApplicationIds}
+              onToggleApplicationSelection={toggleApplicationSelection}
+              onToggleSelectAll={toggleSelectAllApplications}
+              onDeleteApplicationDocuments={handleDeleteApplicationDocuments}
+              onDeleteSelectedApplicationsDocuments={handleDeleteSelectedApplicationsDocuments}
             />
           </div>
         )}

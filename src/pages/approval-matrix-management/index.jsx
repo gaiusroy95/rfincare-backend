@@ -4,6 +4,8 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import Select from '../../components/ui/Select';
 import { approvalMatrixService, bankService, auditService } from '../../services/apiServices';
+import { loanProductCatalogService } from '../../services/loanProductCatalogService';
+import { buildLoanTypeSelectOptions } from '../../utils/loanTypeOptions';
 
 const toNumber = (value, fallback = 0) => {
   const n = Number(value);
@@ -17,47 +19,10 @@ const principalFromEmi = (annualRatePercent, months, emi) => {
   const factor = Math.pow(1 + monthlyRate, months);
   return (emi * (factor - 1)) / (monthlyRate * factor);
 };
-
-const normalizeProductValue = (value) =>
-  String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ');
-
-const humanizeProductValue = (value) =>
-  String(value || '')
-    .trim()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-
-const extractLoanProductOptionsFromBanks = (banks = []) => {
-  const map = new Map();
-  for (const bank of banks || []) {
-    const products = bank?.bankProducts || bank?.bank_products || [];
-    for (const product of products) {
-      const data = product?.data || {};
-      const rawValue =
-        product?.loanType ||
-        product?.loan_type ||
-        data?.loanType ||
-        data?.loan_type ||
-        product?.name ||
-        data?.name ||
-        '';
-      const key = normalizeProductValue(rawValue);
-      if (!key || map.has(key)) continue;
-      const label = product?.name || data?.name || humanizeProductValue(rawValue);
-      map.set(key, { value: String(rawValue), label: String(label) });
-    }
-  }
-  return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
-};
-
-
 const ApprovalMatrixManagement = () => {
   const [rules, setRules] = useState([]);
   const [banks, setBanks] = useState([]);
+  const [catalogProducts, setCatalogProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showModal, setShowModal] = useState(false);
@@ -136,11 +101,21 @@ const ApprovalMatrixManagement = () => {
 
   const loadBanks = useCallback(async () => {
     try {
-      const data = await bankService.getAllBanks();
+      const data = await bankService.getAllBanks({ forceRefresh: true });
       setBanks(Array.isArray(data) ? data : []);
     } catch (err) {
       console.error('Failed to load banks:', err);
       setBanks([]);
+    }
+  }, []);
+
+  const loadCatalogProducts = useCallback(async () => {
+    try {
+      const { data } = await loanProductCatalogService.listAll();
+      setCatalogProducts(Array.isArray(data) ? data : []);
+    } catch (err) {
+      console.error('Failed to load loan product catalog:', err);
+      setCatalogProducts([]);
     }
   }, []);
 
@@ -159,9 +134,10 @@ const ApprovalMatrixManagement = () => {
   const loadData = async () => {
     setLoading(true);
     setError('');
-    const [rulesResult, banksResult] = await Promise.allSettled([
+    const [rulesResult, banksResult, catalogResult] = await Promise.allSettled([
       approvalMatrixService.getAllRules(),
-      bankService.getAllBanks(),
+      bankService.getAllBanks({ forceRefresh: true }),
+      loanProductCatalogService.listAll(),
     ]);
 
     if (rulesResult.status === 'fulfilled') {
@@ -186,11 +162,18 @@ const ApprovalMatrixManagement = () => {
       await loadBanks();
     }
 
+    if (catalogResult.status === 'fulfilled') {
+      const list = catalogResult.value?.data;
+      setCatalogProducts(Array.isArray(list) ? list : []);
+    } else {
+      await loadCatalogProducts();
+    }
+
     setLoading(false);
   };
 
   const handleOpenModal = async (rule = null) => {
-    await loadBanks();
+    await Promise.all([loadBanks(), loadCatalogProducts()]);
     if (rule) {
       setEditingRule(rule);
       setFormData({
@@ -295,18 +278,24 @@ const ApprovalMatrixManagement = () => {
   };
 
   const loanTypeOptions = useMemo(() => {
-    const live = extractLoanProductOptionsFromBanks(banks);
-    const base = [{ value: '', label: 'All Loan Types' }];
-    if (live.length) return base.concat(live);
-    return base.concat([
-      { value: 'home_loan', label: 'Home Loan' },
-      { value: 'personal_loan', label: 'Personal Loan' },
-      { value: 'business_loan', label: 'Business Loan' },
-      { value: 'auto_loan', label: 'Auto Loan' },
-      { value: 'education_loan', label: 'Education Loan' },
-      { value: 'debt_consolidation', label: 'Debt Consolidation' },
-    ]);
-  }, [banks]);
+    const options = buildLoanTypeSelectOptions({
+      banks,
+      catalogProducts,
+      selectedBankId: formData?.bankId || null,
+      includeAllOption: true,
+      valueMode: 'slug',
+    });
+
+    // Keep the currently saved loan type visible even if naming changed.
+    const current = String(formData?.loanType || '').trim();
+    if (current && !options.some((opt) => opt.value === current)) {
+      options.push({
+        value: current,
+        label: current.replace(/[_-]+/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+      });
+    }
+    return options;
+  }, [banks, catalogProducts, formData?.bankId, formData?.loanType]);
 
   const employmentTypeOptions = [
     { value: 'salaried', label: 'Salaried' },
@@ -370,8 +359,8 @@ const ApprovalMatrixManagement = () => {
             </p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={loadBanks} iconName="RefreshCw">
-              Refresh banks
+            <Button variant="outline" onClick={() => { loadBanks(); loadCatalogProducts(); }} iconName="RefreshCw">
+              Refresh products
             </Button>
             <Button onClick={() => handleOpenModal()} iconName="Plus">
               Add Rule
@@ -507,6 +496,12 @@ const ApprovalMatrixManagement = () => {
                   options={loanTypeOptions}
                   value={formData?.loanType}
                   onChange={(value) => setFormData({ ...formData, loanType: value })}
+                  searchable
+                  placeholder={
+                    loanTypeOptions.length > 1
+                      ? 'Select loan product'
+                      : 'No products found — add products under Bank Partners / Loan Products'
+                  }
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">

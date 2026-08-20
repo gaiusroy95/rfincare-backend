@@ -60,7 +60,11 @@ export const leadService = {
     return res.data;
   },
 
-  async listLeads({ assignedTo, month, dateFrom, dateTo } = {}) {
+  async listAgentOptions() {
+    const res = await apiClient.get('/leads/agent-options');
+    return Array.isArray(res.data) ? res.data : [];
+  },
+
     const params = {};
     if (assignedTo) params.assignedTo = assignedTo;
     if (month) params.month = month;

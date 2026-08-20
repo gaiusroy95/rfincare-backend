@@ -103,7 +103,7 @@ const LeadsTable = ({
           {leads.length === 0 ? (
             <tr>
               <td colSpan={colSpan} className="p-8 text-center text-muted-foreground">
-                No leads yet.
+                No leads match this view. Clear date filters or submit a new lead from the agent portal.
               </td>
             </tr>
           ) : (

@@ -140,8 +140,6 @@ const Header = ({ children }) => {
 
   const roleLabel = currentRole === 'super_admin' ? 'Admin' : t(`header.${currentRole}`);
 
-  const dashboardPath = portalNavItems[0]?.path;
-
   return (
     <>
       <header className="rf-header">
@@ -285,24 +283,13 @@ const Header = ({ children }) => {
                     {t('header.login', 'Login')}
                   </button>
                 ) : (
-                  <>
-                    {dashboardPath && (
-                      <button
-                        type="button"
-                        className="rf-btn-cta hidden sm:inline-flex"
-                        onClick={() => handleNavigation(dashboardPath)}
-                      >
-                        My Dashboard
-                      </button>
-                    )}
-                    <button
-                      type="button"
-                      className="rf-btn-login hidden sm:inline-flex"
-                      onClick={handleLogout}
-                    >
-                      {t('header.logout', 'Log out')}
-                    </button>
-                  </>
+                  <button
+                    type="button"
+                    className="rf-btn-login hidden sm:inline-flex"
+                    onClick={handleLogout}
+                  >
+                    {t('header.logout', 'Log out')}
+                  </button>
                 )}
 
                 {children}

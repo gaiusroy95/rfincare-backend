@@ -35,4 +35,9 @@ export const interestMatrixService = {
     const res = await apiClient.delete(`/interest-matrix/${id}`);
     return res.data;
   },
+
+  async bulkDelete(ids = []) {
+    const res = await apiClient.post('/interest-matrix/bulk-delete', { ids });
+    return res.data;
+  },
 };

@@ -25,8 +25,8 @@ describe('agentAttribution', () => {
     expect(getAgentAttributionPayload()).toEqual({
       sourcedAgentCode: 'RFA99999',
       agentCode: 'RFA99999',
-      referralCode: 'RFA99999',
-      referralProgram: 'customer',
+      referralCode: undefined,
+      referralProgram: undefined,
     });
   });
 

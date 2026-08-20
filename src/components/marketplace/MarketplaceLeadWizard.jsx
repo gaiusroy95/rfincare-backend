@@ -119,9 +119,9 @@ const MarketplaceLeadWizard = ({
     step === 0
       ? isShortLeadFlow
         ? marketplaceType === 'post_office'
-          ? 'Enter your details to continue. We verify your mobile and email with OTP before redirecting you to complete your investment.'
-          : 'Enter your details to continue. We verify your mobile and email with OTP before redirecting you to the bank.'
-        : 'Enter your contact details. We will verify your mobile and email with OTP.'
+          ? 'Enter your details, accept consent, and verify with OTP before we redirect you to complete your investment.'
+          : 'Enter your details, accept consent, and verify with OTP before we redirect you to the bank.'
+        : 'Enter your contact details, accept consent, and verify your mobile and email with OTP.'
       : `Just answer ${stepsRemaining} simple question${stepsRemaining === 1 ? '' : 's'} to continue`;
 
   const validateContact = () => {
@@ -131,7 +131,9 @@ const MarketplaceLeadWizard = ({
       return 'Enter a valid 10-digit Indian mobile number.';
     }
     if (!dateOfBirth) return 'Please select your complete date of birth.';
-    if (!consent) return 'Please accept the consent to continue.';
+    if (!consent) {
+      return 'Please accept the consent note to continue with OTP verification.';
+    }
     return null;
   };
 
@@ -446,31 +448,66 @@ const MarketplaceLeadWizard = ({
 
               <Input label="Email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Enter Email Address" disabled={otpSent && !otpVerified} />
 
-              <label className="flex items-start gap-2 text-sm cursor-pointer">
-                <input type="checkbox" checked={consent} onChange={(e) => setConsent(e.target.checked)} className="mt-1" disabled={otpSent && !otpVerified} />
-                <span className="text-muted-foreground">
-                  By continuing, you agree to our Privacy Policy, Terms of Use &amp; Disclaimers.
+              <label className="flex items-start gap-2.5 text-sm cursor-pointer rounded-xl border border-border p-3">
+                <input
+                  type="checkbox"
+                  checked={consent}
+                  onChange={(e) => setConsent(e.target.checked)}
+                  className="mt-1 h-4 w-4 accent-primary"
+                  disabled={otpSent && !otpVerified}
+                />
+                <span className="text-muted-foreground leading-relaxed">
+                  I here by authorized to send notifications via SMS, Email, RCS and other as per
+                  terms of service &amp; privacy policy.
                 </span>
               </label>
-
-              {otpSent && !otpVerified && (
-                <div className="space-y-3 p-4 bg-muted/40 rounded-xl border border-border">
-                  {otpSettings.requireMobileOtp && (
-                    <Input label="OTP sent to mobile" value={mobileOtp} onChange={(e) => setMobileOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" maxLength={6} />
-                  )}
-                  {otpSettings.requireEmailOtp && (
-                    <Input label="OTP sent to email" value={emailOtp} onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))} placeholder="6-digit code" maxLength={6} />
-                  )}
-                </div>
-              )}
 
               <label className="flex items-center justify-between gap-3 text-sm p-3 rounded-xl border border-border">
                 <span className="flex items-center gap-2 text-muted-foreground">
                   <Icon name="MessageCircle" size={18} className="text-emerald-600" />
                   Get updates on WhatsApp
                 </span>
-                <input type="checkbox" checked={whatsappUpdates} onChange={(e) => setWhatsappUpdates(e.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={whatsappUpdates}
+                  onChange={(e) => setWhatsappUpdates(e.target.checked)}
+                  disabled={otpSent && !otpVerified}
+                />
               </label>
+
+              {otpSent && !otpVerified && (
+                <div className="space-y-3 p-4 bg-muted/40 rounded-xl border border-border">
+                  <p className="text-sm font-medium text-foreground">
+                    Enter the OTP sent to your mobile{otpSettings.requireEmailOtp ? ' and email' : ''} to continue.
+                  </p>
+                  {otpSettings.requireMobileOtp && (
+                    <Input
+                      label="Mobile OTP"
+                      value={mobileOtp}
+                      onChange={(e) => setMobileOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="6-digit code"
+                      maxLength={6}
+                    />
+                  )}
+                  {otpSettings.requireEmailOtp && (
+                    <Input
+                      label="Email OTP"
+                      value={emailOtp}
+                      onChange={(e) => setEmailOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                      placeholder="6-digit code"
+                      maxLength={6}
+                    />
+                  )}
+                  <button
+                    type="button"
+                    onClick={handleSendOtp}
+                    disabled={loading}
+                    className="text-xs font-semibold text-primary hover:underline disabled:opacity-50"
+                  >
+                    Resend OTP
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
@@ -545,12 +582,12 @@ const MarketplaceLeadWizard = ({
 
             {step === 0 ? (
               !otpSent ? (
-                <Button type="button" onClick={handleSendOtp} disabled={loading} className="bg-orange-500 hover:bg-orange-600 text-white">
-                  {loading ? 'Sending…' : isShortLeadFlow ? 'Continue' : 'View Plans'}
+                <Button type="button" onClick={handleSendOtp} disabled={loading || !consent} className="bg-orange-500 hover:bg-orange-600 text-white">
+                  {loading ? 'Sending OTP…' : isShortLeadFlow ? 'Send OTP & Continue' : 'Send OTP & View Plans'}
                 </Button>
               ) : !otpVerified ? (
                 <Button type="button" onClick={handleVerifyOtp} disabled={loading} className="bg-orange-500 hover:bg-orange-600 text-white">
-                  {loading ? 'Verifying…' : 'Verify OTP'}
+                  {loading ? 'Verifying…' : isShortLeadFlow ? 'Verify OTP & Continue' : 'Verify OTP & View Plans'}
                 </Button>
               ) : null
             ) : (

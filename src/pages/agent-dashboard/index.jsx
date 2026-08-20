@@ -18,6 +18,7 @@ import PerformanceMetrics from './components/PerformanceMetrics';
 import ClientKanbanBoard from './components/ClientKanbanBoard';
 import AgentLeadSubmissionPanel from './components/AgentLeadSubmissionPanel';
 import AgentApplicationsPanel from './components/AgentApplicationsPanel';
+import AgentCustomersList from './components/AgentCustomersList';
 import CommissionTracker from './components/CommissionTracker';
 import CommissionReportPanel from './components/CommissionReportPanel';
 import { usePortalPolling } from '../../hooks/usePortalPolling';
@@ -27,6 +28,7 @@ import TrainingResources from './components/TrainingResources';
 import PortalReferralSection from '../../components/referral/PortalReferralSection';
 import SessionTimeout from '../../components/SessionTimeout';
 import { agentService } from '../../services/agentService';
+import { agentApplicationService } from '../../services/agentApplicationService';
 import {
   agentLearningService,
   resolveLearningOpenUrl,
@@ -58,7 +60,8 @@ const VIEW_HEADINGS = {
 };
 
 function filterClientsBySection(clients, section) {
-  if (section === 'leads') return clients.filter((c) => c.status === 'new');
+  // Leads kanban shows the full pipeline (new → submitted), not only "new".
+  if (section === 'leads') return clients;
   if (section === 'applications') {
     return clients.filter((c) => ['in-progress', 'documents', 'submitted'].includes(c.status));
   }
@@ -82,6 +85,7 @@ const AgentDashboard = () => {
   const selectedSection = navState.section;
   const activeNavId = navState.navId;
   const [dashboard, setDashboard] = useState(null);
+  const [agentCodeOverride, setAgentCodeOverride] = useState(null);
   const [loading, setLoading] = useState(true);
   const [communicationOpen, setCommunicationOpen] = useState(false);
   const [communicationContext, setCommunicationContext] = useState({
@@ -95,19 +99,46 @@ const AgentDashboard = () => {
   const loadDashboard = useCallback(async ({ background = false } = {}) => {
     if (!background) setLoading(true);
     try {
-      const data = await agentService.getDashboard();
+      const [data, profile] = await Promise.all([
+        agentService.getDashboard(),
+        agentApplicationService.getProfile().catch(() => null),
+      ]);
       setDashboard(data);
+      const code =
+        data?.attribution?.agentCode
+        || (data?.profile?.agentId && data.profile.agentId !== '—' ? data.profile.agentId : null)
+        || profile?.agentCode
+        || null;
+      if (code) {
+        setAgentCodeOverride(code);
+        setStoredAgentCode(code);
+      }
     } catch (err) {
       if (!background) {
         console.error('Agent dashboard load failed:', err);
       }
+      try {
+        const profile = await agentApplicationService.getProfile();
+        if (profile?.agentCode) {
+          setAgentCodeOverride(profile.agentCode);
+          setStoredAgentCode(profile.agentCode);
+        }
+      } catch {
+        /* ignore */
+      }
       setDashboard((prev) =>
         prev || {
-          profile: { name: userProfile?.full_name || 'Agent', tier: 'Agent' },
+          profile: {
+            name: userProfile?.full_name || 'Agent',
+            agentId: '—',
+            tier: 'Agent',
+          },
           metrics: [
             { id: 1, type: 'customers', label: 'Active Clients', value: '0', subtitle: 'Could not load data' },
           ],
           clients: [],
+          applications: [],
+          pipelineLeads: [],
           performanceAnalytics: { week: [], month: [], quarter: [], year: [] },
         },
       );
@@ -125,12 +156,22 @@ const AgentDashboard = () => {
   useEffect(() => {
     if (dashboard?.attribution?.agentCode) {
       setStoredAgentCode(dashboard.attribution.agentCode);
+      setAgentCodeOverride(dashboard.attribution.agentCode);
+    } else if (dashboard?.profile?.agentId && dashboard.profile.agentId !== '—') {
+      setStoredAgentCode(dashboard.profile.agentId);
+      setAgentCodeOverride(dashboard.profile.agentId);
     }
-  }, [dashboard?.attribution?.agentCode]);
+  }, [dashboard?.attribution?.agentCode, dashboard?.profile?.agentId]);
 
   const agentProfile = {
     name: dashboard?.profile?.name || userProfile?.full_name || 'Agent',
-    agentId: dashboard?.profile?.agentId || '—',
+    agentId:
+      (dashboard?.profile?.agentId && dashboard.profile.agentId !== '—'
+        ? dashboard.profile.agentId
+        : null)
+      || agentCodeOverride
+      || dashboard?.attribution?.agentCode
+      || '—',
     avatar:
       resolveAvatarUrl(dashboard?.profile?.avatarUrl) ||
       'https://img.rocket.new/generatedImages/rocket_gen_img_14da91c34-1763294780479.png',
@@ -454,15 +495,21 @@ const AgentDashboard = () => {
           <div className="space-y-6">
             {selectedSection === 'leads' && (
               <AgentLeadSubmissionPanel
-                agentCode={dashboard?.attribution?.agentCode}
-                onLeadCreated={() => loadDashboard({ background: true })}
+                agentCode={
+                  dashboard?.attribution?.agentCode
+                  || (agentProfile.agentId !== '—' ? agentProfile.agentId : null)
+                }
+                onLeadCreated={() => loadDashboard({ background: false })}
               />
             )}
             {selectedSection === 'applications' ? (
               <>
                 <AgentLeadSubmissionPanel
-                  agentCode={dashboard?.attribution?.agentCode}
-                  onLeadCreated={() => loadDashboard({ background: true })}
+                  agentCode={
+                    dashboard?.attribution?.agentCode
+                    || (agentProfile.agentId !== '—' ? agentProfile.agentId : null)
+                  }
+                  onLeadCreated={() => loadDashboard({ background: false })}
                 />
                 <AgentApplicationsPanel
                   applications={agentApplications}
@@ -471,25 +518,12 @@ const AgentDashboard = () => {
                 />
               </>
             ) : selectedSection === 'customers' ? (
-              <div className="bg-card rounded-lg border border-border overflow-hidden">
-                {pipelineItems.length === 0 ? (
-                  <p className="text-sm text-muted-foreground p-6 text-center">No customers yet.</p>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {pipelineItems.map((client) => (
-                      <div key={client.id} className="p-4 md:p-5 flex items-center justify-between gap-4">
-                        <div>
-                          <p className="font-semibold text-foreground">{client.name}</p>
-                          <p className="text-sm text-muted-foreground">{client.loanType || 'Loan application'}</p>
-                        </div>
-                        <span className="text-xs font-medium px-2 py-1 rounded-full bg-muted text-muted-foreground capitalize">
-                          {client.status?.replace('-', ' ')}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
+              <AgentCustomersList
+                applications={agentApplications}
+                leads={dashboard?.pipelineLeads || []}
+                onOpen={handleClientClick}
+                onStartApplication={handleStartApplication}
+              />
             ) : selectedSection === 'leads' ? (
               <ClientKanbanBoard
                 clients={filteredClients}

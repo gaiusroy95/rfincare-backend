@@ -12,45 +12,11 @@ import BulkActions from './components/BulkActions';
 import RateHeatmap from './components/RateHeatmap';
 import VersionHistory from './components/VersionHistory';
 import { bankService } from '../../services/apiServices';
+import { loanProductCatalogService } from '../../services/loanProductCatalogService';
+import { buildLoanTypeSelectOptions } from '../../utils/loanTypeOptions';
 
 const CSV_TEMPLATE = `bank_name,product_type,loan_type,credit_score_min,credit_score_max,loan_amount_min,loan_amount_max,term_min,term_max,interest_rate,status,effective_date,change_note
 HDFC Bank,Personal Loan,Unsecured,700,900,10000,50000,12,60,6.5,active,2026-01-01,Initial rate`;
-
-const normalizeProductValue = (value) =>
-  String(value || '')
-    .trim()
-    .toLowerCase()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\s+/g, ' ');
-
-const humanizeProductValue = (value) =>
-  String(value || '')
-    .trim()
-    .replace(/[_-]+/g, ' ')
-    .replace(/\b\w/g, (c) => c.toUpperCase());
-
-const extractLoanProductOptionsFromBanks = (banks = []) => {
-  const map = new Map();
-  for (const bank of banks || []) {
-    const products = bank?.bankProducts || bank?.bank_products || [];
-    for (const product of products) {
-      const data = product?.data || {};
-      const rawValue =
-        product?.name ||
-        data?.name ||
-        product?.loanType ||
-        product?.loan_type ||
-        data?.loanType ||
-        data?.loan_type ||
-        '';
-      const key = normalizeProductValue(rawValue);
-      if (!key || map.has(key)) continue;
-      const label = product?.name || data?.name || humanizeProductValue(rawValue);
-      map.set(key, { value: String(rawValue), label: String(label) });
-    }
-  }
-  return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
-};
 
 const InterestMatrixManagement = () => {
   const [matrixData, setMatrixData] = useState([]);
@@ -59,6 +25,7 @@ const InterestMatrixManagement = () => {
   const [importing, setImporting] = useState(false);
   const [bankOptions, setBankOptions] = useState([]);
   const [partnerBanks, setPartnerBanks] = useState([]);
+  const [catalogProducts, setCatalogProducts] = useState([]);
 
   const loadMatrix = useCallback(async () => {
     setMatrixLoading(true);
@@ -77,24 +44,51 @@ const InterestMatrixManagement = () => {
     loadMatrix();
   }, [loadMatrix]);
 
-  useEffect(() => {
-    const loadBanks = async () => {
-      try {
-        const banks = await bankService.getAllBanks();
-        setPartnerBanks(Array.isArray(banks) ? banks : []);
-        setBankOptions(
-          (banks || []).map((bank) => ({
-            value: bank.id,
-            label: bank.name,
-          })),
-        );
-      } catch {
-        setPartnerBanks([]);
-        setBankOptions([]);
-      }
-    };
-    loadBanks();
+  const hydratePartnerBanks = useCallback(async () => {
+    try {
+      const [banks, catalogRes] = await Promise.all([
+        bankService.getAllBanks({ forceRefresh: true }),
+        loanProductCatalogService.listAll(),
+      ]);
+      const bankList = Array.isArray(banks) ? banks : [];
+
+      // Bank list often omits nested products — hydrate so Product Type stays in sync.
+      const hydrated = await Promise.all(
+        bankList.map(async (bank) => {
+          const existing = bank?.bankProducts || bank?.bank_products || [];
+          if (Array.isArray(existing) && existing.length) {
+            return { ...bank, bankProducts: existing };
+          }
+          try {
+            const products = await bankService.getBankProducts(bank.id);
+            return {
+              ...bank,
+              bankProducts: Array.isArray(products) ? products : [],
+            };
+          } catch {
+            return { ...bank, bankProducts: [] };
+          }
+        }),
+      );
+
+      setPartnerBanks(hydrated);
+      setBankOptions(
+        hydrated.map((bank) => ({
+          value: bank.id,
+          label: bank.name,
+        })),
+      );
+      setCatalogProducts(Array.isArray(catalogRes?.data) ? catalogRes.data : []);
+    } catch {
+      setPartnerBanks([]);
+      setBankOptions([]);
+      setCatalogProducts([]);
+    }
   }, []);
+
+  useEffect(() => {
+    hydratePartnerBanks();
+  }, [hydratePartnerBanks]);
 
   const handleDownloadFullCsv = () => interestMatrixService.downloadCsv();
 
@@ -138,17 +132,16 @@ const InterestMatrixManagement = () => {
   const [editData, setEditData] = useState(null);
   const [showHeatmap, setShowHeatmap] = useState(false);
 
-  const productTypes = useMemo(() => {
-    const live = extractLoanProductOptionsFromBanks(partnerBanks);
-    if (live.length) return live;
-    return [
-      { value: 'Personal Loan', label: 'Personal Loan' },
-      { value: 'Home Loan', label: 'Home Loan' },
-      { value: 'Business Loan', label: 'Business Loan' },
-      { value: 'Auto Loan', label: 'Auto Loan' },
-      { value: 'Education Loan', label: 'Education Loan' },
-    ];
-  }, [partnerBanks]);
+  const productTypes = useMemo(
+    () =>
+      buildLoanTypeSelectOptions({
+        banks: partnerBanks,
+        catalogProducts,
+        includeAllOption: false,
+        valueMode: 'label',
+      }),
+    [partnerBanks, catalogProducts],
+  );
 
   const loanTypes = [
     { value: "Secured", label: "Secured" },
@@ -302,9 +295,10 @@ const InterestMatrixManagement = () => {
   };
 
   const handleBulkDelete = async () => {
-    if (!window.confirm(`Delete ${selectedRows?.length} rate configuration(s)?`)) return;
+    if (!selectedRows?.length) return;
+    if (!window.confirm(`Delete ${selectedRows.length} rate configuration(s)?`)) return;
     try {
-      await Promise.all(selectedRows.map((id) => interestMatrixService.remove(id)));
+      await interestMatrixService.bulkDelete(selectedRows);
       setSelectedRows([]);
       await loadMatrix();
     } catch (err) {
@@ -404,6 +398,16 @@ const InterestMatrixManagement = () => {
                 </Button>
                 <Button variant="outline" size="sm" iconName="RefreshCw" onClick={loadMatrix}>
                   Refresh
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  iconName="Package"
+                  iconPosition="left"
+                  onClick={hydratePartnerBanks}
+                  title="Reload bank partner products into Product Type"
+                >
+                  Refresh products
                 </Button>
                 <Button
                   variant="outline"

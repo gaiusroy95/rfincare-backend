@@ -50,6 +50,14 @@ export const documentManagementService = {
     const res = await apiClient.delete(`/documents/${encodeURIComponent(documentId)}`);
     return toCamelCase(res.data);
   },
+
+  async bulkDeleteDocuments({ documentIds = [], applicationIds = [] } = {}) {
+    const res = await apiClient.post('/documents/bulk-delete', {
+      documentIds,
+      applicationIds,
+    });
+    return toCamelCase(res.data);
+  },
 };
 
 export const DOC_SUMMARY_LABELS = {

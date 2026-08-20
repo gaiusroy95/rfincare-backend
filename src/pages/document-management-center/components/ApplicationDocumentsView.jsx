@@ -87,76 +87,111 @@ const ApplicationDocumentsView = ({
           No documents uploaded for this application.
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {documents.map((doc) => {
-            const isImage = (doc.mimeType || '').startsWith('image/');
-            const isPdf = String(doc.mimeType || doc.name || '').toLowerCase().includes('pdf');
-            const status = doc.status || 'pending';
-            return (
-              <div
-                key={doc.id}
-                className="bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => onOpenDocument(doc)}
-                onKeyDown={(e) => e.key === 'Enter' && onOpenDocument(doc)}
-                role="button"
-                tabIndex={0}
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <label className="inline-flex items-center gap-2 text-sm text-foreground cursor-pointer">
+              <input
+                type="checkbox"
+                checked={documents.length > 0 && selectedCount === documents.length}
+                ref={(el) => {
+                  if (el) {
+                    el.indeterminate = selectedCount > 0 && selectedCount < documents.length;
+                  }
+                }}
+                onChange={(e) => {
+                  const checked = e.target.checked;
+                  documents.forEach((doc) => onToggleDocumentSelection?.(doc.id, checked));
+                }}
+                className="w-4 h-4 rounded border-border text-primary"
+              />
+              Select all documents ({documents.length})
+            </label>
+            {selectedCount > 0 ? (
+              <Button
+                type="button"
+                variant="destructive"
+                size="sm"
+                iconName="Trash2"
+                onClick={onDeleteSelectedDocuments}
               >
-                <div className="flex gap-3">
-                  <div className="pt-1" onClick={(e) => e.stopPropagation()}>
-                    <input
-                      type="checkbox"
-                      checked={selectedDocumentIds?.has(doc.id)}
-                      onChange={(e) => onToggleDocumentSelection?.(doc.id, e.target.checked)}
-                      className="w-4 h-4 rounded border-border text-primary"
-                    />
+                Delete selected ({selectedCount})
+              </Button>
+            ) : null}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {documents.map((doc) => {
+              const isImage = (doc.mimeType || '').startsWith('image/');
+              const isPdf = String(doc.mimeType || doc.name || '').toLowerCase().includes('pdf');
+              const status = doc.status || 'pending';
+              return (
+                <div
+                  key={doc.id}
+                  className={`bg-card border border-border rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer ${
+                    selectedDocumentIds?.has(doc.id) ? 'ring-2 ring-primary/40' : ''
+                  }`}
+                  onClick={() => onOpenDocument(doc)}
+                  onKeyDown={(e) => e.key === 'Enter' && onOpenDocument(doc)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <div className="flex gap-3">
+                    <div className="pt-1" onClick={(e) => e.stopPropagation()}>
+                      <input
+                        type="checkbox"
+                        checked={selectedDocumentIds?.has(doc.id)}
+                        onChange={(e) => onToggleDocumentSelection?.(doc.id, e.target.checked)}
+                        className="w-4 h-4 rounded border-border text-primary"
+                      />
+                    </div>
+                    <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                      <Icon
+                        name={isImage ? 'Image' : isPdf ? 'FileText' : 'FileText'}
+                        size={24}
+                        className="text-primary"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-semibold text-sm text-foreground truncate">
+                        {documentTypeLabel(doc.documentType)}
+                      </p>
+                      <p className="text-xs text-muted-foreground truncate">{doc.name}</p>
+                      <span
+                        className={`inline-flex mt-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
+                          statusStyles[status] || statusStyles.pending
+                        }`}
+                      >
+                        {DOC_STATUS_LABELS[status] || status}
+                      </span>
+                    </div>
                   </div>
-                  <div className="w-14 h-14 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
-                    <Icon
-                      name={isImage ? 'Image' : isPdf ? 'FileText' : 'FileText'}
-                      size={24}
-                      className="text-primary"
-                    />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm text-foreground truncate">
-                      {documentTypeLabel(doc.documentType)}
+                  {doc.verificationNote && (
+                    <p className="mt-3 text-xs text-muted-foreground bg-muted/50 rounded p-2 line-clamp-2">
+                      Remark: {doc.verificationNote}
                     </p>
-                    <p className="text-xs text-muted-foreground truncate">{doc.name}</p>
-                    <span
-                      className={`inline-flex mt-2 px-2 py-0.5 rounded-full text-xs font-semibold ${
-                        statusStyles[status] || statusStyles.pending
-                      }`}
+                  )}
+                  <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
+                    <Button variant="outline" size="sm" iconName="Eye" onClick={() => onOpenDocument(doc)}>
+                      Open
+                    </Button>
+                    <Button variant="outline" size="sm" iconName="Download" onClick={() => onDownload(doc)}>
+                      Download
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      iconName="Trash2"
+                      onClick={() => onDeleteDocument?.(doc)}
+                      className="text-destructive hover:text-destructive"
                     >
-                      {DOC_STATUS_LABELS[status] || status}
-                    </span>
+                      Delete
+                    </Button>
                   </div>
                 </div>
-                {doc.verificationNote && (
-                  <p className="mt-3 text-xs text-muted-foreground bg-muted/50 rounded p-2 line-clamp-2">
-                    Remark: {doc.verificationNote}
-                  </p>
-                )}
-                <div className="flex gap-2 mt-3" onClick={(e) => e.stopPropagation()}>
-                  <Button variant="outline" size="sm" iconName="Eye" onClick={() => onOpenDocument(doc)}>
-                    Open
-                  </Button>
-                  <Button variant="outline" size="sm" iconName="Download" onClick={() => onDownload(doc)}>
-                    Download
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    iconName="Trash2"
-                    onClick={() => onDeleteDocument?.(doc)}
-                    className="text-destructive hover:text-destructive"
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        </>
       )}
     </div>
   );

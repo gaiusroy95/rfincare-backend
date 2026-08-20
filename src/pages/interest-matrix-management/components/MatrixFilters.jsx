@@ -43,10 +43,11 @@ const MatrixFilters = ({
         <Select
           label="Product Type"
           placeholder="All Products"
-          options={productTypes}
+          options={[{ value: '', label: 'All Products' }, ...(productTypes || [])]}
           value={filters?.productType}
           onChange={(value) => onFilterChange('productType', value)}
           clearable
+          searchable
         />
 
         <Select

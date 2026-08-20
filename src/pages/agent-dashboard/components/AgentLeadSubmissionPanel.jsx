@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
@@ -7,6 +7,7 @@ import Icon from '../../../components/AppIcon';
 import { LOAN_PRODUCTS } from '../../../constants/loanProducts';
 import { leadService } from '../../../services/leadService';
 import { getApiErrorMessage } from '../../../lib/apiErrors';
+import { getStoredAgentCode } from '../../../utils/agentAttribution';
 
 const LOAN_OPTIONS = LOAN_PRODUCTS.filter((p) => p.apiKey !== 'credit_card').map((p) => ({
   value: p.apiKey,
@@ -29,6 +30,11 @@ const AgentLeadSubmissionPanel = ({ agentCode, onLeadCreated }) => {
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
+
+  const resolvedAgentCode = useMemo(
+    () => String(agentCode || getStoredAgentCode() || '').trim() || null,
+    [agentCode],
+  );
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -61,7 +67,10 @@ const AgentLeadSubmissionPanel = ({ agentCode, onLeadCreated }) => {
     loanType: form.loanType,
     source: 'agent_portal',
     consentAccepted: true,
-    ...(agentCode ? { sourcedAgentCode: agentCode, agentCode } : {}),
+    // Backend also stamps agent code from the logged-in JWT when present.
+    ...(resolvedAgentCode
+      ? { sourcedAgentCode: resolvedAgentCode, agentCode: resolvedAgentCode }
+      : {}),
   });
 
   const startApplication = (leadMeta) => {
@@ -89,14 +98,20 @@ const AgentLeadSubmissionPanel = ({ agentCode, onLeadCreated }) => {
     try {
       const res = await leadService.createLead(buildPayload());
       const leadId = res?.lead?.id || res?.id;
-      if (form.notes.trim() && leadId) {
+      if (!leadId) {
+        throw new Error('Lead was saved but no id was returned');
+      }
+      if (!res?.sourcedAgentCode && !resolvedAgentCode) {
+        setError('Lead saved, but it could not be linked to your agent code. Refresh and try again.');
+      }
+      if (form.notes.trim()) {
         await leadService.updateLead(leadId, {
           eligibilityData: { agentNotes: form.notes.trim() },
         }).catch(() => {});
       }
       setMessage(startApp ? 'Lead saved. Opening application…' : 'Lead created successfully.');
       setForm(EMPTY_FORM);
-      onLeadCreated?.();
+      await Promise.resolve(onLeadCreated?.(res));
       if (startApp) {
         startApplication({ leadId });
       }
@@ -119,9 +134,13 @@ const AgentLeadSubmissionPanel = ({ agentCode, onLeadCreated }) => {
             Capture prospect details, save to your pipeline, and start a loan application on their behalf.
           </p>
         </div>
-        {agentCode && (
+        {resolvedAgentCode ? (
           <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 self-start">
-            Agent {agentCode}
+            Agent {resolvedAgentCode}
+          </span>
+        ) : (
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200 self-start">
+            Loading agent code…
           </span>
         )}
       </div>

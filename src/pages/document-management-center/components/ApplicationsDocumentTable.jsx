@@ -1,5 +1,6 @@
 import React from 'react';
 import Icon from '../../../components/AppIcon';
+import Button from '../../../components/ui/Button';
 import { DOC_SUMMARY_LABELS } from '../../../services/documentManagementService';
 
 const summaryStyles = {
@@ -10,7 +11,22 @@ const summaryStyles = {
   in_review: 'bg-blue-500/10 text-blue-600',
 };
 
-const ApplicationsDocumentTable = ({ applications, onSelectApplication, loading, isAgent = false }) => {
+const ApplicationsDocumentTable = ({
+  applications,
+  onSelectApplication,
+  loading,
+  isAgent = false,
+  selectedApplicationIds,
+  onToggleApplicationSelection,
+  onToggleSelectAll,
+  onDeleteApplicationDocuments,
+  onDeleteSelectedApplicationsDocuments,
+}) => {
+  const selectedCount = selectedApplicationIds?.size || 0;
+  const allSelected =
+    applications?.length > 0 && applications.every((app) => selectedApplicationIds?.has(app.applicationId));
+  const someSelected = selectedCount > 0 && !allSelected;
+
   if (loading) {
     return (
       <div className="text-center py-16">
@@ -34,69 +50,146 @@ const ApplicationsDocumentTable = ({ applications, onSelectApplication, loading,
   }
 
   return (
-    <div className="overflow-x-auto border border-border rounded-lg">
-      <table className="w-full min-w-[900px]">
-        <thead className="bg-muted/50 border-b border-border">
-          <tr>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Application ID</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Customer name</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Mobile</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Email</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Documents</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Status</th>
-            <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Breakdown</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-border">
-          {applications.map((app) => {
-            const summary = app.documentSummaryStatus || 'no_documents';
-            return (
-              <tr
-                key={app.applicationId}
-                className="hover:bg-muted/30 cursor-pointer transition-colors"
-                onClick={() => onSelectApplication(app)}
-              >
-                <td className="px-4 py-3">
-                  <button
-                    type="button"
-                    className="text-sm font-semibold text-primary hover:underline"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectApplication(app);
-                    }}
-                  >
-                    {app.applicationNumber || app.applicationId}
-                  </button>
-                </td>
-                <td className="px-4 py-3 text-sm text-foreground">{app.customerName || '—'}</td>
-                <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
-                  {app.customerPhone || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm text-muted-foreground truncate max-w-[200px]">
-                  {app.customerEmail || '—'}
-                </td>
-                <td className="px-4 py-3 text-sm font-medium">{app.totalDocs ?? 0}</td>
-                <td className="px-4 py-3">
-                  <span
-                    className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
-                      summaryStyles[summary] || summaryStyles.in_review
-                    }`}
-                  >
-                    {DOC_SUMMARY_LABELS[summary] || summary}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
-                  <span className="text-success">{app.approvedDocs ?? 0} approved</span>
-                  {' · '}
-                  <span className="text-warning">{app.pendingDocs ?? 0} pending</span>
-                  {' · '}
-                  <span className="text-destructive">{app.rejectedDocs ?? 0} rejected</span>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+    <div className="space-y-3">
+      {selectedCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-border bg-muted/40 px-4 py-3">
+          <p className="text-sm font-medium text-foreground">
+            {selectedCount} application{selectedCount === 1 ? '' : 's'} selected
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="destructive"
+              size="sm"
+              iconName="Trash2"
+              onClick={onDeleteSelectedApplicationsDocuments}
+            >
+              Delete documents
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              iconName="X"
+              onClick={() => onToggleSelectAll?.(false)}
+            >
+              Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="overflow-x-auto border border-border rounded-lg">
+        <table className="w-full min-w-[980px]">
+          <thead className="bg-muted/50 border-b border-border">
+            <tr>
+              <th className="px-3 py-3 w-10">
+                <input
+                  type="checkbox"
+                  checked={allSelected}
+                  ref={(el) => {
+                    if (el) el.indeterminate = someSelected;
+                  }}
+                  onChange={(e) => onToggleSelectAll?.(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-primary"
+                  aria-label="Select all applications"
+                />
+              </th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Application ID</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Customer name</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Mobile</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Email</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Documents</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Status</th>
+              <th className="px-4 py-3 text-left text-xs font-semibold text-foreground">Breakdown</th>
+              <th className="px-4 py-3 text-right text-xs font-semibold text-foreground">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-border">
+            {applications.map((app) => {
+              const summary = app.documentSummaryStatus || 'no_documents';
+              const hasDocs = Number(app.totalDocs || 0) > 0;
+              const isChecked = selectedApplicationIds?.has(app.applicationId);
+              return (
+                <tr
+                  key={app.applicationId}
+                  className={`hover:bg-muted/30 transition-colors ${isChecked ? 'bg-primary/5' : ''}`}
+                >
+                  <td className="px-3 py-3" onClick={(e) => e.stopPropagation()}>
+                    <input
+                      type="checkbox"
+                      checked={Boolean(isChecked)}
+                      onChange={(e) =>
+                        onToggleApplicationSelection?.(app.applicationId, e.target.checked)
+                      }
+                      className="w-4 h-4 rounded border-border text-primary"
+                      aria-label={`Select ${app.applicationNumber || app.applicationId}`}
+                    />
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      className="text-sm font-semibold text-primary hover:underline"
+                      onClick={() => onSelectApplication(app)}
+                    >
+                      {app.applicationNumber || app.applicationId}
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 text-sm text-foreground">{app.customerName || '—'}</td>
+                  <td className="px-4 py-3 text-sm text-foreground whitespace-nowrap">
+                    {app.customerPhone || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm text-muted-foreground truncate max-w-[200px]">
+                    {app.customerEmail || '—'}
+                  </td>
+                  <td className="px-4 py-3 text-sm font-medium">{app.totalDocs ?? 0}</td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`inline-flex px-2 py-1 rounded-full text-xs font-semibold ${
+                        summaryStyles[summary] || summaryStyles.in_review
+                      }`}
+                    >
+                      {DOC_SUMMARY_LABELS[summary] || summary}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap">
+                    <span className="text-success">{app.approvedDocs ?? 0} approved</span>
+                    {' · '}
+                    <span className="text-warning">{app.pendingDocs ?? 0} pending</span>
+                    {' · '}
+                    <span className="text-destructive">{app.rejectedDocs ?? 0} rejected</span>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        iconName="FolderOpen"
+                        onClick={() => onSelectApplication(app)}
+                      >
+                        Open
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        iconName="Trash2"
+                        disabled={!hasDocs}
+                        className="text-destructive hover:text-destructive disabled:opacity-40"
+                        onClick={() => onDeleteApplicationDocuments?.(app)}
+                        title={hasDocs ? 'Delete all documents for this application' : 'No documents to delete'}
+                      >
+                        Delete
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
