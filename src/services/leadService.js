@@ -65,6 +65,7 @@ export const leadService = {
     return Array.isArray(res.data) ? res.data : [];
   },
 
+  async listLeads({ assignedTo, month, dateFrom, dateTo } = {}) {
     const params = {};
     if (assignedTo) params.assignedTo = assignedTo;
     if (month) params.month = month;
