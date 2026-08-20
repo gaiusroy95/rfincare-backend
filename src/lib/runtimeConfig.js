@@ -11,15 +11,20 @@ export function getRuntimeEnv(key) {
   return runtime[key] ?? buildTime[key] ?? '';
 }
 
-const PRODUCTION_API_BASE = 'https://rfincare.onrender.com';
+const PRODUCTION_API_BASE = 'https://rfincare-api-179540276445.asia-south1.run.app';
 
-/** Vercel full-stack deploy serves the SPA but rejects POST on /public/* — use Render API instead. */
+/** Prefer Cloud Run API for production hosts (not the old Render URL). */
 export function normalizeApiBaseUrl(url) {
   const trimmed = String(url || '').trim().replace(/\/$/, '');
   if (!trimmed) return '';
   try {
     const { hostname, protocol } = new URL(trimmed);
+    // Legacy/full-stack Vercel hostname should use the live Cloud Run API.
     if (hostname === 'rfincare-backend.vercel.app') {
+      return PRODUCTION_API_BASE;
+    }
+    // Force-migrate old Render API builds to Cloud Run.
+    if (hostname === 'rfincare.onrender.com') {
       return PRODUCTION_API_BASE;
     }
     if (!protocol.startsWith('http')) return '';
@@ -40,6 +45,8 @@ export function inferApiBaseFromHost() {
   if (
     host === 'rfincare-frontend.vercel.app'
     || host.endsWith('.vercel.app')
+    || host.endsWith('.web.app')
+    || host.endsWith('.firebaseapp.com')
     || host === 'rfincare.com'
     || host === 'www.rfincare.com'
   ) {
