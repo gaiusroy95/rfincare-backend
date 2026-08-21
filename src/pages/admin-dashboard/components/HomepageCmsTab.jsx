@@ -3,7 +3,6 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import LegalContentEditor from '../../../components/cms/LegalContentEditor';
 import { cmsService } from '../../../services/cmsService';
-import { homepageService } from '../../../services/homepageService';
 import { prepareLegalHtml } from '../../../utils/legalContent';
 import { LEGAL_PAGE_SECTIONS } from '../../../constants/legalPages';
 import { getStoryPhotoUrl, formatStoryDate } from '../../../utils/storyMedia';
@@ -19,6 +18,9 @@ const HomepageCmsTab = () => {
   const [editingVideoId, setEditingVideoId] = useState(null);
   const [legalSlug, setLegalSlug] = useState('privacy-policy');
   const [legalForm, setLegalForm] = useState({ title: '', bodyHtml: '' });
+  const [legalSaving, setLegalSaving] = useState(false);
+  const [legalMessage, setLegalMessage] = useState('');
+  const [legalError, setLegalError] = useState('');
   const [trustForm, setTrustForm] = useState({
     heading: 'Trusted by Thousands',
     subtitle: 'Our commitment to security, transparency, and customer success speaks for itself',
@@ -45,9 +47,32 @@ const HomepageCmsTab = () => {
   };
 
   const loadLegal = async (slug) => {
-    const page = await homepageService.getLegalPage(slug);
-    setLegalForm({ title: page.title, bodyHtml: page.bodyHtml || '' });
+    setLegalError('');
+    setLegalMessage('');
+    const page = await cmsService.legal.get(slug);
+    setLegalForm({ title: page.title || '', bodyHtml: page.bodyHtml || '' });
     setLegalSlug(slug);
+  };
+
+  const saveLegal = async () => {
+    setLegalSaving(true);
+    setLegalError('');
+    setLegalMessage('');
+    try {
+      const saved = await cmsService.legal.update(legalSlug, {
+        title: legalForm.title,
+        bodyHtml: prepareLegalHtml(legalForm.bodyHtml),
+      });
+      setLegalForm({
+        title: saved.title || legalForm.title,
+        bodyHtml: saved.bodyHtml || legalForm.bodyHtml,
+      });
+      setLegalMessage('Legal page saved. It is live on the website now.');
+    } catch (err) {
+      setLegalError(err?.response?.data?.error || err?.message || 'Failed to save legal page');
+    } finally {
+      setLegalSaving(false);
+    }
   };
 
   useEffect(() => {
@@ -568,15 +593,10 @@ const HomepageCmsTab = () => {
             value={legalForm.bodyHtml}
             onChange={(bodyHtml) => setLegalForm({ ...legalForm, bodyHtml })}
           />
-          <Button
-            onClick={() =>
-              cmsService.legal.update(legalSlug, {
-                title: legalForm.title,
-                bodyHtml: prepareLegalHtml(legalForm.bodyHtml),
-              }).then(() => loadLegal(legalSlug))
-            }
-          >
-            Save legal page
+          {legalError ? <p className="text-sm text-destructive">{legalError}</p> : null}
+          {legalMessage ? <p className="text-sm text-emerald-700">{legalMessage}</p> : null}
+          <Button onClick={saveLegal} disabled={legalSaving}>
+            {legalSaving ? 'Saving…' : 'Save legal page'}
           </Button>
         </div>
       )}

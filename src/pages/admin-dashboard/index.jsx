@@ -646,7 +646,7 @@ const AdminDashboard = () => {
     if (action) action();
   };
 
-  const showStats = ['applications', 'agents', 'employees', 'registrations', 'leads', 'hierarchy'].includes(activeTab);
+  const showStats = ['applications', 'agents', 'employees', 'registrations', 'hierarchy'].includes(activeTab);
 
   return (
     <>

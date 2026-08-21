@@ -15,6 +15,7 @@ export const cmsService = {
   },
   legal: {
     list: () => apiClient.get('/cms/legal').then((r) => r.data),
+    get: (slug) => apiClient.get(`/cms/legal/${slug}`).then((r) => r.data),
     update: (slug, body) => apiClient.put(`/cms/legal/${slug}`, body).then((r) => r.data),
   },
   stories: {

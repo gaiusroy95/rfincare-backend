@@ -17,18 +17,20 @@ const LegalPage = () => {
       .catch(() => setError('Page not found'));
   }, [slug]);
 
-  const bodyHtml = useMemo(
-    () => (page?.bodyHtml ? prepareLegalHtml(page.bodyHtml) : ''),
-    [page?.bodyHtml],
-  );
+  const bodyHtml = useMemo(() => {
+    const raw = page?.bodyHtml ?? page?.bodyhtml ?? page?.body_html ?? '';
+    return raw ? prepareLegalHtml(raw) : '';
+  }, [page]);
 
-  const updatedLabel = page?.updatedAt
-    ? new Date(page.updatedAt).toLocaleDateString('en-IN', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
-      })
-    : null;
+  const updatedLabel = (() => {
+    const raw = page?.updatedAt ?? page?.updatedat ?? page?.updated_at;
+    if (!raw) return null;
+    return new Date(raw).toLocaleDateString('en-IN', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    });
+  })();
 
   return (
     <MarketingPageShell

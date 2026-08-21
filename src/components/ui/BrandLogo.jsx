@@ -1,21 +1,25 @@
 import React, { useState } from 'react';
 
-const LOGO_SRC = '/assets/images/updated_logo.png';
-const LOGO_SRC_ALT = '/assets/images/logo.png';
+/** Official brand assets — use only these two site-wide. */
+export const BRAND_LOGO_SRC = '/assets/images/Translogo.png';
+export const BRAND_FAVICON_SRC = '/assets/images/fevicon.png';
 
-/** Square emblem sizes — updated_logo.png is the RFINCARE icon mark (no baked-in wordmark). */
-const EMBLEM_CLASS = {
-  sm: 'h-10 w-10',
-  md: 'h-14 w-14',
-  lg: 'h-16 w-16',
-  xl: 'h-20 w-20',
-  '2xl': 'h-28 w-28',
-  icon: 'h-12 w-12',
-  sidebar: 'h-16 w-16',
+/**
+ * Translogo is a wide lockup (emblem + wordmark). Favicon is the square mark.
+ * `icon` size uses the favicon for collapsed portal sidebars.
+ */
+const LOGO_CLASS = {
+  sm: 'h-8 w-auto max-w-[140px]',
+  md: 'h-10 w-auto max-w-[180px]',
+  lg: 'h-12 w-auto max-w-[220px]',
+  xl: 'h-14 w-auto max-w-[260px]',
+  '2xl': 'h-16 w-auto max-w-[300px]',
+  icon: 'h-10 w-10',
+  sidebar: 'h-12 w-auto max-w-[200px]',
 };
 
 /**
- * RFINCARE logo — emblem image with optional text wordmark fallback on load failure.
+ * RFINCARE brand logo — Translogo for full lockups; fevicon for compact icon slots.
  */
 const BrandLogo = ({
   size = 'md',
@@ -23,24 +27,20 @@ const BrandLogo = ({
   className = '',
 }) => {
   const [imgFailed, setImgFailed] = useState(false);
-  const emblemClass = EMBLEM_CLASS[size] || EMBLEM_CLASS.md;
+  const useFavicon = size === 'icon';
+  const src = useFavicon ? BRAND_FAVICON_SRC : BRAND_LOGO_SRC;
+  const logoClass = LOGO_CLASS[size] || LOGO_CLASS.md;
 
   if (!imgFailed) {
     return (
       <div className={`inline-flex flex-col items-start leading-none ${className}`}>
         <img
-          src={LOGO_SRC}
+          src={src}
           alt="RFINCARE"
-          className={`${emblemClass} object-contain object-center shrink-0`}
-          onError={(e) => {
-            if (e.currentTarget.src.includes(LOGO_SRC_ALT)) {
-              setImgFailed(true);
-            } else {
-              e.currentTarget.src = LOGO_SRC_ALT;
-            }
-          }}
+          className={`${logoClass} object-contain object-left shrink-0`}
+          onError={() => setImgFailed(true)}
         />
-        {showTagline ? (
+        {showTagline && !useFavicon ? (
           <span className="text-[10px] font-semibold text-[var(--color-brand-green)] mt-1 tracking-wide uppercase">
             Your Financial Supermarket
           </span>

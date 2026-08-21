@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { leadService } from '../../../services/leadService';
 import { adminService } from '../../../services/adminService';
 import Button from '../../../components/ui/Button';
+import Icon from '../../../components/AppIcon';
 import LeadsTable from '../../../components/leads/LeadsTable';
 import { copyTextToClipboard } from '../../../utils/copyToClipboard';
 
@@ -152,6 +153,55 @@ const LeadsTab = () => {
   const staffCount = employees.length + agents.length;
   const selectedCount = selectedLeadIds.size;
 
+  /** KPI cards must use the same list as the table (not loan_applications). */
+  const leadStats = useMemo(() => {
+    const total = leads.length;
+    let unassigned = 0;
+    let assigned = 0;
+    let inProgress = 0;
+    for (const lead of leads) {
+      if (lead.assignedTo) assigned += 1;
+      else unassigned += 1;
+      const status = String(lead.status || '').toLowerCase();
+      if (
+        status.includes('progress')
+        || status === 'contacted'
+        || status === 'verified'
+        || status === 'profile_complete'
+      ) {
+        inProgress += 1;
+      }
+    }
+    return { total, unassigned, assigned, inProgress };
+  }, [leads]);
+
+  const leadStatCards = [
+    {
+      title: 'Total leads',
+      value: leadStats.total,
+      icon: 'Users',
+      iconBg: 'bg-[var(--color-brand-green-dark)]',
+    },
+    {
+      title: 'Unassigned',
+      value: leadStats.unassigned,
+      icon: 'UserMinus',
+      iconBg: 'bg-gradient-to-br from-warning to-orange-500',
+    },
+    {
+      title: 'Assigned',
+      value: leadStats.assigned,
+      icon: 'UserCheck',
+      iconBg: 'bg-gradient-to-br from-agent-primary to-pink-600',
+    },
+    {
+      title: 'In progress',
+      value: leadStats.inProgress,
+      icon: 'Clock',
+      iconBg: 'bg-gradient-to-br from-sky-500 to-blue-600',
+    },
+  ];
+
   const handleApplyFilters = () => {
     setActionMsg('');
     load({
@@ -265,6 +315,22 @@ const LeadsTab = () => {
             Refresh
           </Button>
         </div>
+      </div>
+
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        {leadStatCards.map((stat) => (
+          <div key={stat.title} className="rf-kpi-card">
+            <div className="flex items-start justify-between">
+              <div className="flex-1">
+                <p className="text-sm text-muted-foreground mb-2">{stat.title}</p>
+                <h3 className="text-2xl md:text-3xl font-bold text-foreground">{stat.value}</h3>
+              </div>
+              <div className={`w-12 h-12 rounded-lg flex items-center justify-center ${stat.iconBg}`}>
+                <Icon name={stat.icon} size={22} color="white" />
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end">

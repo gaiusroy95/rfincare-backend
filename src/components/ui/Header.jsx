@@ -62,8 +62,8 @@ const Header = ({ children }) => {
 
   const isGuest = !user;
   const currentRole = resolveEffectiveRole(user, userProfile) || 'customer';
-  const showMarketingNav = isPublicGuestRoute(location?.pathname)
-    && (isGuest || currentRole === 'customer');
+  // Public marketing pages always keep the site menu (even when admin/agent is logged in).
+  const showMarketingNav = isPublicGuestRoute(location?.pathname);
 
   useEffect(() => {
     document.body.style.overflow = isMobileMenuOpen ? 'hidden' : '';
