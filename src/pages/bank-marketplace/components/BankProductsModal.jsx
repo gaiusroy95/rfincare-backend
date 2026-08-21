@@ -5,25 +5,28 @@ import Button from '../../../components/ui/Button';
 import { getMarketplaceCompareKey } from '../../../utils/bankMarketplace';
 
 const DetailRow = ({ label, value }) => {
-  if (!value || value === '—') return null;
+  if (value == null || value === '' || value === '—') return null;
+  const text = String(value).trim();
+  if (!text || text === 'As per bank schedule' || text === 'Contact bank') return null;
   return (
     <div className="py-2 border-b border-border last:border-0">
       <dt className="text-xs text-muted-foreground">{label}</dt>
-      <dd className="text-sm font-medium text-foreground mt-0.5">{value}</dd>
+      <dd className="text-sm font-medium text-foreground mt-0.5 whitespace-pre-wrap">{text}</dd>
     </div>
   );
 };
 
 const ProductSection = ({ title, items }) => {
-  if (!items?.length) return null;
+  const list = Array.isArray(items) ? items.filter(Boolean) : [];
+  if (!list.length) return null;
   return (
     <div>
       <h4 className="text-sm font-semibold text-foreground mb-2">{title}</h4>
       <ul className="space-y-1.5">
-        {items.map((item, index) => (
-          <li key={`${item}-${index}`} className="flex items-start gap-2 text-sm text-muted-foreground">
+        {list.map((item, index) => (
+          <li key={`${String(item).slice(0, 24)}-${index}`} className="flex items-start gap-2 text-sm text-muted-foreground">
             <Icon name="CheckCircle2" size={14} className="text-success shrink-0 mt-0.5" />
-            <span>{item}</span>
+            <span className="whitespace-pre-wrap">{item}</span>
           </li>
         ))}
       </ul>
@@ -156,9 +159,9 @@ const BankProductsModal = ({
 
               <div className="grid md:grid-cols-2 gap-4">
                 <ProductSection title="Key features" items={product.features} />
-                <ProductSection title="Eligibility" items={product.eligibilityCriteria} />
-                <ProductSection title="Documentation" items={product.documentationRequired} />
-                <ProductSection title="Policies" items={product.policies} />
+                <ProductSection title="Eligibility criteria" items={product.eligibilityCriteria} />
+                <ProductSection title="Documentation required" items={product.documentationRequired} />
+                <ProductSection title="Policies & terms" items={product.policies} />
               </div>
             </div>
             );

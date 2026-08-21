@@ -18,12 +18,6 @@ import {
   getMarketplaceCompareKey,
   listMarketplaceOffers,
 } from '../../utils/bankMarketplace';
-import { listCreditCardMarketplaceOffers } from '../../utils/creditCardMarketplace';
-import { creditCardService } from '../../services/creditCardService';
-import CreditCardFilterPanel from '../../components/credit-cards/CreditCardFilterPanel';
-import CreditCardCategoryBar from '../../components/credit-cards/CreditCardCategoryBar';
-import { DEFAULT_CREDIT_CARD_FILTERS } from '../../constants/creditCardMarketplace';
-import { filterCreditCardOffer, resetCreditCardFilters } from '../../utils/creditCardFilters';
 import { getBankProbabilityMap, loadEligibilityResults, saveEligibilityResults } from '../../services/leadService';
 import { openMarketplaceApply } from '../../utils/eligibilityGate';
 import { homepageService } from '../../services/homepageService';
@@ -66,8 +60,6 @@ const BankMarketplace = () => {
   const [loadSlowHint, setLoadSlowHint] = useState(false);
   const [selectedBankOffer, setSelectedBankOffer] = useState(null);
 
-  const isCreditCardView = loanTypeSlug === 'credit_card';
-
   const [filters, setFilters] = useState({
     search: '',
     productType: 'all',
@@ -79,25 +71,24 @@ const BankMarketplace = () => {
     features: [],
   });
 
-  const [creditCardFilters, setCreditCardFilters] = useState(() => ({
-    ...DEFAULT_CREDIT_CARD_FILTERS,
-    category: searchParams.get('category') || 'all',
-  }));
+  // Credit cards belong only on /credit-cards — never bank marketplace
+  useEffect(() => {
+    if (loanTypeSlug === 'credit_card') {
+      navigate('/credit-cards', { replace: true });
+    }
+  }, [loanTypeSlug, navigate]);
 
   const loadBanks = useCallback(async () => {
+    if (loanTypeSlug === 'credit_card') return;
     let slowTimer;
     try {
       setLoading(true);
       setLoadSlowHint(false);
       slowTimer = setTimeout(() => setLoadSlowHint(true), 4000);
-      const [data, creditCards] = await Promise.all([
-        bankService?.getActiveBanks({
-          loanType: loanTypeSlug || undefined,
-        }),
-        creditCardService.listActive(isCreditCardView ? creditCardFilters : {}).catch(() => []),
-      ]);
+      const data = await bankService?.getActiveBanks({
+        loanType: loanTypeSlug || undefined,
+      });
       const list = Array.isArray(data) ? data : [];
-      const cardList = Array.isArray(creditCards) ? creditCards : [];
 
       let eligibility = loadEligibilityResults();
       if (!eligibility?.banks?.length && eligibility?.formData) {
@@ -113,16 +104,8 @@ const BankMarketplace = () => {
       }
       const probabilityMap = getBankProbabilityMap(eligibility);
       const bankOffers = listMarketplaceOffers(list, loanTypeSlug, probabilityMap);
-      const cardOffers = listCreditCardMarketplaceOffers(cardList, list);
-
-      const isCreditCardViewLocal = loanTypeSlug === 'credit_card';
-      const transformedOffers = isCreditCardViewLocal
-        ? cardOffers
-        : loanTypeSlug
-          ? bankOffers
-          : [...bankOffers, ...cardOffers];
-      setAllOffers(transformedOffers);
-      setBanks(transformedOffers);
+      setAllOffers(bankOffers);
+      setBanks(bankOffers);
     } catch (err) {
       setError(err?.message);
       setBanks([]);
@@ -132,7 +115,7 @@ const BankMarketplace = () => {
       if (slowTimer) clearTimeout(slowTimer);
       setLoading(false);
     }
-  }, [loanTypeSlug, isCreditCardView, creditCardFilters]);
+  }, [loanTypeSlug]);
 
   useEffect(() => {
     loadBanks();
@@ -149,10 +132,6 @@ const BankMarketplace = () => {
   };
 
   const handleResetFilters = () => {
-    if (isCreditCardView) {
-      setCreditCardFilters(resetCreditCardFilters());
-      return;
-    }
     setFilters({
       search: '',
       productType: 'all',
@@ -163,14 +142,6 @@ const BankMarketplace = () => {
       bankTypes: [],
       features: [],
     });
-  };
-
-  const handleCreditCardFilterChange = (key, value) => {
-    setCreditCardFilters((prev) => ({ ...prev, [key]: value }));
-  };
-
-  const handleCreditCardCategoryChange = (slug) => {
-    setCreditCardFilters((prev) => ({ ...prev, category: slug }));
   };
 
   const handleViewBank = (offer) => {
@@ -221,12 +192,6 @@ const BankMarketplace = () => {
   const toggleFilters = () => setIsFilterOpen((prev) => !prev);
 
   const handleApply = (bank) => {
-    if (bank?.isCreditCard) {
-      if (bank?.applyUrl) {
-        window.open(bank.applyUrl, '_blank', 'noopener,noreferrer');
-      }
-      return;
-    }
     if (bank?.applyUrl) {
       window.open(bank.applyUrl, '_blank', 'noopener,noreferrer');
       return;
@@ -248,10 +213,6 @@ const BankMarketplace = () => {
 
     if (bankIdParam) {
       result = result.filter((offer) => offer.id === bankIdParam);
-    }
-
-    if (isCreditCardView) {
-      result = result.filter((offer) => filterCreditCardOffer(offer, creditCardFilters));
     }
 
     if (filters?.search) {
@@ -312,7 +273,7 @@ const BankMarketplace = () => {
     });
 
     return result;
-  }, [banks, filters, sortBy, isCreditCardView, creditCardFilters, bankIdParam]);
+  }, [banks, filters, sortBy, bankIdParam]);
 
   const comparedBanks = banks?.filter((bank) =>
     compareList?.includes(getMarketplaceCompareKey(bank)),
@@ -356,25 +317,17 @@ const BankMarketplace = () => {
               </h1>
               <p className="text-sm md:text-base text-muted-foreground">
                 {activeProduct
-                  ? activeProduct.apiKey === 'credit_card'
-                    ? 'Compare credit cards from partner banks — fees, rewards, and apply links'
-                    : `All ${activeProduct.label.toLowerCase()} products from partner banks`
-                  : 'Compare every loan product and credit card from our trusted banking partners'}
+                  ? `All ${activeProduct.label.toLowerCase()} products from partner banks`
+                  : 'Compare loan products from our trusted banking partners'}
               </p>
               {activeProduct && (
                 <div className="flex flex-wrap gap-2 mt-3">
                   <Button size="sm" variant="outline" onClick={() => navigate('/bank-marketplace')}>
                     Show all loan types
                   </Button>
-                  {activeProduct.apiKey !== 'credit_card' ? (
-                    <Button size="sm" variant="outline" onClick={() => navigate(`/eligibility-assessment?loanType=${activeProduct.slug}`)}>
-                      Check eligibility
-                    </Button>
-                  ) : (
-                    <Button size="sm" variant="outline" onClick={() => navigate('/credit-cards')}>
-                      Full card comparison
-                    </Button>
-                  )}
+                  <Button size="sm" variant="outline" onClick={() => navigate(`/eligibility-assessment?loanType=${activeProduct.slug}`)}>
+                    Check eligibility
+                  </Button>
                 </div>
               )}
               {focusedBank && (
@@ -416,15 +369,6 @@ const BankMarketplace = () => {
             )}
           </div>
         </div>
-
-        {isCreditCardView ? (
-          <div className="mb-6">
-            <CreditCardCategoryBar
-              activeCategory={creditCardFilters.category}
-              onCategoryChange={handleCreditCardCategoryChange}
-            />
-          </div>
-        ) : null}
 
         {/* Trust / benefit indicators */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
@@ -468,26 +412,15 @@ const BankMarketplace = () => {
         {/* Desktop Sidebar Filter Drawer */}
         <div className={`hidden lg:block fixed top-24 left-24 z-30 w-[340px] transition-all duration-300 ${isFilterOpen ? 'translate-x-0 opacity-100' : '-translate-x-8 opacity-0 pointer-events-none'}`}>
           <div className="max-h-[calc(100vh-7rem)] overflow-y-auto rounded-2xl shadow-2xl">
-            {isCreditCardView ? (
-              <CreditCardFilterPanel
-                filters={creditCardFilters}
-                onFilterChange={handleCreditCardFilterChange}
-                onReset={handleResetFilters}
-                isOpen
-                onToggle={toggleFilters}
-                resultCount={filteredAndSortedBanks?.length}
-              />
-            ) : (
-              <FilterPanel
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onReset={handleResetFilters}
-                isOpen
-                onToggle={toggleFilters}
-                showMobileToggle={false}
-                panelClassName="shadow-2xl rounded-2xl"
-              />
-            )}
+            <FilterPanel
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={handleResetFilters}
+              isOpen
+              onToggle={toggleFilters}
+              showMobileToggle={false}
+              panelClassName="shadow-2xl rounded-2xl"
+            />
           </div>
         </div>
 
@@ -504,24 +437,13 @@ const BankMarketplace = () => {
         <div className="space-y-4 md:space-y-6">
           {/* Mobile Filters */}
           <div className="lg:hidden">
-            {isCreditCardView ? (
-              <CreditCardFilterPanel
-                filters={creditCardFilters}
-                onFilterChange={handleCreditCardFilterChange}
-                onReset={handleResetFilters}
-                isOpen={isFilterOpen}
-                onToggle={toggleFilters}
-                resultCount={filteredAndSortedBanks?.length}
-              />
-            ) : (
-              <FilterPanel
-                filters={filters}
-                onFilterChange={handleFilterChange}
-                onReset={handleResetFilters}
-                isOpen={isFilterOpen}
-                onToggle={toggleFilters}
-              />
-            )}
+            <FilterPanel
+              filters={filters}
+              onFilterChange={handleFilterChange}
+              onReset={handleResetFilters}
+              isOpen={isFilterOpen}
+              onToggle={toggleFilters}
+            />
           </div>
 
           {/* Bank Listings */}
@@ -562,9 +484,7 @@ const BankMarketplace = () => {
             <div className="bg-card rounded-lg border border-border p-8 md:p-12 text-center">
                 <Icon name="Search" size={48} className="text-muted mx-auto mb-4" />
                 <h3 className="text-lg md:text-xl font-bold text-foreground mb-2">
-                  {activeProduct?.apiKey === 'credit_card'
-                    ? 'No credit cards match your filters'
-                    : 'No loan products match your filters'}
+                  No loan products match your filters
                 </h3>
                 <p className="text-sm md:text-base text-muted-foreground mb-6">
                   Try adjusting your filter criteria to see more options

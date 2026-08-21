@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import Icon from '../../AppIcon';
 import Button from '../../ui/Button';
-import { COMPARE_SORT_OPTIONS, getMarketplaceCompareConfig, sortCompareProducts, pickCompareWinner, getCompareWinnerLabel } from '../../../constants/marketplaceCompareConfig';
+import { getCompareSortOptions, getMarketplaceCompareConfig, sortCompareProducts, pickCompareWinner, getCompareWinnerLabel } from '../../../constants/marketplaceCompareConfig';
 
 function FeatureList({ items, included = true }) {
   if (!items?.length) return <span className="text-xs text-muted-foreground">—</span>;
@@ -31,6 +31,7 @@ const MarketplaceSideBySideCompare = ({
   title,
 }) => {
   const config = getMarketplaceCompareConfig(type);
+  const sortOptions = getCompareSortOptions(type);
   const [sortBy, setSortBy] = useState('recommended');
   const sorted = useMemo(() => sortCompareProducts(products, sortBy, type), [products, sortBy, type]);
   const winnerId = useMemo(() => pickCompareWinner(sorted, type, sortBy), [sorted, type, sortBy]);
@@ -63,7 +64,7 @@ const MarketplaceSideBySideCompare = ({
             onChange={(e) => setSortBy(e.target.value)}
             className="h-9 rounded-lg border border-border bg-background px-3 text-sm font-medium"
           >
-            {COMPARE_SORT_OPTIONS.map((opt) => (
+            {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>

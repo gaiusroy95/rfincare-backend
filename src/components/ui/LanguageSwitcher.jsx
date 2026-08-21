@@ -63,7 +63,7 @@ function initGoogleTranslate() {
  * Indian-language switcher backed by Google Translate.
  * Custom select keeps English UI labels (avoids browser-locale gadget text).
  */
-const LanguageSwitcher = () => {
+const LanguageSwitcher = ({ variant = 'default' }) => {
   const [lang, setLang] = useState('en');
 
   useEffect(() => {
@@ -99,13 +99,16 @@ const LanguageSwitcher = () => {
   };
 
   return (
-    <div className="rf-google-translate" aria-label="Translate page">
+    <div
+      className={`rf-google-translate${variant === 'trustBar' ? ' rf-google-translate--trust' : ''}`}
+      aria-label="Translate page"
+    >
       <label className="sr-only" htmlFor="rf-lang-select">
         Language
       </label>
       <select
         id="rf-lang-select"
-        className="rf-lang-select"
+        className={`rf-lang-select${variant === 'trustBar' ? ' rf-lang-select--trust' : ''}`}
         value={lang}
         onChange={handleChange}
       >

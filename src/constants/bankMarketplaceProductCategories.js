@@ -29,25 +29,25 @@ export const BANK_MARKETPLACE_PRODUCT_CATEGORIES = [
     parentLoanType: 'business_loan',
     sortOrder: 11,
   },
-  { slug: 'credit_card', label: 'Credit Card', parentLoanType: 'personal_loan', sortOrder: 12 },
+  // Credit Card is intentionally excluded — shown only on /credit-cards
   {
     slug: 'unsecured_cc_limit',
     label: 'Unsecured CC Limit',
     parentLoanType: 'business_loan',
-    sortOrder: 13,
+    sortOrder: 12,
   },
   {
     slug: 'unsecured_overdraft_limit',
     label: 'Unsecured Overdraft Limit',
     parentLoanType: 'business_loan',
-    sortOrder: 14,
+    sortOrder: 13,
   },
   /** Legacy / optional — kept for banks already configured before taxonomy expansion */
   {
     slug: 'education_loan',
     label: 'Education Loan',
     parentLoanType: 'education_loan',
-    sortOrder: 15,
+    sortOrder: 14,
   },
 ];
 

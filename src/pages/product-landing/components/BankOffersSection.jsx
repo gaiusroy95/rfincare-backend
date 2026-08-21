@@ -129,6 +129,8 @@ const BankOffersSection = ({ product }) => {
   };
 
   const qs = `loanType=${product.slug}`;
+  const marketplacePath =
+    product.apiKey === 'credit_card' ? '/credit-cards' : `/bank-marketplace?${qs}`;
 
   return (
     <section className="py-12 md:py-16 bg-background border-t border-border">
@@ -155,7 +157,7 @@ const BankOffersSection = ({ product }) => {
             <Button
               variant="outline"
               iconName="Building2"
-              onClick={() => navigate(`/bank-marketplace?${qs}`)}
+              onClick={() => navigate(marketplacePath)}
             >
               Full marketplace
             </Button>
@@ -200,7 +202,9 @@ const BankOffersSection = ({ product }) => {
             <p className="text-muted-foreground mb-4">
               Partner bank products for {product.label.toLowerCase()} will appear here soon.
             </p>
-            <Button onClick={() => navigate(`/bank-marketplace?${qs}`)}>Browse bank marketplace</Button>
+            <Button onClick={() => navigate(marketplacePath)}>
+              {product.apiKey === 'credit_card' ? 'Browse credit cards' : 'Browse bank marketplace'}
+            </Button>
           </div>
         )}
 

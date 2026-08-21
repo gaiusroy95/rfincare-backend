@@ -20,8 +20,10 @@ import {
   formatCardFee,
   resetCreditCardFilters,
 } from '../../utils/creditCardFilters';
+import { getMarketplaceCompareConfig } from '../../constants/marketplaceCompareConfig';
 
-const MAX_COMPARE = 3;
+const CREDIT_CARD_COMPARE = getMarketplaceCompareConfig('credit_card');
+const MAX_COMPARE = CREDIT_CARD_COMPARE?.maxCompare || 6;
 
 const CreditCardsPage = () => {
   const navigate = useNavigate();
@@ -30,6 +32,7 @@ const CreditCardsPage = () => {
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState([]);
   const [showCompare, setShowCompare] = useState(false);
+  const [compareLimitHint, setCompareLimitHint] = useState('');
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState(() => ({
     ...DEFAULT_CREDIT_CARD_FILTERS,
@@ -90,9 +93,14 @@ const CreditCardsPage = () => {
       if (prev.includes(id)) {
         const next = prev.filter((x) => x !== id);
         if (next.length < 2) setShowCompare(false);
+        setCompareLimitHint('');
         return next;
       }
-      if (prev.length >= MAX_COMPARE) return prev;
+      if (prev.length >= MAX_COMPARE) {
+        setCompareLimitHint(`You can compare up to ${MAX_COMPARE} cards. Remove one to add another.`);
+        return prev;
+      }
+      setCompareLimitHint('');
       const next = [...prev, id];
       if (next.length >= 2) setShowCompare(true);
       return next;
@@ -178,6 +186,12 @@ const CreditCardsPage = () => {
           onCategoryChange={handleCategoryChange}
           counts={categoryCounts}
         />
+
+        {compareLimitHint ? (
+          <p className="mb-4 text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+            {compareLimitHint}
+          </p>
+        ) : null}
 
         {loading ? (
           <div className="text-center py-16 text-muted-foreground">Loading credit cards…</div>

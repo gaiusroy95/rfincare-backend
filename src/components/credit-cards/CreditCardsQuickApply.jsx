@@ -20,7 +20,7 @@ const QUICK_MARKETPLACES = [
     key: 'credit_card',
     label: 'Credit Card',
     icon: 'CreditCard',
-    path: '/bank-marketplace?loanType=credit_card',
+    path: '/credit-cards',
     iconWrapClass: 'bg-violet-100',
     iconClass: 'text-violet-700',
   },
@@ -111,7 +111,7 @@ const CreditCardsQuickApply = ({ banks = [], comparePath = '/credit-cards' }) =>
           <div className="flex items-center gap-3">
             <button
               type="button"
-              onClick={() => navigate('/bank-marketplace?loanType=credit_card')}
+              onClick={() => navigate('/credit-cards')}
               className="text-sm font-semibold text-primary"
             >
               Marketplace
@@ -135,7 +135,7 @@ const CreditCardsQuickApply = ({ banks = [], comparePath = '/credit-cards' }) =>
         ) : (
           <div className="bg-card border border-border rounded-xl p-6 text-center">
             <p className="text-sm text-muted-foreground mb-3">No credit card offers published yet.</p>
-            <Button size="sm" variant="outline" onClick={() => navigate('/bank-marketplace?loanType=credit_card')}>
+            <Button size="sm" variant="outline" onClick={() => navigate('/credit-cards')}>
               Browse marketplace
             </Button>
           </div>

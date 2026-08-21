@@ -10,7 +10,7 @@ const QUICK_APPLY = [
   { loanType: 'home_loan', label: 'Home', icon: 'Home' },
   { loanType: 'business_loan', label: 'Business', icon: 'Store' },
   { loanType: 'auto_loan', label: 'Vehicle', icon: 'Car' },
-  { loanType: 'credit_card', label: 'Credit Card', icon: 'CreditCard', path: '/bank-marketplace?loanType=credit_card' },
+  { loanType: 'credit_card', label: 'Credit Card', icon: 'CreditCard', path: '/credit-cards' },
   { loanType: 'insurance', label: 'Insurance', icon: 'Shield', path: '/insurance-marketplace' },
   { loanType: 'mutual_funds', label: 'Mutual Funds', icon: 'TrendingUp', path: '/mutual-fund-marketplace' },
 ];

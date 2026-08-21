@@ -40,10 +40,14 @@ export const FOOTER_CALCULATOR_LINKS = [
 ];
 
 export const FOOTER_PLANNING_HUB_LINKS = [
-  { label: 'Retirement Planning', path: '/retirement-planning' },
+  { label: 'Retirement Planning', path: '/retirement-planning', key: 'retirementPlanning' },
   { label: 'Tax Saving Products', path: '/tax-saving' },
-  { label: 'Wealth Management', path: '/wealth-management' },
+  { label: 'Wealth Management', path: '/wealth-management', key: 'wealthManagement' },
 ];
+
+export function buildFooterPlanningHubLinks(visibility = {}) {
+  return FOOTER_PLANNING_HUB_LINKS.filter((item) => !item.key || visibility[item.key] !== false);
+}
 
 export const FOOTER_RESOURCE_LINKS = [
   { labelKey: 'footer.helpCenter', path: '/legal/help-center', defaultLabel: 'Help Center' },

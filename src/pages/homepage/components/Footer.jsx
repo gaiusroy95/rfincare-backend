@@ -10,8 +10,8 @@ import { useMarketplaceVisibility } from '../../../contexts/MarketplaceVisibilit
 import {
   buildFooterProductLinks,
   buildFooterCompanyLinks,
+  buildFooterPlanningHubLinks,
   FOOTER_CALCULATOR_LINKS,
-  FOOTER_PLANNING_HUB_LINKS,
   FOOTER_RESOURCE_LINKS,
 } from '../../../constants/footerNavigation';
 
@@ -69,7 +69,7 @@ const Footer = () => {
     products: buildFooterProductLinks(loanProducts, visibility),
     company: buildFooterCompanyLinks(t, visibility),
     resources: [
-      ...FOOTER_PLANNING_HUB_LINKS,
+      ...buildFooterPlanningHubLinks(visibility),
       ...FOOTER_CALCULATOR_LINKS,
       ...FOOTER_RESOURCE_LINKS.map((link) => ({
         label: link.labelKey ? t(link.labelKey, link.defaultLabel) : link.label,

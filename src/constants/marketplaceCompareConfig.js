@@ -28,6 +28,18 @@ export const COMPARE_SORT_OPTIONS = [
   { value: 'name-asc', label: 'Name: A to Z' },
 ];
 
+export const CREDIT_CARD_COMPARE_SORT_OPTIONS = [
+  { value: 'recommended', label: 'Recommended' },
+  { value: 'benefits-desc', label: 'Most benefits' },
+  { value: 'price-asc', label: 'Fee: Low to High' },
+  { value: 'price-desc', label: 'Fee: High to Low' },
+  { value: 'name-asc', label: 'Name: A to Z' },
+];
+
+export function getCompareSortOptions(type) {
+  return type === 'credit_card' ? CREDIT_CARD_COMPARE_SORT_OPTIONS : COMPARE_SORT_OPTIONS;
+}
+
 function pickPriceNumber(product, type) {
   if (type === 'insurance') return Number(product?.premiumFrom ?? product?.premiumTo ?? 0);
   if (type === 'mutual_fund') return Number(product?.returns3y ?? product?.returns1y ?? 0);
@@ -49,9 +61,21 @@ export function sortCompareProducts(products, sortBy, type) {
       return list.sort((a, b) => pickPriceNumber(b, type) - pickPriceNumber(a, type));
     case 'rating-desc':
       return list.sort((a, b) => Number(b?.rating ?? b?.claimSettlementRatio ?? 0) - Number(a?.rating ?? a?.claimSettlementRatio ?? 0));
+    case 'benefits-desc':
+      if (type === 'credit_card') {
+        return list.sort((a, b) => scoreCreditCardBenefits(b) - scoreCreditCardBenefits(a));
+      }
+      return list.sort((a, b) => Number(b?.displayPriority ?? 0) - Number(a?.displayPriority ?? 0));
     case 'name-asc':
       return list.sort((a, b) => String(a?.name || '').localeCompare(String(b?.name || '')));
     default:
+      if (type === 'credit_card') {
+        return list.sort((a, b) => {
+          const benefitDiff = scoreCreditCardBenefits(b) - scoreCreditCardBenefits(a);
+          if (benefitDiff !== 0) return benefitDiff;
+          return Number(b?.displayPriority ?? 0) - Number(a?.displayPriority ?? 0);
+        });
+      }
       return list.sort((a, b) => Number(b?.displayPriority ?? 0) - Number(a?.displayPriority ?? 0));
   }
 }
@@ -119,7 +143,7 @@ const MUTUAL_FUND_CONFIG = {
 const CREDIT_CARD_CONFIG = {
   type: 'credit_card',
   label: 'Credit Card',
-  maxCompare: 3,
+  maxCompare: 6,
   tableRows: CC_ROWS,
   formatCell: formatCcCell,
   getId: (p) => p.id,
@@ -298,12 +322,77 @@ export function getMarketplaceCompareConfig(type) {
   }
 }
 
-const LOWER_IS_BETTER_TYPES = new Set(['insurance', 'credit_card', 'loan', 'fixed_income', 'post_office']);
+const LOWER_IS_BETTER_TYPES = new Set(['insurance', 'loan', 'fixed_income', 'post_office']);
 
-/** Pick best-value product id for compare winner badge (price-asc for premiums/fees, rating-desc for investments). */
+const CREDIT_CARD_BENEFIT_FLAGS = [
+  { key: 'loungeAccess', detailsKey: 'loungeAccessDetails', weight: 3 },
+  { key: 'fuelSurchargeWaiver', weight: 2 },
+  { key: 'movieBenefits', detailsKey: 'movieBenefitsDetails', weight: 2 },
+  { key: 'diningBenefits', detailsKey: 'diningBenefitsDetails', weight: 2 },
+  { key: 'insuranceCover', detailsKey: 'insuranceCoverDetails', weight: 3 },
+  { key: 'emiConversion', detailsKey: 'emiConversionDetails', weight: 1 },
+];
+
+/** Score credit cards by breadth/quality of benefits (higher = better value for the user). */
+export function scoreCreditCardBenefits(card) {
+  if (!card) return 0;
+  let score = 0;
+
+  for (const flag of CREDIT_CARD_BENEFIT_FLAGS) {
+    if (!card[flag.key]) continue;
+    score += flag.weight;
+    const details = flag.detailsKey ? String(card[flag.detailsKey] || '').trim() : '';
+    if (details) score += 1;
+  }
+
+  if (card.rewardPoints && String(card.rewardPoints).trim()) {
+    score += 2;
+    // Richer reward copy usually means a stronger program.
+    if (String(card.rewardPoints).length > 40) score += 1;
+  }
+
+  const featureBags = [
+    ...(Array.isArray(card.features) ? card.features : []),
+    ...(Array.isArray(card.advantages) ? card.advantages : []),
+    ...(Array.isArray(card.benefits) ? card.benefits : []),
+  ].filter(Boolean);
+  score += Math.min(featureBags.length, 8);
+
+  // Mild fee bonuses — never outweigh real benefits.
+  if (Number(card.annualFee) === 0) score += 1.5;
+  if (Number(card.joiningFee) === 0) score += 0.5;
+
+  const forex = Number(card.forexCharges);
+  if (Number.isFinite(forex)) {
+    if (forex <= 0) score += 2;
+    else if (forex <= 2) score += 1;
+  }
+
+  return score;
+}
+
+function pickCreditCardWinner(products) {
+  const config = getMarketplaceCompareConfig('credit_card');
+  const ranked = [...products].sort((a, b) => {
+    const scoreDiff = scoreCreditCardBenefits(b) - scoreCreditCardBenefits(a);
+    if (scoreDiff !== 0) return scoreDiff;
+    const feeDiff = Number(a?.annualFee ?? 999999) - Number(b?.annualFee ?? 999999);
+    if (feeDiff !== 0) return feeDiff;
+    return Number(a?.joiningFee ?? 999999) - Number(b?.joiningFee ?? 999999);
+  });
+  return config.getId(ranked[0]);
+}
+
+/** Pick best-value product id for compare winner badge. */
 export function pickCompareWinner(products, type, sortBy = 'recommended') {
   if (!products?.length) return null;
   const config = getMarketplaceCompareConfig(type);
+
+  // Credit cards: max benefits for the user (not lowest fee alone).
+  if (type === 'credit_card') {
+    return pickCreditCardWinner(products);
+  }
+
   const sorted = sortCompareProducts(products, sortBy, type);
   if (LOWER_IS_BETTER_TYPES.has(type)) {
     return config.getId(sorted[0]);

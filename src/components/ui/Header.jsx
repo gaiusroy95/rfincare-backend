@@ -154,6 +154,13 @@ const Header = ({ children }) => {
                     <Icon name={item.icon} size={13} className="shrink-0 opacity-90" />
                     <span>{item.label}</span>
                   </span>
+                  {/* Language select sits between Best Prices Guaranteed and 24x7 Expert Support */}
+                  {item.label === 'Best Prices Guaranteed' ? (
+                    <>
+                      <span className="rf-trust-divider" aria-hidden>|</span>
+                      <LanguageSwitcher variant="trustBar" />
+                    </>
+                  ) : null}
                 </React.Fragment>
               ))}
             </div>
@@ -223,8 +230,6 @@ const Header = ({ children }) => {
 
               {/* Actions */}
               <div className="rf-header-actions">
-                <LanguageSwitcher />
-
                 {showMarketingNav && (
                   <div className="relative hidden sm:block rf-search-wrap">
                     <button

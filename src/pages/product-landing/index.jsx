@@ -130,7 +130,7 @@ const ProductLanding = () => {
       <BankOffersSection product={product} />
 
       <section className="mt-8 pt-8 border-t border-border">
-        <h2 className="text-lg font-semibold mb-4">Other loan products</h2>
+        <h2 className="text-lg font-semibold mb-4">Other products</h2>
         <div className="flex flex-wrap gap-2">
           {otherProducts.map((p) => (
             <button

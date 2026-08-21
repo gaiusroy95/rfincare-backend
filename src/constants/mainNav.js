@@ -29,8 +29,12 @@ export function buildMainNavGroups({ marketplaceVisibility = {}, t = (k) => k } 
     v.governmentSchemesMarketplace !== false
       ? { label: t('header.governmentSchemesMarketplace', 'Government Schemes'), path: '/government-schemes-marketplace', icon: 'Landmark' }
       : null,
-    { label: 'Retirement Planning', path: '/retirement-planning', icon: 'Sunset' },
-    { label: 'Wealth Management', path: '/wealth-management', icon: 'PieChart' },
+    v.retirementPlanning !== false
+      ? { label: 'Retirement Planning', path: '/retirement-planning', icon: 'Sunset' }
+      : null,
+    v.wealthManagement !== false
+      ? { label: 'Wealth Management', path: '/wealth-management', icon: 'PieChart' }
+      : null,
   ].filter(Boolean);
 
   const insuranceChildren = v.insuranceMarketplace !== false

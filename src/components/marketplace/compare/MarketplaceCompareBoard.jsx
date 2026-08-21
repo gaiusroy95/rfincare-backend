@@ -1,7 +1,7 @@
 import React, { useMemo, useState, useRef, useEffect } from 'react';
 import Icon from '../../AppIcon';
 import {
-  COMPARE_SORT_OPTIONS,
+  getCompareSortOptions,
   getMarketplaceCompareConfig,
   sortCompareProducts,
 } from '../../../constants/marketplaceCompareConfig';
@@ -23,6 +23,7 @@ const MarketplaceCompareBoard = ({
   renderGridCard,
 }) => {
   const config = getMarketplaceCompareConfig(type);
+  const sortOptions = getCompareSortOptions(type);
   const [sortBy, setSortBy] = useState('recommended');
   const [viewMode, setViewMode] = useState('rows');
   const compareRef = useRef(null);
@@ -74,7 +75,7 @@ const MarketplaceCompareBoard = ({
             onChange={(e) => setSortBy(e.target.value)}
             className="h-9 rounded-lg border border-border bg-background px-3 text-xs font-medium"
           >
-            {COMPARE_SORT_OPTIONS.map((opt) => (
+            {sortOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>{opt.label}</option>
             ))}
           </select>

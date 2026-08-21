@@ -57,6 +57,35 @@ function normalizeKey(value) {
     .replace(/-/g, '_');
 }
 
+/** Credit cards belong on /credit-cards only — never bank marketplace loan listings. */
+export function isCreditCardMarketplaceProduct(product) {
+  if (!product) return false;
+  if (product.isCreditCard) return true;
+  const data = parseProductData(product);
+  const slug = normalizeKey(
+    product.productCategorySlug
+      || data.product_category_slug
+      || data.productCategorySlug
+      || data.catalog_slug
+      || data.catalogSlug
+      || '',
+  );
+  const loanType = normalizeKey(
+    product.loanType
+      || product.loan_type
+      || data.loan_type
+      || data.loanType
+      || data.type
+      || data.productType
+      || '',
+  );
+  const name = normalizeKey(product.name || product.productName || '');
+  if (slug === 'credit_card') return true;
+  if (loanType === 'credit_card') return true;
+  if (name === 'credit_card' || name === 'credit card') return true;
+  return false;
+}
+
 function normalizeBankName(name) {
   return String(name || '')
     .trim()
@@ -287,17 +316,17 @@ export function mapProductForMarketplace(bank, product, loanTypeSlug, probabilit
     processingFee: formatProcessingFee(productData),
     processingFeePercentage:
       productData.processingFeePercentage ?? productData.processing_fee_percentage ?? null,
-    otherCharges: otherCharges || 'As per bank schedule',
-    prepaymentCharges: prepaymentCharges || 'As per bank schedule',
-    foreclosureCharges: foreclosureCharges || 'As per bank schedule',
-    latePaymentCharges: latePaymentCharges || 'As per bank schedule',
-    documentationCharges: documentationCharges || 'As per bank schedule',
-    minAmount: formatCurrency(minLoan) || 'Contact bank',
+    otherCharges: otherCharges || '—',
+    prepaymentCharges: prepaymentCharges || null,
+    foreclosureCharges: foreclosureCharges || null,
+    latePaymentCharges: latePaymentCharges || null,
+    documentationCharges: documentationCharges || null,
+    minAmount: formatCurrency(minLoan) || null,
     maxAmount: formatCurrency(maxLoan) || 'Contact bank',
-    minTenure: formatTenure(minTenure) || '—',
-    maxTenure: formatTenure(maxTenure) || '20 years',
-    disbursalTimeline: disbursalTimeline || 'Contact bank',
-    collateralRequired: collateralRequired || 'As per bank schedule',
+    minTenure: formatTenure(minTenure) || null,
+    maxTenure: formatTenure(maxTenure) || '—',
+    disbursalTimeline: disbursalTimeline || null,
+    collateralRequired: collateralRequired || null,
     features,
     eligibilityCriteria,
     policies,
@@ -323,18 +352,22 @@ export function mapProductForMarketplace(bank, product, loanTypeSlug, probabilit
  * Expand banks into one marketplace offer per active product (all products from all banks).
  */
 export function listMarketplaceOffers(banks, loanTypeSlug, probabilityMap = null) {
+  // Dedicated credit-card marketplace lives at /credit-cards
+  if (normalizeKey(loanTypeSlug) === 'credit_card') return [];
+
   const catalogProduct = getLoanProductBySlug(loanTypeSlug);
   const offers = [];
   const seenProductIds = new Set();
 
   for (const bank of banks || []) {
     const products = bank?.bankProducts || bank?.bank_products || [];
-    const matched = filterProductsForCategory(products, catalogProduct || loanTypeSlug);
+    const matched = filterProductsForCategory(products, catalogProduct || loanTypeSlug)
+      .filter((product) => !isCreditCardMarketplaceProduct(product));
     for (const product of matched) {
       const productId = product?.id ? String(product.id) : null;
       if (productId && seenProductIds.has(productId)) continue;
       const mapped = mapProductForMarketplace(bank, product, loanTypeSlug, probabilityMap);
-      if (!mapped) continue;
+      if (!mapped || isCreditCardMarketplaceProduct(mapped)) continue;
       if (productId) seenProductIds.add(productId);
       offers.push(mapped);
     }
@@ -351,10 +384,11 @@ export function listMarketplaceOffers(banks, loanTypeSlug, probabilityMap = null
  * Map API bank + products into marketplace / comparison card shape (first matching product).
  */
 export function mapBankForMarketplace(bank, loanTypeSlug, probabilityMap = null) {
+  if (normalizeKey(loanTypeSlug) === 'credit_card') return null;
   const products = bank?.bankProducts || bank?.bank_products || [];
   const catalogProduct = getLoanProductBySlug(loanTypeSlug);
   const primaryProduct = pickProductForCategory(products, catalogProduct || loanTypeSlug);
-  if (!primaryProduct) return null;
+  if (!primaryProduct || isCreditCardMarketplaceProduct(primaryProduct)) return null;
   return mapProductForMarketplace(bank, primaryProduct, loanTypeSlug, probabilityMap);
 }
 

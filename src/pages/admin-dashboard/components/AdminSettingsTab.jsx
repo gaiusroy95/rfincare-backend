@@ -6,6 +6,7 @@ import Icon from '../../../components/AppIcon';
 import PasswordChangeWithOtpForm from '../../../components/security/PasswordChangeWithOtpForm';
 import { adminProfileService, resolveAvatarUrl } from '../../../services/adminProfileService';
 import { useAuth } from '../../../contexts/AuthContext';
+import { normalizeMarketplaceVisibility } from '../../../contexts/MarketplaceVisibilityContext';
 
 const Section = ({ title, description, icon, children }) => (
   <section className="bg-card border border-border rounded-lg p-4 md:p-6 space-y-4">
@@ -34,16 +35,9 @@ const AdminSettingsTab = () => {
   const [busy, setBusy] = useState('');
 
   const [verifierEmails, setVerifierEmails] = useState(['', '', '']);
-  const [marketplaceVisibility, setMarketplaceVisibility] = useState({
-    bankMarketplace: true,
-    creditCardMarketplace: true,
-    insuranceMarketplace: true,
-    mutualFundMarketplace: true,
-    fixedIncomeMarketplace: true,
-    postOfficeMarketplace: true,
-    governmentSchemesMarketplace: true,
-    investmentMarketplace: true,
-  });
+  const [marketplaceVisibility, setMarketplaceVisibility] = useState(() =>
+    normalizeMarketplaceVisibility(),
+  );
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -55,16 +49,7 @@ const AdminSettingsTab = () => {
       const existing = profile?.verificationEmails?.map((v) => v.email) || [];
       setVerifierEmails([existing[0] || '', existing[1] || '', existing[2] || '']);
       if (visibility) {
-        setMarketplaceVisibility({
-          bankMarketplace: visibility.bankMarketplace !== false,
-          creditCardMarketplace: visibility.creditCardMarketplace !== false,
-          insuranceMarketplace: visibility.insuranceMarketplace !== false,
-          mutualFundMarketplace: visibility.mutualFundMarketplace !== false,
-          fixedIncomeMarketplace: visibility.fixedIncomeMarketplace !== false,
-          postOfficeMarketplace: visibility.postOfficeMarketplace !== false,
-          governmentSchemesMarketplace: visibility.governmentSchemesMarketplace !== false,
-          investmentMarketplace: visibility.investmentMarketplace !== false,
-        });
+        setMarketplaceVisibility(normalizeMarketplaceVisibility(visibility));
       }
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Failed to load profile');
@@ -132,16 +117,7 @@ const AdminSettingsTab = () => {
     setBusy('marketplace-visibility');
     try {
       const updated = await adminProfileService.updateMarketplaceVisibility(marketplaceVisibility);
-      setMarketplaceVisibility({
-        bankMarketplace: updated.bankMarketplace !== false,
-        creditCardMarketplace: updated.creditCardMarketplace !== false,
-        insuranceMarketplace: updated.insuranceMarketplace !== false,
-        mutualFundMarketplace: updated.mutualFundMarketplace !== false,
-        fixedIncomeMarketplace: updated.fixedIncomeMarketplace !== false,
-        postOfficeMarketplace: updated.postOfficeMarketplace !== false,
-        governmentSchemesMarketplace: updated.governmentSchemesMarketplace !== false,
-        investmentMarketplace: updated.investmentMarketplace !== false,
-      });
+      setMarketplaceVisibility(normalizeMarketplaceVisibility(updated));
       setMessage('Marketplace visibility updated');
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Could not update marketplace visibility');
@@ -280,6 +256,8 @@ const AdminSettingsTab = () => {
             { key: 'postOfficeMarketplace', label: 'Post Office Marketplace' },
             { key: 'governmentSchemesMarketplace', label: 'Government Schemes Marketplace' },
             { key: 'investmentMarketplace', label: 'Investment Marketplace' },
+            { key: 'retirementPlanning', label: 'Retirement Planning' },
+            { key: 'wealthManagement', label: 'Wealth Management' },
           ].map((item) => (
             <label key={item.key} className="flex items-center justify-between gap-3 p-3 rounded-lg border border-border">
               <span className="text-sm font-medium text-foreground">{item.label}</span>

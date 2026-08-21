@@ -5,7 +5,7 @@ import { queryCacheFetch } from '../lib/queryCache';
 const CACHE_KEY = 'public:marketplace-visibility';
 const CACHE_TTL_MS = 5 * 60 * 1000;
 
-const DEFAULT_VISIBILITY = {
+export const DEFAULT_MARKETPLACE_VISIBILITY = {
   bankMarketplace: true,
   creditCardMarketplace: true,
   insuranceMarketplace: true,
@@ -14,15 +14,32 @@ const DEFAULT_VISIBILITY = {
   postOfficeMarketplace: true,
   governmentSchemesMarketplace: true,
   investmentMarketplace: true,
+  retirementPlanning: true,
+  wealthManagement: true,
 };
 
+export function normalizeMarketplaceVisibility(data = {}) {
+  return {
+    bankMarketplace: data.bankMarketplace !== false,
+    creditCardMarketplace: data.creditCardMarketplace !== false,
+    insuranceMarketplace: data.insuranceMarketplace !== false,
+    mutualFundMarketplace: data.mutualFundMarketplace !== false,
+    fixedIncomeMarketplace: data.fixedIncomeMarketplace !== false,
+    postOfficeMarketplace: data.postOfficeMarketplace !== false,
+    governmentSchemesMarketplace: data.governmentSchemesMarketplace !== false,
+    investmentMarketplace: data.investmentMarketplace !== false,
+    retirementPlanning: data.retirementPlanning !== false,
+    wealthManagement: data.wealthManagement !== false,
+  };
+}
+
 const MarketplaceVisibilityContext = createContext({
-  visibility: DEFAULT_VISIBILITY,
+  visibility: DEFAULT_MARKETPLACE_VISIBILITY,
   loading: true,
 });
 
 export function MarketplaceVisibilityProvider({ children }) {
-  const [visibility, setVisibility] = useState(DEFAULT_VISIBILITY);
+  const [visibility, setVisibility] = useState(DEFAULT_MARKETPLACE_VISIBILITY);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -34,16 +51,7 @@ export function MarketplaceVisibilityProvider({ children }) {
     )
       .then((data) => {
         if (!active || !data) return;
-        setVisibility({
-          bankMarketplace: data.bankMarketplace !== false,
-          creditCardMarketplace: data.creditCardMarketplace !== false,
-          insuranceMarketplace: data.insuranceMarketplace !== false,
-          mutualFundMarketplace: data.mutualFundMarketplace !== false,
-          fixedIncomeMarketplace: data.fixedIncomeMarketplace !== false,
-          postOfficeMarketplace: data.postOfficeMarketplace !== false,
-          governmentSchemesMarketplace: data.governmentSchemesMarketplace !== false,
-          investmentMarketplace: data.investmentMarketplace !== false,
-        });
+        setVisibility(normalizeMarketplaceVisibility(data));
       })
       .catch(() => {})
       .finally(() => {
